@@ -11,9 +11,10 @@ D-bus protocol client and server for node.js
     var cookie = connection.message({
       type: dbus.messageType.functionCall, // optional, default to functionCall
       // flags:     // optional, default to no flags
-      object: "org.freedesktop.dbus",
-      interface: "/org/freedesktop/dbu",
-      method: "Hello"
+      path: '/org/freedesktop/DBus',
+      interface: 'org.freedesktop.DBus',
+      destination: 'org.freedesktop.DBus'
+      member: 'Hello'
     });
 
     connection.on('message', function(message) {
