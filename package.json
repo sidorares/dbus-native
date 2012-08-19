@@ -1,7 +1,7 @@
 {
     "name": "dbus-native",
     "author" : "Andrey Sidorov <sidorares@yandex.com>",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "keywords": ["dbus", "d-bus", "rpc", "gnome", "kde"],
     "description": "D-bus protocol implementation in native javascript",
     "directories": {
@@ -18,7 +18,9 @@
     },
     "dependencies": {
         "binary": "0.2.0",
-        "abstractsocket": "*"
+        "byline": "2.0.*",
+        "put": "0.0.6",
+        "abstractsocket": "0.0.2"
     },
     "devDependencies": {
         "mocha": "*"

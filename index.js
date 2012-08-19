@@ -2,6 +2,7 @@
 
 var EventEmitter = require('events').EventEmitter;
 var net = require('net');
+require('abstractsocket')(net);
 var binary = require('binary');
 var Parser = require('./lib/parser');
 //var constants = require('./lib/constants');
