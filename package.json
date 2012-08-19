@@ -18,7 +18,7 @@
     },
     "dependencies": {
         "binary": "0.2.0",
-        "abstractsocket", "*"
+        "abstractsocket": "*"
     },
     "devDependencies": {
         "mocha": "*"
