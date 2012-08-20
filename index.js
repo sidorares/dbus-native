@@ -3,9 +3,10 @@
 var EventEmitter = require('events').EventEmitter;
 var net = require('net');
 require('abstractsocket')(net);
-var binary = require('binary');
-var Parser = require('./lib/parser');
-//var constants = require('./lib/constants');
+
+var binary =    require('binary');
+var parser =    require('./lib/parser');
+var constants = require('./lib/constants');
 
 function createStream(opts) {
   if (opts.stream)
@@ -58,8 +59,16 @@ module.exports = function (opts) {
             console.warn("Didn't write bytes to closed stream");
         };
     });
+   
+
+    var hexy = require('./hexy');
+    self.stream.on('data', function(data) {
+       console.error(hexy.hexy(data, {prefix: 'from dbus'})); 
+    });
+
     
-    var parser = new Parser(self, opts);    
+    // start parsing input stream
+    parser(self, opts);    
 
     self.write = function (buf) {
         if (Buffer.isBuffer(buf)) {
@@ -128,7 +137,7 @@ module.exports = function (opts) {
             .word32le(serial)
             .word32le(0x6e) // ?? header length
             .word8(headerType.path) // type: path
-            .word8(1) // ??? (length of 'o' string)
+            .word8(1) // (length of 'o' string)
             .put(Buffer('o')) // object path
             .word8(0)
             .put(dstring(path))
@@ -159,3 +168,6 @@ module.exports = function (opts) {
     };
     return self;
 };
+
+
+module.exports.messageType = constants.messageType;
