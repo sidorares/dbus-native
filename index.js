@@ -60,13 +60,11 @@ module.exports = function (opts) {
         };
     });
    
+    //var hexy = require('./hexy');
+    //self.stream.on('data', function(data) {
+    //   console.error(hexy.hexy(data, {prefix: 'from dbus'})); 
+    //});
 
-    var hexy = require('./hexy');
-    self.stream.on('data', function(data) {
-       console.error(hexy.hexy(data, {prefix: 'from dbus'})); 
-    });
-
-    
     // start parsing input stream
     parser(self, opts);    
 
@@ -86,14 +84,6 @@ module.exports = function (opts) {
     };
 
     var littleEndian = 108; // 'l'
-    //PATH = 1
-    //INTERFACE = 2
-    //MEMBER = 3
-    //ERROR_NAME = 4
-    //REPLY_SERIAL = 5
-    //DESTINATION = 6
-    //SENDER = 7
-    //SIGNATURE = 8
 
     var headerType = {
       path: 1,
