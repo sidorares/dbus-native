@@ -7,6 +7,7 @@ require('abstractsocket')(net);
 var binary =    require('binary');
 var parser =    require('./lib/parser');
 var constants = require('./lib/constants');
+var message   = require('./lib/message');
 
 function createStream(opts) {
   if (opts.stream)
@@ -83,6 +84,10 @@ module.exports = function (opts) {
         return self;
     };
 
+    self.message = message.write;
+
+   /*
+
     var littleEndian = 108; // 'l'
 
     var headerType = {
@@ -156,8 +161,9 @@ module.exports = function (opts) {
         }
         return self;
     };
+    */
+
     return self;
 };
-
 
 module.exports.messageType = constants.messageType;
