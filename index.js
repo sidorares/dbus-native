@@ -14,7 +14,10 @@ function createStream(opts) {
       return stream;
   var host = opts.host;
   var port = opts.port;
+  var socket = opts.socket;
   var stream;
+  if (socket)
+    return net.createConnection(socket);
   if (port)
     return net.createConnection(port, host);
   var busAddress = opts.busAddress || process.env.DBUS_SESSION_BUS_ADDRESS;
@@ -63,13 +66,17 @@ module.exports = function (opts) {
    
     //var hexy = require('./hexy');
     //self.stream.on('data', function(data) {
-    //   console.error(hexy.hexy(data, {prefix: 'from dbus'})); 
+    //   console.error(hexy.hexy(data, {prefix: 'from dbus  '})); 
     //});
 
     // start parsing input stream
     parser(self, opts);    
 
     self.write = function (buf) {
+   
+        //var hexy = require('./hexy');
+        //console.error(hexy.hexy(buf, {prefix: 'from client'})); 
+
         if (Buffer.isBuffer(buf)) {
             stream.write(buf);
         }
@@ -84,86 +91,30 @@ module.exports = function (opts) {
         return self;
     };
 
-    self.message = message.write;
-
-   /*
-
-    var littleEndian = 108; // 'l'
-
-    var headerType = {
-      path: 1,
-      interface: 2,
-      member: 3,
-      errorName: 4,
-      repySerial: 5,
-      destination: 6,
-      sender: 7,
-      signature: 8
-    };
-
-    function dstring(s) {
-       var padded = ((s.length+1 + 3) >> 2) << 2
-       var buf = Buffer(padded + 4);
-       buf.fill(0);
-       buf.writeUInt32LE(s.length, 0);
-       buf.write(s, 4);
-       return buf;
+    self.message = function(msg) {
+       if (self.state === 'connected')
+           message.write.call(self, msg);
+       else {
+           self.once('connect', function() {
+               message.write.call(self, msg);
+           });
+       }
     }
-
-    // TODO: put dbus serialising here 
-    self.message = function (msg) {
-        function send() {
-        var messageType = 1;
-        var flags = 0;
-        var protocolVersion = 1;
-        var bodyLength = 0;
-        var serial = 1;
-        var path = '/org/freedesktop/DBus';
-        var iface = 'org.freedesktop.DBus';
-        var member = 'Hello'
-        var destination = 'org.freedesktop.DBus';
-        debugger;
-        binary.put()
-            .word8(littleEndian)
-            .word8(messageType)
-            .word8(flags)
-            .word8(protocolVersion)
-            .word32le(bodyLength)
-            .word32le(serial)
-            .word32le(0x6e) // ?? header length
-            .word8(headerType.path) // type: path
-            .word8(1) // (length of 'o' string)
-            .put(Buffer('o')) // object path
-            .word8(0)
-            .put(dstring(path))
-            .word8(headerType.destination) // type: iface
-            .word8(1)
-            .put(Buffer('s'))  // utf8 string
-            .word8(0)
-            .put(dstring(destination))
-            .word8(headerType.interface)
-            .word8(1)
-            .put(Buffer('s'))  // utf8 string
-            .word8(0)
-            .put(dstring(iface))
-            .word8(headerType.member) // type: iface
-            .word8(1)
-            .put(Buffer('s'))  // utf8 string
-            .word8(0)
-            .put(dstring(member))
-            .write(self)
-        ;
-        }
-        if (self.state == 'connected')
-           send()
-        else {
-           self.once('connect', send);
-        }
-        return self;
-    };
-    */
-
     return self;
 };
+
+var bus = require('./lib/bus');
+module.exports.createClient = function(params) {
+    var conn = module.exports(params);
+    return new bus(conn);
+}
+
+module.exports.systemBus = function() {
+    return module.exports.createClient({socket: '/var/run/dbus/system_bus_socket'});
+}
+
+module.exports.sessionBus = function(opts) {
+    return module.exports.createClient(opts);
+}
 
 module.exports.messageType = constants.messageType;
