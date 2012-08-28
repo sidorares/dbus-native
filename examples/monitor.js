@@ -20,6 +20,7 @@ conn.message({
    body: ["type='signal'"]
 });
 
+
 conn.message({
    path: '/org/freedesctop/DBus',
    destination: 'org.freedesktop.DBus',
@@ -39,5 +40,7 @@ conn.message({
 });
 
 conn.on('message', function(msg) {
-   console.log(msg); //TODO: dbus-monitor pretty-print
+   if (!msg.body)
+       return;
+   //console.log(JSON.stringify(msg, 0, 4)); //TODO: dbus-monitor pretty-print
 });
