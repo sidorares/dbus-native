@@ -16,7 +16,7 @@ bus.invoke({
    interface:   'org.freedesktop.DBus',
    member:      'RequestName',
    signature:   'su',
-   body: [ 'com.github.sidorares.node.dbus.Example', 0x01 ] // TODO: core DBus api constants (they are not related to transport)
+   body: [ 'com.github.sidorares.dbus.Example', 0x01 ] // TODO: core DBus api constants (they are not related to transport)
 }, function(err, flags) {
    if (err)
       console.log('ERROR:' + err);
@@ -25,15 +25,15 @@ bus.invoke({
 });
 
 bus.connection.on('message', function(msg) {
-    if (msg.type == 1) {
+    //if (msg.type == 1) {
     console.log(msg);
-    bus.invoke({
-        destination: msg.sender,   
-        type: dbus.messageType.methodReturn,
-        replySerial: msg.serial,
-        signature: 's',
-        body: [reply]
-    });
+    //bus.invoke({
+    //    destination: msg.sender,   
+    //    type: dbus.messageType.methodReturn,
+    //    replySerial: msg.serial,
+    //    signature: 's',
+    //    body: [reply]
+    //});
 
-    }
+    //}
 });
