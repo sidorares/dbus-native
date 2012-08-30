@@ -93,7 +93,6 @@ module.exports = function (opts) {
     };
 
     self.message = function(msg) {
-       console.log(JSON.stringify(msg, null, 4));
        if (self.state === 'connected')
            message.write.call(self, msg);
        else {
