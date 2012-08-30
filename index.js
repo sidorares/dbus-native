@@ -24,10 +24,10 @@ function createStream(opts) {
   if (!busAddress) throw new Error('unknown bus address');
   var familyParams = busAddress.split(':');
   var family = familyParams[0];
-  var params = {}
+  var params = {};
   familyParams[1].split(',').map(function(p) { 
     var keyVal = p.split('='); 
-    params[keyVal[0]] = keyVal[1] 
+    params[keyVal[0]] = keyVal[1]; 
   });
   switch(family.toLowerCase()) {
     case 'tcp':
@@ -41,6 +41,7 @@ function createStream(opts) {
        if (params.abstract) {
          return net.createConnection('\u0000' + params.abstract); 
        }
+       throw new Error('not enough parameters for \'unix\' connection - you need to specify \'socket\' or \'abstract\' parameter');
     default:
        throw new Error('unknown address type');
   }
@@ -48,7 +49,7 @@ function createStream(opts) {
 }
 
 module.exports = function (opts) {
-    var self = new EventEmitter;
+    var self = new EventEmitter();
     if (!opts) opts = {};
     var stream = self.stream = createStream(opts);
     stream.setNoDelay();
@@ -92,6 +93,7 @@ module.exports = function (opts) {
     };
 
     self.message = function(msg) {
+       console.log(JSON.stringify(msg, null, 4));
        if (self.state === 'connected')
            message.write.call(self, msg);
        else {
@@ -99,7 +101,7 @@ module.exports = function (opts) {
                message.write.call(self, msg);
            });
        }
-    }
+    };
     return self;
 };
 
@@ -107,14 +109,14 @@ var bus = require('./lib/bus');
 module.exports.createClient = function(params) {
     var conn = module.exports(params);
     return new bus(conn);
-}
+};
 
 module.exports.systemBus = function() {
     return module.exports.createClient({socket: '/var/run/dbus/system_bus_socket'});
-}
+};
 
 module.exports.sessionBus = function(opts) {
     return module.exports.createClient(opts);
-}
+};
 
 module.exports.messageType = constants.messageType;
