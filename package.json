@@ -18,7 +18,7 @@
     },
     "dependencies": {
         "binary": "0.2.0",
-        "byline": "2.0.*",
+        "byline": "2.0.3",
         "put": "0.0.6",
         "abstractsocket": "0.0.2"
     },
