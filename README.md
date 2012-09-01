@@ -8,6 +8,7 @@ Installation
 git clone https://github.com/sidorares/node-dbus # clone the repo
 cd node-dbus 
 npm install abstractsocket binary put byline  # install dependencies
+sudo cp examples/com.github.sidorares.dbus.Example.conf /etc/dbus-1/system.d/ # if you want to test examples/service.js
 ```
 
 Usage
