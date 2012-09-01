@@ -4,10 +4,16 @@ D-bus protocol client and server for node.js
 
 Installation
 ------------
+
+```shell
+npm install dbus-native
+```
+or
+
 ```shell
 git clone https://github.com/sidorares/node-dbus # clone the repo
 cd node-dbus 
-npm install abstractsocket binary put byline  # install dependencies
+npm install # install dependencies
 sudo cp examples/com.github.sidorares.dbus.Example.conf /etc/dbus-1/system.d/ # if you want to test examples/service.js
 ```
 
