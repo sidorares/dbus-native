@@ -1,7 +1,17 @@
 node-dbus
 ===========
-
 D-bus protocol client and server for node.js
+
+Installation
+------------
+```shell
+git clone https://github.com/sidorares/node-dbus # clone the repo
+cd node-dbus 
+npm install abstractsocket binary put byline  # install dependencies
+```
+
+Usage
+------
 
     var dbus = require('dbus-native');
     // TODO: docs for options
