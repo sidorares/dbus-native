@@ -11,7 +11,7 @@ var message   = require('./lib/message');
 
 function createStream(opts) {
   if (opts.stream)
-      return stream;
+      return opts.stream;
   var host = opts.host;
   var port = opts.port;
   var socket = opts.socket;
@@ -53,7 +53,7 @@ module.exports = function (opts) {
     if (!opts) opts = {};
     var stream = self.stream = createStream(opts);
     stream.setNoDelay();
-   
+
     stream.on('error', function (err) {
         self.emit('error', err);
     });
@@ -65,10 +65,10 @@ module.exports = function (opts) {
         };
     });
    
-    //var hexy = require('./hexy');
-    //self.stream.on('data', function(data) {
-    //   console.error(hexy.hexy(data, {prefix: 'from dbus  '})); 
-    //});
+//    var hexy = require('./lib/hexy');
+//    self.stream.on('data', function(data) {
+//       console.error(hexy.hexy(data, {prefix: 'from dbus  '})); 
+//    });
 
     // start parsing input stream
     parser(self, opts);    
@@ -97,6 +97,7 @@ module.exports = function (opts) {
            message.write.call(self, msg);
        else {
            self.once('connect', function() {
+               self.state = 'connected';
                message.write.call(self, msg);
            });
        }
@@ -119,3 +120,7 @@ module.exports.sessionBus = function(opts) {
 };
 
 module.exports.messageType = constants.messageType;
+module.exports.createConnection = module.exports;
+
+var server = require('./lib/server');
+module.exports.createServer = server.createServer;
