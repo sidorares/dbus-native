@@ -92,6 +92,8 @@ module.exports = function (opts) {
         return self;
     };
 
+    // TODO this is really bad
+    // use own internal queue or move to async initialisation
     self.message = function(msg) {
        if (self.state === 'connected')
            message.write.call(self, msg);
