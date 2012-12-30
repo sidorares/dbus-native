@@ -24,7 +24,8 @@
         "xml2js": "0.1.14"
     },
     "devDependencies": {
-        "mocha": "*"
+        "mocha": "*",
+        "buffers": "*"
     },
     "scripts" : {
         "test" : "mocha",
