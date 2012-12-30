@@ -2,6 +2,8 @@ node-dbus
 ===========
 D-bus protocol client and server for node.js
 
+[![Build Status](https://secure.travis-ci.org/sidorares/node-dbus.png)](http://travis-ci.org/sidorares/node-dbus)
+
 Installation
 ------------
 
@@ -42,4 +44,53 @@ sessionBus.getService('org.freedesktop.Notifications').getInterface(
        //setTimeout(function() { n.CloseNotification(id, console.log); }, 4000);
     });
 });
+```
+
+API
+---
+
+### Low level messaging: bus connection
+
+`connection = dbus.createClient(options)`
+
+options:
+   - socket - unix socket path
+   - port - TCP port
+   - host - TCP host
+   - busAddress - encoded bus address. Default is `DBUS_SESSION_BUS_ADDRESS` environment variable. See http://dbus.freedesktop.org/doc/dbus-specification.html#addresses
+   - ( TODO: add/document option to use adress from X11 session )
+
+connection has only one method, `message(msg)`
+
+message fields:
+   - type - methodCall, methodReturn, error or signal
+   - path - object path
+   - interface 
+   - destination
+   - sender
+   - member
+   - serial
+   - signature
+   - body
+   - errorName
+   - replySerial
+  
+connection signals:
+   - connect - emitted after successful authentication
+   - message
+   - error
+  
+example:
+
+```js
+var dbus = require('dbus-native');
+var conn = dbus.createConnection();
+conn.message({
+    path:'/org/freedesktop/DBus',
+    destination: 'org.freedesktop.DBus',
+    'interface': 'org.freedesktop.DBus',
+    member: 'Hello',
+    type: dbus.messageType.methodCall
+});
+conn.on('message', function(msg) { console.log(msg); });
 ```
