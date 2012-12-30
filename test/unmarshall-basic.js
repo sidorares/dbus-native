@@ -9,7 +9,7 @@ function testOnly() {};
 function test(signature, data, callback) {
     console.log(signature, data);
     var marshalledBuffer = marshall(signature, data);
-    //console.error(hexy(marshalledBuffer, {prefix: '===='}));
+    console.error(hexy(marshalledBuffer, {prefix: '===='}));
     var stream = binary(marshalledBuffer);
     unmarshall.call(stream, signature, 0, function(err, result) {
         if (err)
@@ -66,6 +66,16 @@ describe('marshall/unmarshall', function() {
          ['yyy(yyy)y', [5, 6, 7, [1, 2, 3], 4]],
          ['yyyy(yyy)y', [5, 6, 7, 8, [1, 2, 3], 4]],
          ['yyyyy(yyy)y', [5, 6, 7, 8, 9, [1, 2, 3], 4]]
+     ],
+     'arrays of simple types': [
+         ['ai', [[1, 2, 3, 4, 5, 6, 7]]],
+         ['aai', [[[300, 400, 500], [1, 2, 3, 4, 5, 6, 7]]] ],
+         ['aiai', [[1, 2, 3], [300, 400, 500]] ],
+     ],
+     'compound types': [
+         ['iyai', [10, 100, [1, 2, 3, 4, 5, 6]]],
+         // TODO: fix 'array of structs offset problem
+         //['a(iyai)', [[[10, 100, [1, 2, 3, 4, 5, 6]], [11, 200, [15, 4, 5, 6]]]] ]
      ]
   };
 
@@ -111,9 +121,6 @@ for (var t1 = 0; t1 < intTypes.length; ++t1)
 
 test('ai', [[]]);
 test('aai', [[[]]]);
-test('ai', [[1, 2, 3, 4, 5, 6, 7]]);
-test('aiay', [[300, 400, 500], [1, 2, 3, 4, 5, 6, 7]]);
-testOnly('ayai', [[1, 2, 3], [300, 400, 500]]);
 
 
 
@@ -129,6 +136,5 @@ testOnly('ayai', [[1, 2, 3], [300, 400, 500]]);
 // np test('a(ai)', [[  [[1, 2, 3, 4, 5, 6]], [[15, 4, 5, 6]] ]]);
 // pass test('aai', [[[1, 2, 3, 4, 5, 6], [15, 4, 5, 6]]]);
 
-// pass test('iyai', [10, 100, [1, 2, 3, 4, 5, 6]]);
 
 */

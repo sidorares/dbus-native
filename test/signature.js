@@ -8,9 +8,9 @@ describe('Signature parser', function() {
   afterEach(function(done) {
   });
 
-  it('parses simple sequence', function(done) {
-    var res = parse('yvsgu');
-    // TODO: wip
-  });
+  //it('parses simple sequence', function(done) {
+  //  var res = parse('yvsgu');
+  //  // TODO: wip
+  //});
 
 });

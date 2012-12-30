@@ -5,6 +5,7 @@ var binary = require('binary');
 var buffers = require('buffers');
 var assert = require('assert');
 var hexy = require('../lib/hexy').hexy;
+var common = require('./common');
 
 function msg2buff(msg) {
     var buff = buffers();
@@ -32,6 +33,7 @@ function buff2msg(buff, callback) {
 }
 
 var msg1 = {
+    type: 1,
     destination: "final",
     flags: 1,
     signature: "uuu",
@@ -40,13 +42,10 @@ var msg1 = {
 
 function test(msg) {
     var messageBuff = msg2buff(msg);
-    //console.error(hexy(messageBuff, {prefix: 'message  '}));
     buff2msg(messageBuff, function(msgout) {
-    //console.log(msg);
     assert.deepEqual(msg, msgout);
     });
 }
-
 
 test(msg1);
 //test({signature: 'ai', body: [[]]});
