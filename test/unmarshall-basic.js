@@ -9,6 +9,7 @@ function testOnly() {};
 function test(signature, data, callback) {
     console.log(signature, data);
     var marshalledBuffer = marshall(signature, data);
+    console.error('============= ', signature);
     console.error(hexy(marshalledBuffer, {prefix: '===='}));
     var stream = binary(marshalledBuffer);
     unmarshall.call(stream, signature, 0, function(err, result) {
@@ -75,7 +76,14 @@ describe('marshall/unmarshall', function() {
      'compound types': [
          ['iyai', [10, 100, [1, 2, 3, 4, 5, 6]]],
          // TODO: fix 'array of structs offset problem
-         //['a(iyai)', [[[10, 100, [1, 2, 3, 4, 5, 6]], [11, 200, [15, 4, 5, 6]]]] ]
+         ['a(iyai)', [[[10, 100, [1, 2, 3, 4, 5, 6]], [11, 200, [15, 4, 5, 6]]]] ],
+         ['sa(iyai)', ['test test test test', [[10, 100, [1, 2, 3, 4, 5, 6]], [11, 200, [15, 4, 5, 6]]]]],
+         ['a(iyai)', [[[10, 100, [1, 2, 3, 4, 5, 6]], [11, 200, [15, 4, 5, 6]]]]],
+         ['a(yai)', [[[100, [1, 2, 3, 4, 5, 6]], [200, [15, 4, 5, 6]]]]],
+         ['ai', [[1, 2, 3, 4, 5, 6]]],
+         ['aii', [[1, 2, 3, 4, 5, 6], 10]],
+         ['a(ai)', [[  [[1, 2, 3, 4, 5, 6]], [[15, 4, 5, 6]] ]]],
+         ['aai', [[[1, 2, 3, 4, 5, 6], [15, 4, 5, 6]]]],
      ]
   };
 
@@ -126,15 +134,5 @@ test('aai', [[[]]]);
 
 // TODO: epsilon-test floats
 // test('bdsai', [0, 3.141590118408203, 'test string', [1, 2, 3, 0, 0, 0, 4, 5, 6, 7]]);
-// test('sa(iyai)', ['test test test test', [[10, 100, [1, 2, 3, 4, 5, 6]], [11, 200, [15, 4, 5, 6]]]]);
-// np test('a(iyai)', [[[10, 100, [1, 2, 3, 4, 5, 6]], [11, 200, [15, 4, 5, 6]]]]);
-// np test('a(yai)', [[[100, [1, 2, 3, 4, 5, 6]], [200, [15, 4, 5, 6]]]]);
-
-// pass test('ai', [[1, 2, 3, 4, 5, 6]]);
-// pass test('aii', [[1, 2, 3, 4, 5, 6], 10]);
-
-// np test('a(ai)', [[  [[1, 2, 3, 4, 5, 6]], [[15, 4, 5, 6]] ]]);
-// pass test('aai', [[[1, 2, 3, 4, 5, 6], [15, 4, 5, 6]]]);
-
 
 */
