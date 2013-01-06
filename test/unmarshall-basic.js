@@ -9,8 +9,8 @@ function testOnly() {};
 function test(signature, data, callback) {
     console.log(signature, data);
     var marshalledBuffer = marshall(signature, data);
-    console.error('============= ', signature);
-    console.error(hexy(marshalledBuffer, {prefix: '===='}));
+    //console.error('============= ', signature);
+    //console.error(hexy(marshalledBuffer, {prefix: '===='}));
     var stream = binary(marshalledBuffer);
     unmarshall.call(stream, signature, 0, function(err, result) {
         if (err)
@@ -27,12 +27,17 @@ var str300chars = '';
 for (var i=0; i < 300; ++i)
    str300chars += 'x';
 
+var b30000bytes = Buffer(30000);
+b30000bytes.fill(60);
+var str30000chars = b30000bytes.toString('ascii');
+
 describe('marshall/unmarshall', function() {
 
    // signature, data, not expected to fail?, data after unmarshall (when expected to convert to canonic form and different from input)
    var tests = {
       'simple types': [
          ['s', ['short string']],
+         ['s', ['str30000chars']],
          ['o', ['/object/path']],
          ['o', ['invalid/object/path'], false],
          ['g', ['xxxtt[t]s{u}uuiibb']],
