@@ -1,38 +1,53 @@
 {
-    "name": "dbus-native",
-    "author" : "Andrey Sidorov <sidorares@yandex.com>",
-    "version": "0.0.8",
-    "keywords": ["dbus", "dcop", "d-bus", "rpc", "gnome", "kde"],
-    "description": "D-bus protocol implementation in native javascript",
-    "directories": {
-        "lib": "lib",
-        "test": "test",
-        "examples": "examples"
-    },
-    "main": "index.js",
-    "maintainers" : [ { "name": "Andrey Sidorov" , "email": "sidoares@yandex.ru" } ],
-    "license" : "MIT",
-    "repository": {
-        "type": "git",
-        "url": "http://github.com/sidorares/node-dbus.git"
-    },
-    "dependencies": {
-        "binary": "0.2.0",
-        "byline": "2.0.3",
-        "put": "0.0.6",
-        "abstractsocket": "0.0.2",
-        "xml2js": "0.1.14"
-    },
-    "devDependencies": {
-        "mocha": "*",
-        "buffers": "*"
-    },
-    "scripts" : {
-        "test" : "mocha",
-        "prepublish" : "npm prune"
-    },
-    "engine": {
-        "node" : ">=0.6.0"
+  "name": "dbus-native",
+  "author": "Andrey Sidorov <sidorares@yandex.com>",
+  "version": "0.0.8",
+  "keywords": [
+    "dbus",
+    "dcop",
+    "d-bus",
+    "rpc",
+    "gnome",
+    "kde"
+  ],
+  "description": "D-bus protocol implementation in native javascript",
+  "directories": {
+    "lib": "lib",
+    "test": "test",
+    "examples": "examples"
+  },
+  "main": "index.js",
+  "maintainers": [
+    {
+      "name": "Andrey Sidorov",
+      "email": "sidoares@yandex.ru"
     }
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/sidorares/node-dbus.git"
+  },
+  "bin": {
+    "dbus2js": "./bin/dbus2js.js"
+  },
+  "dependencies": {
+    "binary": "0.2.0",
+    "byline": "2.0.3",
+    "put": "0.0.6",
+    "abstractsocket": "0.0.2",
+    "xml2js": "0.1.14",
+    "optimist": "~0.3.5"
+  },
+  "devDependencies": {
+    "mocha": "*",
+    "buffers": "*"
+  },
+  "scripts": {
+    "test": "mocha",
+    "prepublish": "npm prune"
+  },
+  "engine": {
+    "node": ">=0.6.0"
+  }
 }
-
