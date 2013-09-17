@@ -7,7 +7,7 @@ var hexy = require('../lib/hexy').hexy;
 function testOnly() {};
 
 function test(signature, data, callback) {
-    console.log(signature, data);
+    //console.log(signature, data);
     var marshalledBuffer = marshall(signature, data);
     //console.error('============= ', signature);
     //console.error(hexy(marshalledBuffer, {prefix: '===='}));
@@ -16,9 +16,14 @@ function test(signature, data, callback) {
         if (err)
             return callback(err);
 
-        if (JSON.stringify(data) !== JSON.stringify(result))
+        var orig = JSON.stringify(data);
+	var unmarshalled = JSON.stringify(result);
+        if (orig !== unmarshalled) {
+            console.log('signature   :', signature);
+	    console.log('orig        :', orig);
+	    console.log('unmarshalled:', unmarshalled);
             return callback(new Error('results don\'t match'));
-         
+	}
         callback(null);
     });
 }
@@ -30,6 +35,10 @@ for (var i=0; i < 300; ++i)
 var b30000bytes = Buffer(30000);
 b30000bytes.fill(60);
 var str30000chars = b30000bytes.toString('ascii');
+
+if (typeof describe == 'undefined') {
+  global.describe = function() {};
+}
 
 describe('marshall/unmarshall', function() {
 
@@ -85,6 +94,8 @@ describe('marshall/unmarshall', function() {
          ['sa(iyai)', ['test test test test', [[10, 100, [1, 2, 3, 4, 5, 6]], [11, 200, [15, 4, 5, 6]]]]],
          ['a(iyai)', [[[10, 100, [1, 2, 3, 4, 5, 6]], [11, 200, [15, 4, 5, 6]]]]],
          ['a(yai)', [[[100, [1, 2, 3, 4, 5, 6]], [200, [15, 4, 5, 6]]]]],
+         ['a(yyai)', [[[100, 101, [1, 2, 3, 4, 5, 6]], [200, 201, [15, 4, 5, 6]]]]],
+         ['a(yyyai)', [[[100, 101, 102, [1, 2, 3, 4, 5, 6]], [200, 201, 202, [15, 4, 5, 6]]]]],
          ['ai', [[1, 2, 3, 4, 5, 6]]],
          ['aii', [[1, 2, 3, 4, 5, 6], 10]],
          ['a(ai)', [[  [[1, 2, 3, 4, 5, 6]], [[15, 4, 5, 6]] ]]],
@@ -121,6 +132,28 @@ describe('marshall/unmarshall', function() {
 });
 
 
+//test('a(yai)', [[[100,[1,2,3,4,5,6]],[200,[15,4,5,6]]]], console.log);
+//test('a(yv)', [[[6,["s","final"]],[8,["g","uuu"]]]], console.log)
+
+// 7 a(ai)<-[[[[1,2,3,4,5,6]],[[15,4,5,6]]]]
+
+/*
+test('a(ai)', [
+ [
+   [[1,2,3,4,5,6]],
+   [[7, 7, 4,5,6,7,8,9]]
+ ]
+], console.log);
+*/
+
+/*
+test('aai', [ 
+   [
+      [1,2,3,4,5,6],
+      [7, 7, 4,5,6,7,8,9]
+   ]
+], console.log);
+*/
 /*
 
 intTypes = ['y', 'n', 'q', 'i', 'u']; //, 'x', 't'];

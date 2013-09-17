@@ -42,10 +42,39 @@ var msg1 = {
 
 function test(msg) {
     var messageBuff = msg2buff(msg);
+    //console.error(hexy(messageBuff, {prefix: '=======  '}));
     buff2msg(messageBuff, function(msgout) {
+    //console.log(msg, msgout);
     assert.deepEqual(msg, msgout);
     });
 }
 
-test(msg1);
-//test({signature: 'ai', body: [[]]});
+describe('message marshall/unmarshall', function() {
+   var tests = require('./testdata.js');
+   var testName, testData, testNum;
+   for(testName in tests) {
+    for (testNum = 0; testNum < tests[testName].length; ++testNum) {
+       debugger;
+       testData = tests[testName][testNum];
+       var testDesc = testName + ' ' + testNum + ' ' + testData[0] + '<-' + JSON.stringify(testData[1]);
+       if (testData[2] !== false) {
+        (function(testData) {
+          it(testDesc, function(done) {
+            var msg = {
+              type: 1,
+              destination: "final",
+              flags: 1,
+              signature: testData[0],
+              body: testData[1]
+            };
+            var messageBuff = msg2buff(msg);
+            buff2msg(messageBuff, function(msgout) {
+              assert.deepEqual(msg, msgout);
+              done();
+            });
+          });
+        })(testData);
+       }
+    }
+  }
+});
