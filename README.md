@@ -94,3 +94,8 @@ conn.message({
 });
 conn.on('message', function(msg) { console.log(msg); });
 ```
+
+
+### Links
+   - TODO - add other node, ruby, perl etc implementations
+   - https://github.com/guelfey/go.dbus
