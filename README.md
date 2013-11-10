@@ -97,5 +97,13 @@ conn.on('message', function(msg) { console.log(msg); });
 
 
 ### Links
-   - TODO - add other node, ruby, perl etc implementations
    - https://github.com/guelfey/go.dbus
+   - https://github.com/Shouqun/node-dbus - libdbus
+   - https://github.com/Motorola-Mobility/node-dbus - libdbus
+   - https://github.com/izaakschroeder/node-dbus - libdbus
+   - https://github.com/agnat/node_libdbus
+   - https://github.com/agnat/node_dbus - native js
+   - https://github.com/cocagne/txdbus - native python + twisted
+   - http://search.cpan.org/~danberr/Net-DBus-1.0.0/ (seems to be native, but requires libdbus?)
+   - https://github.com/mvidner/ruby-dbus (native, sync)
+   - http://www.ndesk.org/DBusSharp (C#/Mono)
