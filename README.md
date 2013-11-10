@@ -97,6 +97,7 @@ conn.on('message', function(msg) { console.log(msg); });
 
 
 ### Links
+   - http://cgit.freedesktop.org/dbus - freedesktop reference C library
    - https://github.com/guelfey/go.dbus
    - https://github.com/Shouqun/node-dbus - libdbus
    - https://github.com/Motorola-Mobility/node-dbus - libdbus
