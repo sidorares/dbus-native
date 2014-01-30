@@ -41,6 +41,9 @@ function createStream(opts) {
        if (params.abstract) {
          return net.createConnection('\u0000' + params.abstract); 
        }
+       if (params.path)
+    	   return net.createConnection(params.path);
+       
        throw new Error('not enough parameters for \'unix\' connection - you need to specify \'socket\' or \'abstract\' parameter');
     default:
        throw new Error('unknown address type');
