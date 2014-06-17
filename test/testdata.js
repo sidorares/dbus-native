@@ -13,11 +13,11 @@ module.exports = {
          ['b', [1]],
          //['b', [true], true, 1],
          //['b', [false], true, 0],
-         ['y', [10]], 
+         ['y', [10]],
          //['y', [300], false],  // TODO: validate on input
          //['y', [-10]],  // TODO: validate on input
          ['n', [300]],
-         ['n', [16300]], 
+         ['n', [16300]],
          //['n', [65535], false] // TODO: signed 16 bit
          //['n', [-100], false];  // TODO: validate on input, should fail
          ['q', [65535]],
@@ -29,7 +29,8 @@ module.exports = {
          ['u', [1048576]],
          ['u', [0]],
          //['u', [-1], false]  // TODO validate input, should fail
-     ], 
+         ['bdsai', [0, 3.141590118408203, 'test string', [1, 2, 3, 0, 0, 0, 4, 5, 6, 7]] ]
+     ],
      'simple structs': [
          ['(yyy)y', [[1, 2, 3], 4]],
          ['y(yyy)y', [5, [1, 2, 3], 4]],
@@ -56,5 +57,9 @@ module.exports = {
          ['aii', [[1, 2, 3, 4, 5, 6], 10]],
          ['a(ai)', [[  [[1, 2, 3, 4, 5, 6]], [[15, 4, 5, 6]] ]]],
          ['aai', [[[1, 2, 3, 4, 5, 6], [15, 4, 5, 6]]]],
-     ]
+     ],
+    'variants': [
+        ['av', [[  ['i', 5], ['s', 'test'], ['y', 6], ['s', '7'], ['i', 999]  ]], true, [[ 5, 'test', 6, '7', 999 ]]],
+        ['v', [ ['v', ['i', 7777]] ], true, [ 7777 ]]
+    ]
   };

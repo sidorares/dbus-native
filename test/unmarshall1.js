@@ -1,9 +1,8 @@
 var hexy = require('../lib/hexy').hexy;
 var unmarshall = require('../lib/unmarshall');
 var signature = "a(ssasib)";
-var common = require('./common');
-
-var data = require('fs').readFileSync(common.fixturesDir + '/problembody.bin');
+var testFilePath = require('path').join(__dirname, 'fixtures/problembody.bin');
+var data = require('fs').readFileSync(testFilePath);
 var bufstream = require('binary').parse(data);
 
 // TODO: mochify, re-enable after array of structs offset fixed
