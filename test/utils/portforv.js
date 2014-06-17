@@ -1,5 +1,5 @@
 var net = require('net');
-var hexy = require('./lib/hexy').hexy;
+var hexy = require('../../lib/hexy').hexy;
 require('abstractsocket')(net);
 
 net.createServer(function(s)
@@ -16,9 +16,9 @@ net.createServer(function(s)
         console.error(hexy(d, {prefix: 'from client'}));
         if (connected)
         {
-           cli.write(d);
+            cli.write(d);
         } else {
-           buff += d.toString();
+            buff += d.toString();
         }
     });
     s.on('end', function() {
@@ -42,4 +42,3 @@ net.createServer(function(s)
     });
     cli.pipe(s);
 }).listen(7000, '0.0.0.0');
-
