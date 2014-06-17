@@ -53,7 +53,7 @@ describe('message marshall/unmarshall', function() {
                         msg.body = testData[3];
                     }
 
-                    assert.deepEqual(msg, msgout);
+                    assert.deepEqual(msgout, msg);
                     done();
                 });
             });

@@ -9,10 +9,7 @@ module.exports = {
          ['g', ['signature'], false], // TODO: validate on input
          //['g', [str300chars], false],  // max 255 chars
          ['o', ['/']],
-         ['b', [0]],
-         ['b', [1]],
-         //['b', [true], true, 1],
-         //['b', [false], true, 0],
+         ['bbbbbb', [0, 1, false, true, -20, 20], true, [ false, true, false, true, true, true ]],
          ['y', [10]],
          //['y', [300], false],  // TODO: validate on input
          //['y', [-10]],  // TODO: validate on input
@@ -29,7 +26,7 @@ module.exports = {
          ['u', [1048576]],
          ['u', [0]],
          //['u', [-1], false]  // TODO validate input, should fail
-         ['bdsai', [0, 3.141590118408203, 'test string', [1, 2, 3, 0, 0, 0, 4, 5, 6, 7]] ]
+         ['dsai', [3.141590118408203, 'test string', [1, 2, 3, 0, 0, 0, 4, 5, 6, 7]] ]
      ],
      'simple structs': [
          ['(yyy)y', [[1, 2, 3], 4]],
