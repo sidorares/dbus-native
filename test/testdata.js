@@ -9,15 +9,15 @@ module.exports = {
          ['g', ['signature'], false], // TODO: validate on input
          //['g', [str300chars], false],  // max 255 chars
          ['o', ['/']],
-         ['b', [0]],
-         ['b', [1]],
+         ['b', [false]],
+         ['b', [true]],
          //['b', [true], true, 1],
          //['b', [false], true, 0],
-         ['y', [10]], 
+         ['y', [10]],
          //['y', [300], false],  // TODO: validate on input
          //['y', [-10]],  // TODO: validate on input
          ['n', [300]],
-         ['n', [16300]], 
+         ['n', [16300]],
          //['n', [65535], false] // TODO: signed 16 bit
          //['n', [-100], false];  // TODO: validate on input, should fail
          ['q', [65535]],
@@ -29,7 +29,7 @@ module.exports = {
          ['u', [1048576]],
          ['u', [0]],
          //['u', [-1], false]  // TODO validate input, should fail
-     ], 
+     ],
      'simple structs': [
          ['(yyy)y', [[1, 2, 3], 4]],
          ['y(yyy)y', [5, [1, 2, 3], 4]],
@@ -45,7 +45,6 @@ module.exports = {
      ],
      'compound types': [
          ['iyai', [10, 100, [1, 2, 3, 4, 5, 6]]],
-         // TODO: fix 'array of structs offset problem
          ['a(iyai)', [[[10, 100, [1, 2, 3, 4, 5, 6]], [11, 200, [15, 4, 5, 6]]]] ],
          ['sa(iyai)', ['test test test test', [[10, 100, [1, 2, 3, 4, 5, 6]], [11, 200, [15, 4, 5, 6]]]]],
          ['a(iyai)', [[[10, 100, [1, 2, 3, 4, 5, 6]], [11, 200, [15, 4, 5, 6]]]]],

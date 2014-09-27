@@ -1,31 +1,21 @@
-var marshall = require('../lib/marshall');
+var marshall   = require('../lib/marshall');
 var unmarshall = require('../lib/unmarshall');
-var binary = require('binary');
-var assert = require('assert');
-var hexy = require('../lib/hexy').hexy;
+var assert     = require('assert');
+var hexy       = require('../lib/hexy').hexy;
 
 function testOnly() {};
 
-function test(signature, data, callback) {
-    //console.log(signature, data);
+function test(signature, data) {
     var marshalledBuffer = marshall(signature, data);
-    //console.error('============= ', signature);
-    //console.error(hexy(marshalledBuffer, {prefix: '===='}));
-    var stream = binary(marshalledBuffer);
-    unmarshall.call(stream, signature, 0, function(err, result) {
-        if (err)
-            return callback(err);
-
-        var orig = JSON.stringify(data);
-	var unmarshalled = JSON.stringify(result);
-        if (orig !== unmarshalled) {
-            console.log('signature   :', signature);
-	    console.log('orig        :', orig);
-	    console.log('unmarshalled:', unmarshalled);
-            return callback(new Error('results don\'t match'));
-	}
-        callback(null);
-    });
+    var result = unmarshall(marshalledBuffer, signature)
+    try {
+      assert.deepEqual(data, result)
+    } catch (e) {
+      console.log('signature   :', signature);
+	    console.log('orig        :', data);
+	    console.log('unmarshalled:', result);
+      throw new Error('results don\'t match');
+	  }
 }
 
 var str300chars = '';
@@ -57,11 +47,11 @@ describe('marshall/unmarshall', function() {
          ['b', [1]],
          //['b', [true], true, 1],
          //['b', [false], true, 0],
-         ['y', [10]], 
+         ['y', [10]],
          //['y', [300], false],  // TODO: validate on input
          //['y', [-10]],  // TODO: validate on input
          ['n', [300]],
-         ['n', [16300]], 
+         ['n', [16300]],
          //['n', [65535], false] // TODO: signed 16 bit
          //['n', [-100], false];  // TODO: validate on input, should fail
          ['q', [65535]],
@@ -73,7 +63,7 @@ describe('marshall/unmarshall', function() {
          ['u', [1048576]],
          ['u', [0]],
          //['u', [-1], false]  // TODO validate input, should fail
-     ], 
+     ],
      'simple structs': [
          ['(yyy)y', [[1, 2, 3], 4]],
          ['y(yyy)y', [5, [1, 2, 3], 4]],
@@ -111,23 +101,18 @@ describe('marshall/unmarshall', function() {
           if (testData[2] === false) // should fail
           {
               (function(testData) {
-                  it(testDesc , function(done) {
-                      test(testData[0], testData[1], function(err) {
-                          if (err === null || typeof(err) == 'undefined')
-                              done();
-                          else
-                              done('expected fail, but not failed');
-                      });
+                  it(testDesc , function() {
+                      test(testData[0], testData[1]);
                   });
               })(testData);
            } else {
               (function(testData) {
-                  it(testDesc, function(done) {
-                      test(testData[0], testData[1], done);
+                  it(testDesc, function() {
+                      test(testData[0], testData[1]);
                   });
               })(testData);
           }
-      }         
+      }
   }
 });
 
@@ -147,7 +132,7 @@ test('a(ai)', [
 */
 
 /*
-test('aai', [ 
+test('aai', [
    [
       [1,2,3,4,5,6],
       [7, 7, 4,5,6,7,8,9]
