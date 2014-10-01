@@ -1,7 +1,7 @@
 {
   "name": "dbus-native",
   "author": "Andrey Sidorov <sidorares@yandex.com>",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "keywords": [
     "dbus",
     "dcop",
@@ -32,22 +32,19 @@
     "dbus2js": "./bin/dbus2js.js"
   },
   "dependencies": {
-    "abstractsocket": "0.0.2",
-    "binary": "0.3.0",
-    "byline": "2.0.3",
-    "optimist": "~0.3.5",
+    "abstract-socket": "^0.1.0",
+    "event-stream": "^3.1.7",
     "put": "0.0.6",
     "xml2js": "0.1.14"
   },
   "devDependencies": {
-    "mocha": "*",
-    "buffers": "*"
+    "mocha": "*"
   },
   "scripts": {
     "test": "mocha",
     "prepublish": "npm prune"
   },
   "engine": {
-    "node": ">=0.6.0"
+    "node": ">=0.10.0"
   }
 }
