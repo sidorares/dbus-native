@@ -1,6 +1,8 @@
+// simple script to monitor incoming/outcoming dbus messages
+// needs a lot of cleanup but does the job
+
 var net = require('net');
-//require('./node_modules/dbus/node_modules/abstractsocket')(net);
-require('abstractsocket')(net);
+var abs = require('abstract-socket');
 var hexy = require('../lib/hexy').hexy;
 var address = process.env.DBUS_SESSION_BUS_ADDRESS;
 var m = address.match(/abstract=([^,]+)/);
@@ -22,7 +24,12 @@ net.createServer(function(s)
 {
     var buff = "";
     var connected = false;
-    var cli = net.createConnection('\0' + m[1]);
+    var cli
+
+    if (process.argv[2] == '--system')
+      cli = net.connect('/var/run/dbus/system_bus_socket');
+    else
+      cli = abs.connect('\0' + m[1]);
 
     s.on('data', function(d) {
         if (connected)
@@ -32,11 +39,11 @@ net.createServer(function(s)
            buff += d.toString();
         }
     });
-    setTimeout(function() {
-         console.log('CONNECTED!');
+   // setTimeout(function() {
+   //      console.log('CONNECTED!');
         connected = true;
         cli.write(buff);
-    }, 100);
+    //}, 100);
     cli.pipe(s);
 
     var through2 = require('through2');
