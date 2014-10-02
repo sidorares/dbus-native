@@ -7,8 +7,6 @@ D-bus protocol client and server for node.js
 Installation
 ------------
 
-Important: install `socat` to be able to use session bus.
-
 ```shell
 npm install dbus-native
 ```
@@ -16,7 +14,7 @@ or
 
 ```shell
 git clone https://github.com/sidorares/node-dbus # clone the repo
-cd node-dbus 
+cd node-dbus
 npm install # install dependencies
 sudo cp examples/com.github.sidorares.dbus.Example.conf /etc/dbus-1/system.d/ # if you want to test examples/service.js
 ```
@@ -30,13 +28,13 @@ Short example using desktop notifications service
 var dbus = require('dbus-native');
 var sessionBus = dbus.sessionBus();
 sessionBus.getService('org.freedesktop.Notifications').getInterface(
-    '/org/freedesktop/Notifications', 
+    '/org/freedesktop/Notifications',
     'org.freedesktop.Notifications', function(err, notifications) {
-        
+
     // dbus signals are EventEmitter events
     notifications.on('ActionInvoked', function() {
         console.log('ActionInvoked', arguments);
-    }); 
+    });
     notifications.on('NotificationClosed', function() {
         console.log('NotificationClosed', arguments);
     });
@@ -65,7 +63,7 @@ connection has only one method, `message(msg)`
 message fields:
    - type - methodCall, methodReturn, error or signal
    - path - object path
-   - interface 
+   - interface
    - destination
    - sender
    - member
@@ -74,12 +72,12 @@ message fields:
    - body
    - errorName
    - replySerial
-  
+
 connection signals:
    - connect - emitted after successful authentication
    - message
    - error
-  
+
 example:
 
 ```js
@@ -108,5 +106,5 @@ conn.on('message', function(msg) { console.log(msg); });
    - http://search.cpan.org/~danberr/Net-DBus-1.0.0/ (seems to be native, but requires libdbus?)
    - https://github.com/mvidner/ruby-dbus (native, sync)
    - http://www.ndesk.org/DBusSharp (C#/Mono)
-   
+
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/sidorares/node-dbus/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
