@@ -9,6 +9,7 @@ function msg2buff(msg) {
 }
 
 function buff2msg(buff) {
+  debugger
   return message.unmarshall(buff);
 }
 
