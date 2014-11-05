@@ -128,7 +128,7 @@ module.exports = createConnection;
 
 module.exports.createClient = function(params) {
   var connection = createConnection(params || {});
-  return new MessageBus(connection);
+  return new MessageBus(connection, params || {});
 };
 
 module.exports.systemBus = function() {
