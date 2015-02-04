@@ -106,5 +106,6 @@ conn.on('message', function(msg) { console.log(msg); });
    - http://search.cpan.org/~danberr/Net-DBus-1.0.0/ (seems to be native, but requires libdbus?)
    - https://github.com/mvidner/ruby-dbus (native, sync)
    - http://www.ndesk.org/DBusSharp (C#/Mono)
+   - https://github.com/lizenn/erlang-dbus/ - erlang
 
 [![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/sidorares/node-dbus/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
