@@ -32,10 +32,12 @@
     "dbus2js": "./bin/dbus2js.js"
   },
   "dependencies": {
-    "abstract-socket": "^0.1.0",
     "event-stream": "^3.1.7",
     "put": "0.0.6",
     "xml2js": "0.1.14"
+  },
+  "optionalDependencies": {
+    "abstract-socket": "^0.1.0"
   },
   "devDependencies": {
     "mocha": "*"
