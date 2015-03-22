@@ -36,6 +36,30 @@ if (typeof describe == 'undefined') {
   global.describe = function() {};
 }
 
+function expectMarshallToThrowOnBadArguments(badSig, badData, errorRegex) {
+    assert.throws(function () {
+        marshall(badSig, badData);
+    }, errorRegex );
+}
+
+describe("marshall", function() {
+    it("throws error on bad data", function() {
+        var badData = [ ["s", [3], /Expected string or buffer argument/]];
+        for (var ii = 0; ii < badData.length; ++ii) {
+            var badRow = badData[ii];
+            var badSig = badRow[0];
+            var badDatum = badRow[1];
+            var errorRegex = badRow[2];
+            expectMarshallToThrowOnBadArguments(badSig, badDatum, errorRegex);
+        }
+    });
+    it("throws error on bad signature", function() {
+        var badSig = "1";
+        var badData = 1;
+        expectMarshallToThrowOnBadArguments(badSig, badData);
+    });
+});
+
 describe('marshall/unmarshall', function() {
 
    // signature, data, not expected to fail?, data after unmarshall (when expected to convert to canonic form and different from input)
