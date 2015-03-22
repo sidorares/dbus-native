@@ -5,9 +5,15 @@ var hexy       = require('../lib/hexy').hexy;
 
 function testOnly() {};
 
-function test(signature, data) {
+/** Take the data and marshall it then unmarshall it */
+function marshallAndUnmarshall(signature, data) {
     var marshalledBuffer = marshall(signature, data);
     var result = unmarshall(marshalledBuffer, signature)
+    return result;
+}
+
+function test(signature, data) {
+    var result = marshallAndUnmarshall(signature, data);
     try {
       assert.deepEqual(data, result)
     } catch (e) {
