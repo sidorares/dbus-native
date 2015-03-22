@@ -5,9 +5,15 @@ var hexy       = require('../lib/hexy').hexy;
 
 function testOnly() {};
 
-function test(signature, data) {
+/** Take the data and marshall it then unmarshall it */
+function marshallAndUnmarshall(signature, data) {
     var marshalledBuffer = marshall(signature, data);
     var result = unmarshall(marshalledBuffer, signature)
+    return result;
+}
+
+function test(signature, data) {
+    var result = marshallAndUnmarshall(signature, data);
     try {
       assert.deepEqual(data, result)
     } catch (e) {
@@ -29,6 +35,38 @@ var str30000chars = b30000bytes.toString('ascii');
 if (typeof describe == 'undefined') {
   global.describe = function() {};
 }
+
+function expectMarshallToThrowOnBadArguments(badSig, badData, errorRegex) {
+    assert.throws(function () {
+        marshall(badSig, badData);
+    }, errorRegex );
+}
+
+describe("marshall", function() {
+    it("throws error on bad data", function() {
+        var badData = [ ["s", [3], /Expected string or buffer argument/],
+                        ["y", ["n"], /Data:.*was not of type number/],
+                        ["y", [-1], /Number outside range/],
+                        ["y", [1.5], /Data:.*was not an integer/],
+                        ["y", [256], /Number outside range/],
+                        ["b", ["n"], /Data:.*was not of type boolean/],
+                        ["b", [-1], /Data:.*was not of type boolean/],
+                        ["b", [0.5], /Data:.*was not of type boolean/],
+                        ["b", [2], /Data:.*was not of type boolean/]];
+        for (var ii = 0; ii < badData.length; ++ii) {
+            var badRow = badData[ii];
+            var badSig = badRow[0];
+            var badDatum = badRow[1];
+            var errorRegex = badRow[2];
+            expectMarshallToThrowOnBadArguments(badSig, badDatum, errorRegex);
+        }
+    });
+    it("throws error on bad signature", function() {
+        var badSig = "1";
+        var badData = 1;
+        expectMarshallToThrowOnBadArguments(badSig, badData);
+    });
+});
 
 describe('marshall/unmarshall', function() {
 
