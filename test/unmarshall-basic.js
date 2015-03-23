@@ -52,7 +52,11 @@ describe("marshall", function() {
                         ["b", ["n"], /Data:.*was not of type boolean/],
                         ["b", [-1], /Data:.*was not of type boolean/],
                         ["b", [0.5], /Data:.*was not of type boolean/],
-                        ["b", [2], /Data:.*was not of type boolean/]];
+                        ["b", [2], /Data:.*was not of type boolean/],
+                        ["n", ["n"], /Data:.*was not of type number/],
+                        ["n", [(-0x7FFF-2)], /Number outside range/],
+                        ["n", [1.5], /Data:.*was not an integer/],
+                        ["n", [(0x7FFF+1)], /Number outside range/]];
         for (var ii = 0; ii < badData.length; ++ii) {
             var badRow = badData[ii];
             var badSig = badRow[0];
