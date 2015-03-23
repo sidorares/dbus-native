@@ -56,7 +56,12 @@ describe("marshall", function() {
                         ["n", ["n"], /Data:.*was not of type number/],
                         ["n", [(-0x7FFF-2)], /Number outside range/],
                         ["n", [1.5], /Data:.*was not an integer/],
-                        ["n", [(0x7FFF+1)], /Number outside range/]];
+                        ["n", [(0x7FFF+1)], /Number outside range/],
+                        ["q", ["n"], /Data:.*was not of type number/],
+                        ["q", [-1], /Number outside range/],
+                        ["q", [1.5], /Data:.*was not an integer/],
+                        ["q", [(0xFFFF+1)], /Number outside range/]
+        ];
         for (var ii = 0; ii < badData.length; ++ii) {
             var badRow = badData[ii];
             var badSig = badRow[0];
