@@ -68,7 +68,15 @@ describe("marshall", function() {
                         ["u", ["n"], /Data:.*was not of type number/],
                         ["u", [(-1)], /Number outside range/],
                         ["u", [1.5], /Data:.*was not an integer/],
-                        ["u", [(0xFFFFFFFF+1)], /Number outside range/]
+                        ["u", [(0xFFFFFFFF+1)], /Number outside range/],
+                        ["x", ["n"], /64 Bit integers not supported/],
+                        ["x", [(-(Math.pow(2,53))-1)], /64 Bit integers not supported/],
+                        ["x", [1.5], /64 Bit integers not supported/],
+                        ["x", [(Math.pow(2,53))], /64 Bit integers not supported/],
+                        ["t", ["n"], /64 Bit integers not supported/],
+                        ["t", [(-1)], /64 Bit integers not supported/],
+                        ["t", [1.5], /64 Bit integers not supported/],
+                        ["t", [(Math.pow(2,53))], /64 Bit integers not supported/]
         ];
         for (var ii = 0; ii < badData.length; ++ii) {
             var badRow = badData[ii];
