@@ -45,6 +45,7 @@ function expectMarshallToThrowOnBadArguments(badSig, badData, errorRegex) {
 describe("marshall", function() {
     it("throws error on bad data", function() {
         var badData = [ ["s", [3], /Expected string or buffer argument/],
+                        ["s", ["as\0df"], /String contains null byte/],
                         ["y", ["n"], /Data:.*was not of type number/],
                         ["y", [-1], /Number outside range/],
                         ["y", [1.5], /Data:.*was not an integer/],
