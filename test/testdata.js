@@ -5,7 +5,7 @@ module.exports = {
          ['s', ['str30000chars']],
          ['o', ['/object/path']],
          ['o', ['invalid/object/path'], false],
-         ['g', ['xxxttts{u}uuiibb']],
+         ['g', ['xxxtt(t)s{u}uuiibb']],
          ['g', ['signature'], false], // TODO: validate on input
          //['g', [str300chars], false],  // max 255 chars
          ['o', ['/']],
