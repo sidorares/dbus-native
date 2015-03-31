@@ -18,10 +18,10 @@ function test(signature, data) {
       assert.deepEqual(data, result)
     } catch (e) {
       console.log('signature   :', signature);
-	    console.log('orig        :', data);
-	    console.log('unmarshalled:', result);
+      console.log('orig        :', data);
+      console.log('unmarshalled:', result);
       throw new Error('results don\'t match');
-	  }
+    }
 }
 
 var str300chars = '';
@@ -77,7 +77,7 @@ describe('marshall/unmarshall', function() {
          ['s', ['str30000chars']],
          ['o', ['/object/path']],
          ['o', ['invalid/object/path'], false],
-         ['g', ['xxxtt[t]s{u}uuiibb']],
+         ['g', ['xxxttts{u}uuiibb']],
          ['g', ['signature'], false], // TODO: validate on input
          //['g', [str300chars], false],  // max 255 chars
          ['o', ['/']],
