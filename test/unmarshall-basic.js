@@ -102,7 +102,7 @@ describe("marshall", function() {
     it("throws error on bad signature", function() {
         var badSig = "1";
         var badData = 1;
-        expectMarshallToThrowOnBadArguments(badSig, badData);
+        expectMarshallToThrowOnBadArguments(badSig, badData, /Unknown type.*in signature.*/);
     });
 });
 
