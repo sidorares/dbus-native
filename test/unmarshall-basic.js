@@ -26,7 +26,7 @@ function test(signature, data) {
 
 var str300chars = '';
 for (var i=0; i < 300; ++i)
-   str300chars += 'x';
+   str300chars += 'i';
 
 var b30000bytes = Buffer(30000);
 b30000bytes.fill(60);
@@ -44,7 +44,16 @@ function expectMarshallToThrowOnBadArguments(badSig, badData, errorRegex) {
 
 describe("marshall", function() {
     it("throws error on bad data", function() {
-        var badData = [ ["s", [3], /Expected string or buffer argument/],
+        var badData = [
+                        ["s", [3], /Expected string or buffer argument/],
+                        ["s", ["as\0df"], /String contains null byte/],
+                        ["g", [3], /Expected string or buffer argument/],
+                        ["g", ["ccc"], /Unknown type.*in signature.*/],
+                        ["g", ["as\0df"], /String contains null byte/],
+                        ["g", [str300chars], /Data:.* is too long for signature type/],
+                        ["g", ["iii(i"], /Bad signature: unexpected end/],
+                        ["g", ["iii{i"], /Bad signature: unexpected end/],
+                        ["g", ["i(i(i(i(i(i(i(i(i(i(i(i(i(i(i(i(i(i(i(i(i(i(i(i(i(i(i(i(i(i(i(i(i(i)))))))))))))))))))))))))))))))))"], /Maximum container type nesting exceeded/],
                         ["y", ["n"], /Data:.*was not of type number/],
                         ["y", [-1], /Number outside range/],
                         ["y", [1.5], /Data:.*was not an integer/],
@@ -52,7 +61,36 @@ describe("marshall", function() {
                         ["b", ["n"], /Data:.*was not of type boolean/],
                         ["b", [-1], /Data:.*was not of type boolean/],
                         ["b", [0.5], /Data:.*was not of type boolean/],
-                        ["b", [2], /Data:.*was not of type boolean/]];
+                        ["b", [2], /Data:.*was not of type boolean/],
+                        ["n", ["n"], /Data:.*was not of type number/],
+                        ["n", [(-0x7FFF-2)], /Number outside range/],
+                        ["n", [1.5], /Data:.*was not an integer/],
+                        ["n", [(0x7FFF+1)], /Number outside range/],
+                        ["q", ["n"], /Data:.*was not of type number/],
+                        ["q", [-1], /Number outside range/],
+                        ["q", [1.5], /Data:.*was not an integer/],
+                        ["q", [(0xFFFF+1)], /Number outside range/],
+                        ["i", ["n"], /Data:.*was not of type number/],
+                        ["i", [(-0x7FFFFFFF-2)], /Number outside range/],
+                        ["i", [1.5], /Data:.*was not an integer/],
+                        ["i", [(0x7FFFFFFF+1)], /Number outside range/],
+                        ["u", ["n"], /Data:.*was not of type number/],
+                        ["u", [(-1)], /Number outside range/],
+                        ["u", [1.5], /Data:.*was not an integer/],
+                        ["u", [(0xFFFFFFFF+1)], /Number outside range/],
+                        ["x", ["n"], /64 Bit integers not supported/],
+                        ["x", [(-(Math.pow(2,53))-1)], /64 Bit integers not supported/],
+                        ["x", [1.5], /64 Bit integers not supported/],
+                        ["x", [(Math.pow(2,53))], /64 Bit integers not supported/],
+                        ["t", ["n"], /64 Bit integers not supported/],
+                        ["t", [(-1)], /64 Bit integers not supported/],
+                        ["t", [1.5], /64 Bit integers not supported/],
+                        ["t", [(Math.pow(2,53))], /64 Bit integers not supported/],
+                        ["d", ["n"], /Data:.*was not of type number/],
+                        ["d", [Number.NEGATIVE_INFINITY], /Number outside range/],
+                        ["d", [NaN], /Data:.*was not a number/],
+                        ["d", [Number.POSITIVE_INFINITY], /Number outside range/],
+        ];
         for (var ii = 0; ii < badData.length; ++ii) {
             var badRow = badData[ii];
             var badSig = badRow[0];
@@ -64,7 +102,7 @@ describe("marshall", function() {
     it("throws error on bad signature", function() {
         var badSig = "1";
         var badData = 1;
-        expectMarshallToThrowOnBadArguments(badSig, badData);
+        expectMarshallToThrowOnBadArguments(badSig, badData, /Unknown type.*in signature.*/);
     });
 });
 
@@ -77,7 +115,7 @@ describe('marshall/unmarshall', function() {
          ['s', ['str30000chars']],
          ['o', ['/object/path']],
          ['o', ['invalid/object/path'], false],
-         ['g', ['xxxttts{u}uuiibb']],
+         ['g', ['xxxtt(t)s{u}uuiibb']],
          ['g', ['signature'], false], // TODO: validate on input
          //['g', [str300chars], false],  // max 255 chars
          ['o', ['/']],
