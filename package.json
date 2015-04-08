@@ -40,7 +40,8 @@
     "abstract-socket": "^1.0.0"
   },
   "devDependencies": {
-    "mocha": "*"
+    "mocha": "*",
+    "q": "~1.2.0"
   },
   "scripts": {
     "test": "mocha",
