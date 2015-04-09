@@ -45,6 +45,7 @@
   },
   "scripts": {
     "test": "mocha",
+    "functional_test": "mocha functional_tests",
     "prepublish": "npm prune"
   },
   "engine": {
