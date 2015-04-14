@@ -15,6 +15,7 @@ describe("server", function() {
     var testName = "com.nodedbustest.service";
     var testInterfaceName = "com.nodedbustest.service";
     var bus = dbus.sessionBus();
+
     var testInterface = {
         name: testInterfaceName,
         methods: {
@@ -32,10 +33,14 @@ describe("server", function() {
         }
     };
 
-    before(launchService(bus, name, path, interfaceName, implementation)  {
+    before(function()  {
         bus.requestName(testName, 0);
         bus.exportInterface(testImplementation, testPath, testInterfaceName);
-    }
+    });
+
+    after(function() {
+        bus.connection.end();
+    });
 
     it("serves a basic service", function(done) {
         //don't run if not on local machine
