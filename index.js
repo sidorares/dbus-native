@@ -21,6 +21,7 @@ function createStream(opts) {
   if (port)
     return net.createConnection(port, host);
 
+  debugger;
   var busAddress = opts.busAddress || process.env.DBUS_SESSION_BUS_ADDRESS;
   if (!busAddress) throw new Error('unknown bus address');
   var familyParams = busAddress.split(':');
