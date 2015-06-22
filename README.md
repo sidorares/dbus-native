@@ -107,3 +107,4 @@ conn.on('message', function(msg) { console.log(msg); });
    - https://github.com/mvidner/ruby-dbus (native, sync)
    - http://www.ndesk.org/DBusSharp (C#/Mono)
    - https://github.com/lizenn/erlang-dbus/ - erlang
+   - http://0pointer.net/blog/the-new-sd-bus-api-of-systemd.html - Blog post about sb-bus and D-Bus in general
