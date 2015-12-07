@@ -23,43 +23,57 @@ function createStream(opts) {
 
   var busAddress = opts.busAddress || process.env.DBUS_SESSION_BUS_ADDRESS;
   if (!busAddress) throw new Error('unknown bus address');
-  var familyParams = busAddress.split(':');
-  var family = familyParams[0];
-  var params = {};
-  familyParams[1].split(',').map(function(p) {
-    var keyVal = p.split('=');
-    params[keyVal[0]] = keyVal[1];
-  });
 
-  // TODO: multiple addressedd can be specified. In that case, try them in order and use first successful
-  switch (family.toLowerCase()) {
-    case 'tcp':
-      host = params.host || 'localhost';
-      port = params.port;
-      return net.createConnection(port, host);
+  var addresses = busAddress.split(';')
+  for (var i in addresses) {
+    var address = addresses[i];
+    var familyParams = address.split(':');
+    var family = familyParams[0];
+    var params = {};
+    familyParams[1].split(',').map(function(p) {
+      var keyVal = p.split('=');
+      params[keyVal[0]] = keyVal[1];
+    });
 
-    case 'unix':
-      if (params.socket)
-        return net.createConnection(params.socket);
-      if (params.abstract) {
-        var abs = require('abstract-socket');
-        return abs.connect('\u0000' + params.abstract);
+    try {
+
+      switch (family.toLowerCase()) {
+        case 'tcp':
+          host = params.host || 'localhost';
+          port = params.port;
+          return net.createConnection(port, host);
+        case 'unix':
+          if (params.socket)
+            return net.createConnection(params.socket);
+          if (params.abstract) {
+            var abs = require('abstract-socket');
+            return abs.connect('\u0000' + params.abstract);
+          }
+          if (params.path)
+            return net.createConnection(params.path);
+          throw new Error('not enough parameters for \'unix\' connection - you need to specify \'socket\' or \'abstract\' or \'path\' parameter');
+        case 'unixexec':
+          var eventStream = require('event-stream');
+          var spawn = require('child_process').spawn;
+          var args = [];
+          for (var n = 1; params['arg' + n]; n++)
+            args.push(params['arg' + n]);
+          spawn(params.path, args);
+          return eventStream.duplex(child.stdin, child.stdout);
+        default:
+          throw new Error('unknown address type:' + family);
       }
-      if (params.path)
-        return net.createConnection(params.path);
-      throw new Error('not enough parameters for \'unix\' connection - you need to specify \'socket\' or \'abstract\' or \'path\' parameter');
-    case 'unixexec':
-      var eventStream = require('event-stream');
-      var spawn = require('child_process').spawn;
-      var args = [];
-      for (var n = 1; params['arg' + n]; n++)
-        args.push(params['arg' + n]);
-      spawn(params.path, args);
-      return eventStream.duplex(child.stdin, child.stdout);
-    case 'nonce-tcp:':
-      throw new Error('not implemented:' + family);
-    default:
-      throw new Error('unknown address type:' + family);
+
+    } catch (e) {
+
+      if (i < addresses.length - 1) {
+        if (console && console.warn instanceof Function) console.warn(e.message);
+        continue;
+      } else {
+        throw e;
+      }
+
+    }
   }
 
 }
