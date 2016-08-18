@@ -1,0 +1,90 @@
+{
+  "env": {
+    "node": true,
+    "mocha": true
+  },
+  "extends": "eslint:recommended",
+  "rules": {
+    "array-bracket-spacing": [
+      2,
+      "never"
+    ],
+    "block-spacing": [
+      2,
+      "always"
+    ],
+    "comma-dangle": [
+      2,
+      "never"
+    ],
+    "comma-spacing": [
+      2,
+      {
+        "after": true,
+        "before": false
+      }
+    ],
+    "computed-property-spacing": [
+      2,
+      "never"
+    ],
+    "consistent-return": ["off"],
+    "curly": 2,
+    "eol-last": 2,
+    "indent": [
+      2,
+      2
+    ],
+    "keyword-spacing": [
+      2,
+      {
+        "after": true,
+        "before": true
+      }
+    ],
+    "func-call-spacing": ["error", "never"],
+    "linebreak-style": [
+      2,
+      "unix"
+    ],
+    "no-console": ["off"],
+    "no-multi-spaces": 2,
+    "no-unsafe-negation": 2,
+    "no-trailing-spaces": 2,
+    "no-whitespace-before-property": 2,
+    "object-curly-spacing": 2,
+    "quotes": ["error", "single", {"avoidEscape": true}],
+    "eqeqeq": ["error", "always"],
+    "semi": [
+      2,
+      "always"
+    ],
+    "space-before-blocks": [
+      2,
+      "always"
+    ],
+    "space-before-function-paren": [
+      2,
+      "always"
+    ],
+    "space-in-parens": [
+      2,
+      "never"
+    ],
+    "space-infix-ops": 2,
+    "space-unary-ops": [
+      2,
+      {
+        "nonwords": false,
+        "words": true
+      }
+    ],
+    "spaced-comment": [
+      2,
+      "always"
+    ],
+    "use-isnan": 2,
+    "valid-jsdoc": 1,
+    "valid-typeof": 2
+  }
+}

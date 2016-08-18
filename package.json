@@ -41,11 +41,13 @@
     "abstract-socket": "^1.0.1"
   },
   "devDependencies": {
+    "eslint": "^3.3.1",
     "mocha": "*"
   },
   "scripts": {
     "test": "mocha",
-    "prepublish": "npm prune"
+    "prepublish": "npm prune",
+    "lint": "eslint lib test"
   },
   "engine": {
     "node": ">=0.10.0"
