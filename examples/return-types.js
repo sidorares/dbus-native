@@ -68,6 +68,7 @@ function proceed() {
 	ifaceDesc = {
 		name: interfaceName,
 		methods: {
+			// Simple types
 			SayHello: ['', 's', [], ['hello_sentence']], // Takes no input and returns a single string
 			GetInt16: ['', 'n', [], ['Int16_number']], // Takes no input and returns an int16 integers
 			GetUInt16: ['', 'q', [], ['UInt16_number']], // Takes no input and returns an uint16 integers
@@ -79,6 +80,13 @@ function proceed() {
 			GetBool: ['', 'b', [], ['Bool_value']], // Takes no input, returns a boolean
 			GetDouble: ['', 'd', [], ['Double_value']], // Takes no input, returns a double
 			GetByte: ['', 'y', [], ['Byte_value']], // Takes no input, returns a byte
+
+			// Complex-types
+			GetArrayOfStrings: ['y', 'as', ['nb_elems'], ['strings']], // Take a number and return an array of N strings
+			// Takes no input, returns a structure with a string, an int32 and a bool
+			GetCustomStruct: ['', '(sib)', [], ['struct']],
+			// Takes no input, returns a dictionary (hash-table) whose keys are strings and values int32
+			GetDictEntry: ['', '{si}', [], ['disct_entry']],
 		},
 		// No signals nor properties for this example
 		signals: {},
@@ -125,6 +133,41 @@ function proceed() {
 			let min = 0x00
 			let max = 0xFF
 			return Math.round (Math.random() * (max - min) + min)
+		},
+		GetArrayOfStrings: function (n) {
+			let ret = []
+
+			// Check that we requested a positive number of elements, and not a too big one
+			if (n < 0 || n > 255) {
+				// Return a DBus error to indicate a problem (shows how to send DBus errors)
+				return new Error ('Incorrect number of elements supplied (0 < n < 256)!')
+			}
+
+			while (n--) {
+				ret.unshift ('String #' + n)
+			}
+
+			return ret // 'ret' is an array, to return an array, we simply return it
+		},
+		GetCustomStruct: function () {
+			let min = -0x7FFFFFFF-1
+			let max = 0x7FFFFFFF
+			let string = 'I\m sorry, my responses are limited, you must ask the right question.'
+			let int32 = Math.round (Math.random() * (max - min) + min)
+			let bool = Math.random() >= 0.5 ? true : false
+
+			/*
+				Important note here: for the DBus type STRUCT, you need to return a Javascript ARRAY, with the field in
+				the right order for the declared struct.
+			*/
+			return [string, int32, bool]
+		},
+		GetDictEntry: function () {
+			let min = -0x7FFFFFFF-1
+			let max = 0x7FFFFFFF
+			let int32 = Math.round (Math.random() * (max - min) + min)
+
+			return ['key', 253]
 		}
 	}
 
