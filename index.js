@@ -1,13 +1,21 @@
 // dbus.freedesktop.org/doc/dbus-specification.html
 
-var EventEmitter = require('events').EventEmitter;
-var net = require('net');
+const net             = require('net')
+const utils           = require ('./lib/utils')
+const inspect         = require ('util').inspect
+const message         = require('./lib/message')
+const constants       = require('./lib/constants')
+const EventEmitter    = require('events').EventEmitter
+const helloMessage    = require('./lib/hello-message.js')
+const clientHandshake = require('./lib/handshake.js')
+const serverHandshake = require('./lib/server-handshake.js')
 
-var constants = require('./lib/constants');
-var message   = require('./lib/message');
-var clientHandshake = require('./lib/handshake.js');
-var serverHandshake = require('./lib/server-handshake.js');
-var helloMessage    = require('./lib/hello-message.js');
+// Whether to set this file's functions into debugging (verbose) mode
+const DEBUG_THIS_FILE = false
+
+// Allows for setting all files to debug in once statement instead of manually setting every flag
+const DEBUG = DEBUG_THIS_FILE || utils.GLOBAL_DEBUG
+
 
 function createStream(opts) {
   if (opts.stream)
@@ -85,11 +93,13 @@ function createConnection(opts) {
   stream.setNoDelay();
 
   stream.on('error', function(err) {
+      if (DEBUG) console.error ('Stream.error(): ' + err)
     // forward network and stream errors
     self.emit('error', err);
   });
 
   stream.on('end', function() {
+    if (DEBUG) console.error ('Stream.end(): ' + inspect (arguments))
     self.emit('end');
     self.message = function() {
       console.warn("Didn't write bytes to closed stream");
