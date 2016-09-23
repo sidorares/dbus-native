@@ -86,7 +86,7 @@ function proceed() {
 			// Takes no input, returns a structure with a string, an int32 and a bool
 			GetCustomStruct: ['', '(sib)', [], ['struct']],
 			// Takes no input, returns a dictionary (hash-table) whose keys are strings and values int32
-			GetDictEntry: ['', '{si}', [], ['disct_entry']],
+			GetDictEntry: ['', 'a{si}', [], ['dict_entry']],
 		},
 		// No signals nor properties for this example
 		signals: {},
@@ -165,9 +165,20 @@ function proceed() {
 		GetDictEntry: function () {
 			let min = -0x7FFFFFFF-1
 			let max = 0x7FFFFFFF
-			let int32 = Math.round (Math.random() * (max - min) + min)
+			let key1 = 'str1'
+			let key2 = 'str2'
+			let key3 = 'str3'
+			let i1 = Math.round (Math.random() * (max - min) + min)
+			let i2 = Math.round (Math.random() * (max - min) + min)
+			let i3 = Math.round (Math.random() * (max - min) + min)
 
-			return ['key', 253]
+			/*
+				This is how DICT_ENTRIES are returned: in JS side, it's an array of arrays.
+				Each of the arrays must have TWO values, the first being the key (here a string ; keys
+				MUST be single types, so string, integers, double, booleans, etc.) and the second being
+				the value (here, an int32 ; keys can be any type, including complex one: struct, etc.)
+			*/
+			return [[key1, i1], [key2, i2], [key3, i3]]
 		}
 	}
 
