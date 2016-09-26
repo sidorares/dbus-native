@@ -195,7 +195,7 @@ describe('marshall/unmarshall', function() {
 // issue-128: marshall/unmarshall of "n"
 var data =  [10, 1000];
 var s = 'nn';
-var buf = marshall(a, data);
+var buf = marshall(s, data);
 assert.equal(buf.toString('hex'), '0xa001e80')
 assert.deepEqual(unmarshall(buf, s), data);
 
