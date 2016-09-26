@@ -196,7 +196,7 @@ describe('marshall/unmarshall', function() {
 var data =  [10, 1000];
 var s = 'nn';
 var buf = marshall(s, data);
-assert.equal(buf.toString('hex'), '0xa001e80')
+assert.equal(buf.toString('hex'), '0a00e803')
 assert.deepEqual(unmarshall(buf, s), data);
 
 //test('a(yai)', [[[100,[1,2,3,4,5,6]],[200,[15,4,5,6]]]], console.log);
