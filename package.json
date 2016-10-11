@@ -36,6 +36,7 @@
     "event-stream": "^3.1.7",
     "put": "0.0.6",
     "xml2js": "0.1.14",
+    "xmlbuilder": "8.2.2",
     "bluebird": "3.4.6",
     "libxmljs": "0.18.0"
   },
