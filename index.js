@@ -1,14 +1,19 @@
 // dbus.freedesktop.org/doc/dbus-specification.html
 
-const net             = require('net')
-const utils           = require ('./lib/utils')
-const inspect         = require ('util').inspect
-const message         = require('./lib/message')
-const constants       = require('./lib/constants')
-const EventEmitter    = require('events').EventEmitter
-const helloMessage    = require('./lib/hello-message.js')
-const clientHandshake = require('./lib/handshake.js')
-const serverHandshake = require('./lib/server-handshake.js')
+const net                = require ('net')
+const utils              = require ('./lib/utils')
+const inspect            = require ('util').inspect
+const message            = require ('./lib/message')
+const constants          = require ('./lib/constants')
+const DBusProxy          = require ('./lib/DBusProxy.js')
+const signature          = require ('./lib/signature.js')
+const EventEmitter       = require ('events').EventEmitter
+const DBusService2       = require ('./lib/DBusService2.js')
+const helloMessage       = require ('./lib/hello-message.js')
+const clientHandshake    = require ('./lib/handshake.js')
+const DBusObject2Libs    = require ('./lib/DBusObject2Libs')
+const DBusInterface2Libs = require ('./lib/DBusInterface2Libs')
+const serverHandshake    = require ('./lib/server-handshake.js')
 
 // Whether to set this file's functions into debugging (verbose) mode
 const DEBUG_THIS_FILE = false
@@ -170,3 +175,38 @@ module.exports.createConnection = module.exports;
 
 var server = require('./lib/server.js');
 module.exports.createServer = server.createServer;
+
+/*
+    Export DBus signature types
+*/
+
+let type = {}
+
+type.DBUS_BYTE = signature.DBUS_BYTE
+type.DBUS_BOOL = signature.DBUS_BOOL
+type.DBUS_INT16 = signature.DBUS_INT16
+type.DBUS_UINT16 = signature.DBUS_UINT16
+type.DBUS_INT32 = signature.DBUS_INT32
+type.DBUS_UINT32 = signature.DBUS_UINT32
+type.DBUS_INT64 = signature.DBUS_INT64
+type.DBUS_UINT64 = signature.DBUS_UINT64
+type.DBUS_DOUBLE = signature.DBUS_DOUBLE
+type.DBUS_UNIX_FD = signature.DBUS_UNIX_FD
+type.DBUS_STRING = signature.DBUS_STRING
+type.DBUS_OBJ_PATH = signature.DBUS_OBJ_PATH
+type.DBUS_SIGNATURE = signature.DBUS_SIGNATURE
+
+type.DBUS_ARRAY = signature.DBUS_ARRAY
+type.DBUS_DICT = signature.DBUS_DICT
+type.DBUS_STRUCT = signature.DBUS_STRUCT
+
+module.exports.type = type
+
+/*
+    Exports classes from the new API
+*/
+
+module.exports.DBusObjectLibs = DBusObject2Libs
+module.exports.DBusInterfaceLibs = DBusInterface2Libs
+module.exports.DBusService = DBusService2
+module.exports.DBusProxy = DBusProxy
