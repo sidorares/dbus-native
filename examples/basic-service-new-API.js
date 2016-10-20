@@ -3,18 +3,18 @@
 const dbus               = require ('../index.js')
 const inspect            = require ('util').inspect
 
-const DBusObjectLibs    = dbus.DBusObject2Libs.js
-const DBusService       = dbus.DBusService2.js
-const DBusInterfaceLibs = dbus.DBusInterface2Libs.js
+const DBusObjectLibs    = dbus.DBusObjectLibs
+const DBusService       = dbus.DBusService2
+const DBusInterfaceLibs = dbus.DBusInterfaceLibs
 
 const t = dbus.type
 
-const DBusMethod     = DBusInterface2Libs.DBusMethod
-const DBusSignal     = DBusInterface2Libs.DBusSignal
-const DBusProperty   = DBusInterface2Libs.DBusProperty
-const DBusInterface2 = DBusInterface2Libs.DBusInterface2
+const DBusMethod    = DBusInterfaceLibs.DBusMethod
+const DBusSignal    = DBusInterfaceLibs.DBusSignal
+const DBusProperty  = DBusInterfaceLibs.DBusProperty
+const DBusInterface = DBusInterfaceLibs.DBusInterface2
 
-const DBusObject2    = DBusObject2Libs.DBusObject2
+const DBusObject    = DBusObjectLibs.DBusObject2
 
 // The name we want to expose our DBus service on
 const serviceName   = 'com.dbus.native.basic.service'
@@ -125,7 +125,7 @@ iface.GetDict = function () {
 DBusMethod (iface, 'GetDict', {
 	input: {},
 	output: [
-		{dict: s.DBUS_DICT (s.DBUS_STRING, s.DBUS_INT16)} // First type is key, second type is value
+		{dict: t.DBUS_DICT (t.DBUS_STRING, t.DBUS_INT16)} // First type is key, second type is value
 	]
 })
 
@@ -135,7 +135,7 @@ iface.GetArray = function () {
 }
 DBusMethod (iface, 'GetArray', {
 	input: {},
-	output: {array: s.DBUS_ARRAY (s.DBUS_STRING)}
+	output: {array: t.DBUS_ARRAY (t.DBUS_STRING)}
 })
 
 /*
@@ -157,27 +157,27 @@ The key of the last object can either be:
  - 'readwrite' for readwrite access
 */
 DBusProperty (iface, 'Flag', {
-	read: s.DBUS_BOOL
+	read: t.DBUS_BOOL
 })
 
 iface.StringProp = 'initial string'
 DBusProperty (iface, 'StringProp', {
-	readwrite: s.DBUS_STRING
+	readwrite: t.DBUS_STRING
 })
 
 DBusSignal (iface, 'Rand', {
-	'random_number': s.DBUS_INT32
+	random_number: t.DBUS_INT32
 })
 
 
 // Create an object that implements the interface
-let obj = new DBusObject2 (iface) // add the interface directly on build
+let obj = new DBusObject (iface) // add the interface directly on build
 
 // Note that it is also possible to add an interface with `obj.addInterface (iface)`
 
 
 // Create the service
-let service = new DBusService2 ()
+let service = new DBusService ()
 
 // Add an child object to the service (note that the path must be relative: no initial '/')
 service.addObject (obj, 'com/dbus/native/basic/service')
