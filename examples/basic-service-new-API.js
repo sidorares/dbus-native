@@ -3,8 +3,8 @@
 const dbus               = require ('../index.js')
 const inspect            = require ('util').inspect
 
+const DBusService       = dbus.DBusService
 const DBusObjectLibs    = dbus.DBusObjectLibs
-const DBusService       = dbus.DBusService2
 const DBusInterfaceLibs = dbus.DBusInterfaceLibs
 
 const t = dbus.type
@@ -40,7 +40,7 @@ if (!sessionBus) {
 }
 
 // Create our interface
-let iface = new DBusInterface2 (interfaceName)
+let iface = new DBusInterface (interfaceName)
 
 /*
                 _   _               _

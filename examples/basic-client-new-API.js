@@ -48,8 +48,9 @@ sessionBus.getService2 (targetService) // actual call to create a proxy for the 
 			locally in the DBusInterface2. It is updated automatically when 'PropertiesChanged' is received.
 		*/
 		console.log ('flag (before): ' + flagValue)
+		return flagValue
 	})
-	.then( () => {
+	.then( flagValue => {
 		/*
 			Here is how we change the value of a property.
 			We simply call the same function (function's name is the property's) with ONE argument: the new value
@@ -58,13 +59,13 @@ sessionBus.getService2 (targetService) // actual call to create a proxy for the 
 			'PropertiesChanged' signal to update its property's value.
 			This is done so that the proxy doesn't get update if the DBus SET call fails for some reason.
 		*/
-		return obj["com.dbus.native.basic.service"].Flag(false)
+		return obj["com.dbus.native.basic.service"].Flag(!flagValue)
 	})
 	.then( () => {
 		// Here we query for the property value again, to show that the binding does work
 		return obj["com.dbus.native.basic.service"].Flag()
 	})
-	.then( (newFlagValue) => {
+	.then( newFlagValue => {
 		// Display this new value
 		console.log ('flag (after): ' + newFlagValue)
 	})
@@ -76,7 +77,7 @@ sessionBus.getService2 (targetService) // actual call to create a proxy for the 
 	/*
 		An interface can have signals too, so here is how we listen to a signal from the interface
 	*/
-	obj["com.dbus.native.basic.service"].on ('Rand', (nb) => {
+	obj["com.dbus.native.basic.service"].on ('Rand', nb => {
 		console.log ('Rand gave out: ' + nb)
 	})
 
