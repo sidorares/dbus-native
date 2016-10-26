@@ -53,14 +53,9 @@ sessionBus.getService2 (targetService)
 		console.log (inspect (service, {colors: true, depth: 6}))
 	}
 
-	// Make a function call, just to check. Make it random to see that several functions call actually work (see below)
-	let fn = Math.round (Math.random() * 100) >= 50
-		? 'SayHello'
-		: 'GiveTime'
-
 	// Accessing a property is calling the function whose name is the property's, with no argument. Promise-based.
 	obj["com.dbus.native.basic.service"].Flag() // That's a normal getter (but promisified)
-	.then( (flagValue) => {
+	.then( flagValue => {
 		/*
 			We actually got the value here whe nthe getter returns.
 			Though this is promised-based, the value is returned immediately, because the property value is stored
@@ -88,7 +83,7 @@ sessionBus.getService2 (targetService)
 		// Display this new value
 		console.log ('flag (after): ' + newFlagValue)
 	})
-	.catch( (err) => {
+	.catch( err => {
 		// Should not arrive: no errors here, but still safe to gracefully react
 		console.error ('>> Error: ' + err)
 	})
@@ -105,7 +100,7 @@ sessionBus.getService2 (targetService)
 		Same thing, just to show that complex, container types get marshalled correctly
 	*/
 	obj["com.dbus.native.basic.service"].on ('TestSig', arg => {
-		console.log ('arg: ' + inspect (arg))
+		console.log ('TestSig arg: ' + inspect (arg))
 		// console.log ('TestSig str: ' + str)
 		// console.log ('TestSig bool: ' + bool)
 	})
@@ -126,10 +121,10 @@ sessionBus.getService2 (targetService)
 	}, 1400)
 
 	setTimeout (() => {
-		// Another method call, randomized
-		obj['com.dbus.native.basic.service'][fn]()
+		// Another method call, SayHello
+		obj['com.dbus.native.basic.service'].SayHello()
 		.then( (ret) => {
-			console.log ('Method call ' + fn + ' returned: ' + ret)
+			console.log ('Method call \'SayHello\' returned: ' + ret)
 		})
 		.catch( (err) => {
 			console.error (fn + ' returned failed with: ' + err)
