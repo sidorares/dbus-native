@@ -18,7 +18,7 @@ if (!sessionBus) {
 	throw new Error ('Could not connect to the DBus session bus.')
 }
 
-sessionBus.getService2 (serviceName)
+sessionBus.mkProxy (serviceName)
 .then( service => {
 	let obj = service.com.dbus.SimpleService
 	let iface = obj[interfaceName]
