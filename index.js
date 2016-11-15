@@ -7,13 +7,13 @@ const message            = require ('./lib/message')
 const constants          = require ('./lib/constants')
 const DBusProxy          = require ('./lib/DBusProxy.js')
 const signature          = require ('./lib/signature.js')
+const DBusService        = require ('./lib/DBusService.js')
 const EventEmitter       = require ('events').EventEmitter
-const DBusService2       = require ('./lib/DBusService2.js')
 const helloMessage       = require ('./lib/hello-message.js')
+const DBusObjectLibs     = require ('./lib/DBusObjectLibs')
 const clientHandshake    = require ('./lib/handshake.js')
-const DBusObject2Libs    = require ('./lib/DBusObject2Libs')
-const DBusInterface2Libs = require ('./lib/DBusInterface2Libs')
 const serverHandshake    = require ('./lib/server-handshake.js')
+const DBusInterfaceLibs  = require ('./lib/DBusInterfaceLibs')
 
 // Whether to set this file's functions into debugging (verbose) mode
 const DEBUG_THIS_FILE = false
@@ -206,7 +206,7 @@ module.exports.type = type
     Exports classes from the new API
 */
 
-module.exports.DBusObjectLibs = DBusObject2Libs
-module.exports.DBusInterfaceLibs = DBusInterface2Libs
-module.exports.DBusService = DBusService2
+module.exports.DBusObjectLibs = DBusObjectLibs
+module.exports.DBusInterfaceLibs = DBusInterfaceLibs
+module.exports.DBusService = DBusService
 module.exports.DBusProxy = DBusProxy
