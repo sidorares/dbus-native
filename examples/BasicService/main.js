@@ -70,7 +70,7 @@ setInterval( () => {
 , 2500)
 
 // Expose the service on the bus so that it's usable by other services and clients
-sessionBus.exposeService2 (service, serviceName) // the call is promisified
+sessionBus.exposeService (service, serviceName) // the call is promisified
 .then (() => {
 	console.log ('Service exposed and ready to answer calls, with name \'' + serviceName + '\'')
 })
