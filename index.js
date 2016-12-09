@@ -195,6 +195,7 @@ type.DBUS_UNIX_FD = signature.DBUS_UNIX_FD
 type.DBUS_STRING = signature.DBUS_STRING
 type.DBUS_OBJ_PATH = signature.DBUS_OBJ_PATH
 type.DBUS_SIGNATURE = signature.DBUS_SIGNATURE
+type.DBUS_VARIANT = signature.DBUS_VARIANT
 
 type.DBUS_ARRAY = signature.DBUS_ARRAY
 type.DBUS_DICT = signature.DBUS_DICT
