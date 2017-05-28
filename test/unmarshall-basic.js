@@ -3,6 +3,9 @@ var unmarshall = require('../lib/unmarshall');
 var assert     = require('assert');
 var hexy       = require('../lib/hexy').hexy;
 
+if( assert.deepStrictEqual === undefined )  // workaround for node 0.12
+    assert.deepStrictEqual = assert.deepEqual;
+
 function testOnly() {};
 
 /** Take the data and marshall it then unmarshall it */
@@ -15,7 +18,7 @@ function marshallAndUnmarshall(signature, data) {
 function test(signature, data) {
     var result = marshallAndUnmarshall(signature, data);
     try {
-      assert.deepEqual(data, result)
+      assert.deepStrictEqual(data, result)
     } catch (e) {
       console.log('signature   :', signature);
       console.log('orig        :', data);
@@ -119,10 +122,8 @@ describe('marshall/unmarshall', function() {
          ['g', ['signature'], false], // TODO: validate on input
          //['g', [str300chars], false],  // max 255 chars
          ['o', ['/']],
-         ['b', [0]],
-         ['b', [1]],
-         //['b', [true], true, 1],
-         //['b', [false], true, 0],
+         ['b', [false]],
+         ['b', [true]],
          ['y', [10]],
          //['y', [300], false],  // TODO: validate on input
          //['y', [-10]],  // TODO: validate on input
@@ -200,7 +201,7 @@ var data =  [10, 1000];
 var s = 'nn';
 var buf = marshall(s, data);
 assert.equal(buf.toString('hex'), '0a00e803')
-assert.deepEqual(unmarshall(buf, s), data);
+assert.deepStrictEqual(unmarshall(buf, s), data);
 
 //test('a(yai)', [[[100,[1,2,3,4,5,6]],[200,[15,4,5,6]]]], console.log);
 //test('a(yv)', [[[6,["s","final"]],[8,["g","uuu"]]]], console.log)
