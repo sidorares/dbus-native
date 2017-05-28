@@ -3,6 +3,9 @@ var unmarshall = require('../lib/unmarshall');
 var assert     = require('assert');
 var hexy       = require('../lib/hexy').hexy;
 
+if( assert.deepStrictEqual === undefined )  // workaround for node 0.12
+    assert.deepStrictEqual = assert.deepEqual;
+
 function testOnly() {};
 
 function test(signature, data) {
