@@ -15,7 +15,7 @@ describe('given base-64 encoded files with complete messages', function() {
       //console.log(unmarshall(msgBin));
       var unmarshalledMsg = unmarshall(msgBin);
       var marshalled = marshall(unmarshalledMsg);
-      assert.deepEqual(unmarshalledMsg, unmarshall(marshalled));
+      assert.deepStrictEqual(unmarshalledMsg, unmarshall(marshalled));
     });
   });
 });
