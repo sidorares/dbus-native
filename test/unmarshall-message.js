@@ -29,7 +29,7 @@ describe('message marshall/unmarshall', function() {
               signature: testData[0],
               body: testData[1]
             };
-            assert.deepEqual(msg, buff2msg(msg2buff(msg)));
+            assert.deepStrictEqual(msg, buff2msg(msg2buff(msg)));
           });
         })(testData);
        }

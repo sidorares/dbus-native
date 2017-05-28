@@ -15,7 +15,7 @@ function marshallAndUnmarshall(signature, data) {
 function test(signature, data) {
     var result = marshallAndUnmarshall(signature, data);
     try {
-      assert.deepEqual(data, result)
+      assert.deepStrictEqual(data, result)
     } catch (e) {
       console.log('signature   :', signature);
       console.log('orig        :', data);
@@ -197,7 +197,7 @@ var data =  [10, 1000];
 var s = 'nn';
 var buf = marshall(s, data);
 assert.equal(buf.toString('hex'), '0a00e803')
-assert.deepEqual(unmarshall(buf, s), data);
+assert.deepStrictEqual(unmarshall(buf, s), data);
 
 //test('a(yai)', [[[100,[1,2,3,4,5,6]],[200,[15,4,5,6]]]], console.log);
 //test('a(yv)', [[[6,["s","final"]],[8,["g","uuu"]]]], console.log)
