@@ -119,10 +119,8 @@ describe('marshall/unmarshall', function() {
          ['g', ['signature'], false], // TODO: validate on input
          //['g', [str300chars], false],  // max 255 chars
          ['o', ['/']],
-         ['b', [0]],
-         ['b', [1]],
-         //['b', [true], true, 1],
-         //['b', [false], true, 0],
+         ['b', [false]],
+         ['b', [true]],
          ['y', [10]],
          //['y', [300], false],  // TODO: validate on input
          //['y', [-10]],  // TODO: validate on input
