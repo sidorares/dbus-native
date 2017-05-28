@@ -166,7 +166,10 @@ describe('marshall/unmarshall', function() {
          ['aii', [[1, 2, 3, 4, 5, 6], 10]],
          ['a(ai)', [[  [[1, 2, 3, 4, 5, 6]], [[15, 4, 5, 6]] ]]],
          ['aai', [[[1, 2, 3, 4, 5, 6], [15, 4, 5, 6]]]],
-     ]
+     ],
+     'buffers': [
+         ['ayay', [Buffer([0, 1, 2, 3, 4, 5, 6, 0xff]), Buffer([])]],
+     ],
   };
 
   var testName, testData, testNum;
