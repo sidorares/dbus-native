@@ -154,6 +154,12 @@ describe('marshall/unmarshall', function() {
          ['aai', [[[300, 400, 500], [1, 2, 3, 4, 5, 6, 7]]] ],
          ['aiai', [[1, 2, 3], [300, 400, 500]] ],
      ],
+     'variants': [
+         ['vv', [['i', 42], ['ai', [1, 2, 3]]]],
+         ['vv', [['(i)', [42]], ['a(i)', [[1], [2], [3]]]]],
+         ['v', [['v', ['v', ['y', 42]]]]],
+         ['vv', [['v', ['av', []]], ['av', [['i', 42]]]]],
+     ],
      'compound types': [
          ['iyai', [10, 100, [1, 2, 3, 4, 5, 6]]],
          // TODO: fix 'array of structs offset problem
