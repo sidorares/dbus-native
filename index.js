@@ -110,7 +110,7 @@ function createConnection(opts) {
     self.emit('connect');
     message.unmarshalMessages(stream, function(message) {
       self.emit('message', message);
-    });
+    }, opts);
   });
 
   self._messages = [];
