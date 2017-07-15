@@ -3,27 +3,38 @@ var unmarshall = require('../lib/unmarshall');
 var assert     = require('assert');
 var hexy       = require('../lib/hexy').hexy;
 
+var Long = require('long');
+var LongMaxS64 = Long.fromString("9223372036854775807", false);
+var LongMinS64 = Long.fromString("-9223372036854775808", false);
+var LongMaxU64 = Long.fromString("18446744073709551615", true);
+var LongMinU64 = Long.fromString("0", true);
+var LongMaxS53 = Long.fromString("9007199254740991", false);
+var LongMinS53 = Long.fromString("-9007199254740991", false);
+var LongMaxU53 = Long.fromString("9007199254740991", true);
+
 if( assert.deepStrictEqual === undefined )  // workaround for node 0.12
     assert.deepStrictEqual = assert.deepEqual;
 
 function testOnly() {};
 
 /** Take the data and marshall it then unmarshall it */
-function marshallAndUnmarshall(signature, data) {
+function marshallAndUnmarshall(signature, data, unmarshall_opts) {
     var marshalledBuffer = marshall(signature, data);
-    var result = unmarshall(marshalledBuffer, signature)
+    var result = unmarshall(marshalledBuffer, signature, undefined, unmarshall_opts)
     return result;
 }
 
-function test(signature, data) {
-    var result = marshallAndUnmarshall(signature, data);
+function test(signature, data, other_result, unmarshall_opts) {
+    var result = marshallAndUnmarshall(signature, data, unmarshall_opts);
     try {
-      assert.deepStrictEqual(data, result)
+        if (other_result != undefined) assert.deepStrictEqual(result, other_result);
+        else assert.deepStrictEqual(data, result);
     } catch (e) {
       console.log('signature   :', signature);
       console.log('orig        :', data);
       console.log('unmarshalled:', result);
-      throw new Error('results don\'t match');
+      if (other_result != undefined) throw new Error('results don\'t match (' + result + ') != (' + other_result + ')');
+      else throw new Error('results don\'t match (' + data + ') != (' + result + ')');
     }
 }
 
@@ -81,14 +92,19 @@ describe("marshall", function() {
                         ["u", [(-1)], /Number outside range/],
                         ["u", [1.5], /Data:.*was not an integer/],
                         ["u", [(0xFFFFFFFF+1)], /Number outside range/],
-                        ["x", ["n"], /Data:.*was not of type number.*/],
+                        ["x", ["n"], /Data:.*did not convert correctly to signed 64 bit/],
                         ["x", [(-(Math.pow(2,53))-1)], /Number outside range.*/],
                         ["x", [1.5], /Data:.*was not an integer.*/],
                         ["x", [(Math.pow(2,53))], /Number outside range.*/],
-                        ["t", ["n"], /Data:.*was not of type number.*/],
+                        ["x", ["9223372036854775808"], /Data:.*did not convert correctly to signed 64 bit*/], // exceed S64
+                        ["x", ["-9223372036854775809"], /Data:.*did not convert correctly to signed 64 bit*/], // exceed S64
+                        ["t", ["n"], /Data:.*did not convert correctly to unsigned 64 bit/],
                         ["t", [(-1)], /Number outside range.*/],
+                        ["t", ["18446744073709551616"], /Data:.*did not convert correctly to unsigned 64 bit*/],  // exceed U64
                         ["t", [1.5], /Data:.*was not an integer.*/],
                         ["t", [(Math.pow(2,53))], /Number outside range.*/],
+                        ["x", [LongMaxU53], /Longjs object is unsigned, but marshalling into signed 64 bit field/], // Longjs unsigned/signed must match with field?
+                        ["t", [LongMaxS53], /Longjs object is signed, but marshalling into unsigned 64 bit field/],
                         ["d", ["n"], /Data:.*was not of type number/],
                         ["d", [Number.NEGATIVE_INFINITY], /Number outside range/],
                         ["d", [NaN], /Data:.*was not a number/],
@@ -111,7 +127,7 @@ describe("marshall", function() {
 
 describe('marshall/unmarshall', function() {
 
-   // signature, data, not expected to fail?, data after unmarshall (when expected to convert to canonic form and different from input)
+   // signature, data, not expected to fail?, data after unmarshall (when expected to convert to canonic form and different from input), unmarshall_options
    var tests = {
       'simple types': [
          ['s', ['short string']],
@@ -140,6 +156,19 @@ describe('marshall/unmarshall', function() {
          ['u', [1048576]],
          ['u', [0]],
          //['u', [-1], false]  // TODO validate input, should fail
+        ["x", ["9007199254740991"], false, [9007199254740991]], // strings should parse and convert to 53bit numbers
+        ["x", ["-9007199254740991"], false, [-9007199254740991]],
+        ["t", ["9007199254740991"], false, [9007199254740991]],
+        ["t", ["0"], false, [0]],
+        ["x", [LongMaxS53], false, [9007199254740991]], // make sure Longjs objects convert to 53bit numbers
+        ["x", [LongMinS53], false, [-9007199254740991]],
+        ["t", [LongMaxU53], false, [9007199254740991]],
+        ["x", [LongMaxS64], false, [LongMaxS64], {ReturnLongjs:true}], // make sure Longjs object returns work
+        ["x", [LongMinS64], false, [LongMinS64], {ReturnLongjs:true}],
+        ["t", [LongMaxU64], false, [LongMaxU64], {ReturnLongjs:true}],
+        ["t", [LongMinU64], false, [LongMinU64], {ReturnLongjs:true}],
+        ["x", [LongMaxS53], false, [LongMaxS53], {ReturnLongjs:true}],
+        ["x", [LongMinS53], false, [LongMinS53], {ReturnLongjs:true}],
      ],
      'simple structs': [
          ['(yyy)y', [[1, 2, 3], 4]],
@@ -182,13 +211,13 @@ describe('marshall/unmarshall', function() {
           {
               (function(testData) {
                   it(testDesc , function() {
-                      test(testData[0], testData[1]);
+                      test(testData[0], testData[1], testData[3], testData[4]);
                   });
               })(testData);
            } else {
               (function(testData) {
                   it(testDesc, function() {
-                      test(testData[0], testData[1]);
+                      test(testData[0], testData[1], testData[3], testData[4]);
                   });
               })(testData);
           }
