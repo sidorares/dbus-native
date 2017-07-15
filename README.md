@@ -56,6 +56,8 @@ options:
    - port - TCP port
    - host - TCP host
    - busAddress - encoded bus address. Default is `DBUS_SESSION_BUS_ADDRESS` environment variable. See http://dbus.freedesktop.org/doc/dbus-specification.html#addresses
+   - ayBuffer - boolean (default:true): if true 'ay' dbus fields are returned as buffers
+   - ReturnLongjs - boolean (default:false): if true 64 bit dbus fields (x/t) are read out as Long.js objects, otherwise they are converted to numbers (which should be good up to 53 bits)
    - ( TODO: add/document option to use adress from X11 session )
 
 connection has only one method, `message(msg)`
