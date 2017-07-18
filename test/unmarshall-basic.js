@@ -11,6 +11,7 @@ var LongMinU64 = Long.fromString("0", true);
 var LongMaxS53 = Long.fromString("9007199254740991", false);
 var LongMinS53 = Long.fromString("-9007199254740991", false);
 var LongMaxU53 = Long.fromString("9007199254740991", true);
+var LongMinU53 = Long.fromString("0", true);
 
 if( assert.deepStrictEqual === undefined )  // workaround for node 0.12
     assert.deepStrictEqual = assert.deepEqual;
@@ -156,6 +157,10 @@ describe('marshall/unmarshall', function() {
          ['u', [1048576]],
          ['u', [0]],
          //['u', [-1], false]  // TODO validate input, should fail
+        ["x", [9007199254740991]], // 53bit numbers convert to 53bit numbers
+        ["x", [-9007199254740991]],
+        ["t", [9007199254740991]],
+        ["t", [0]],
         ["x", ["9007199254740991"], false, [9007199254740991]], // strings should parse and convert to 53bit numbers
         ["x", ["-9007199254740991"], false, [-9007199254740991]],
         ["t", ["9007199254740991"], false, [9007199254740991]],
@@ -163,12 +168,19 @@ describe('marshall/unmarshall', function() {
         ["x", [LongMaxS53], false, [9007199254740991]], // make sure Longjs objects convert to 53bit numbers
         ["x", [LongMinS53], false, [-9007199254740991]],
         ["t", [LongMaxU53], false, [9007199254740991]],
-        ["x", [LongMaxS64], false, [LongMaxS64], {ReturnLongjs:true}], // make sure Longjs object returns work
+        ["t", [LongMinU53], false, [0]],
+        ["x", [9007199254740991], false, [LongMaxS53], {ReturnLongjs:true}], // 53bit numbers to objects
+        ["x", [-9007199254740991], false, [LongMinS53], {ReturnLongjs:true}],
+        ["t", [9007199254740991], false, [LongMaxU53], {ReturnLongjs:true}],
+        ["t", [0], false, [LongMinU53], {ReturnLongjs:true}],
+        ["x", ["9223372036854775807"], false, [LongMaxS64], {ReturnLongjs:true}], // strings to objects
+        ["x", ["-9223372036854775808"], false, [LongMinS64], {ReturnLongjs:true}],
+        ["t", ["18446744073709551615"], false, [LongMaxU64], {ReturnLongjs:true}],
+        ["t", ["0"], false, [LongMinU64], {ReturnLongjs:true}],
+        ["x", [LongMaxS64], false, [LongMaxS64], {ReturnLongjs:true}], // Longjs object to objects
         ["x", [LongMinS64], false, [LongMinS64], {ReturnLongjs:true}],
         ["t", [LongMaxU64], false, [LongMaxU64], {ReturnLongjs:true}],
         ["t", [LongMinU64], false, [LongMinU64], {ReturnLongjs:true}],
-        ["x", [LongMaxS53], false, [LongMaxS53], {ReturnLongjs:true}],
-        ["x", [LongMinS53], false, [LongMinS53], {ReturnLongjs:true}],
      ],
      'simple structs': [
          ['(yyy)y', [[1, 2, 3], 4]],
