@@ -181,6 +181,10 @@ describe('marshall/unmarshall', function() {
         ["x", [LongMinS64], false, [LongMinS64], {ReturnLongjs:true}],
         ["t", [LongMaxU64], false, [LongMaxU64], {ReturnLongjs:true}],
         ["t", [LongMinU64], false, [LongMinU64], {ReturnLongjs:true}],
+        ["x", [new String(9007199254740991)], false, [9007199254740991]], // quick check String instance conversion
+        ["t", [new String("9007199254740991")], false, [9007199254740991]],
+        ["x", [new Number(9007199254740991)], false, [9007199254740991]], // quick check Number instance conversion
+        ["t", [new Number("9007199254740991")], false, [9007199254740991]],
      ],
      'simple structs': [
          ['(yyy)y', [[1, 2, 3], 4]],
