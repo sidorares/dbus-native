@@ -100,7 +100,7 @@ conn.on('message', function(msg) { console.log(msg); });
 Long.js is used for 64 Bit support. https://github.com/dcodeIO/long.js
 The following javascript types can be marshalled into 64 bit dbus fields:
    - typeof 'number' up to 53bits
-   - typeof 'string' (consisting of decimal digits with no separators) up to full 64bit range
+   - typeof 'string' (consisting of decimal digits with no separators or '0x' prefixed hexadecimal) up to full 64bit range
    - Long.js objects (or object with compatible properties)
 
 By default 64 bit dbus fields are unmarshalled into a 'number' (with precision loss beyond 53 bits). Use {ReturnLongjs:true} option to return the actual Long.js object and preserve the entire 64 bits.
