@@ -181,6 +181,10 @@ describe('marshall/unmarshall', function() {
         ["x", [LongMinS64], false, [LongMinS64], {ReturnLongjs:true}],
         ["t", [LongMaxU64], false, [LongMaxU64], {ReturnLongjs:true}],
         ["t", [LongMinU64], false, [LongMinU64], {ReturnLongjs:true}],
+        ["x", [{low:LongMaxS64.low,high:LongMaxS64.high,unsigned:LongMaxS64.unsigned}], false, [LongMaxS64], {ReturnLongjs:true}], // non-instance Longjs object to objects
+        ["x", [{low:LongMaxS53.low,high:LongMaxS53.high,unsigned:LongMaxS53.unsigned}], false, [9007199254740991]],
+        ["t", [{low:LongMaxU64.low,high:LongMaxU64.high,unsigned:LongMaxU64.unsigned}], false, [LongMaxU64], {ReturnLongjs:true}],
+        ["t", [{low:LongMaxU53.low,high:LongMaxU53.high,unsigned:LongMaxU53.unsigned}], false, [9007199254740991]],
         ["x", [new String(9007199254740991)], false, [9007199254740991]], // quick check String instance conversion
         ["t", [new String("9007199254740991")], false, [9007199254740991]],
         ["x", [new Number(9007199254740991)], false, [9007199254740991]], // quick check Number instance conversion
