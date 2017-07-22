@@ -165,6 +165,12 @@ describe('marshall/unmarshall', function() {
         ["x", ["-9007199254740991"], false, [-9007199254740991]],
         ["t", ["9007199254740991"], false, [9007199254740991]],
         ["t", ["0"], false, [0]],
+        ["x", ["0x1FFFFFFFFFFFFF"], false, [9007199254740991]], // hex strings
+        ["x", ["0x0000"], false, [0]],
+        ["x", ["0x7FFFFFFFFFFFFFFF"], false, [LongMaxS64], {ReturnLongjs:true}],
+        ["t", ["0x1FFFFFFFFFFFFF"], false, [9007199254740991]],
+        ["t", ["0x0000"], false, [0]],
+        ["t", ["0xFFFFFFFFFFFFFFFF"], false, [LongMaxU64], {ReturnLongjs:true}],
         ["x", [LongMaxS53], false, [9007199254740991]], // make sure Longjs objects convert to 53bit numbers
         ["x", [LongMinS53], false, [-9007199254740991]],
         ["t", [LongMaxU53], false, [9007199254740991]],
