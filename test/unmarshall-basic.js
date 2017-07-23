@@ -166,6 +166,7 @@ describe('marshall/unmarshall', function() {
         ["t", ["9007199254740991"], false, [9007199254740991]],
         ["t", ["0"], false, [0]],
         ["x", ["0x1FFFFFFFFFFFFF"], false, [9007199254740991]], // hex strings
+        ["x", ["-0x1FFFFFFFFFFFFF"], false, [-9007199254740991]],
         ["x", ["0x0000"], false, [0]],
         ["x", ["0x7FFFFFFFFFFFFFFF"], false, [LongMaxS64], {ReturnLongjs:true}],
         ["t", ["0x1FFFFFFFFFFFFF"], false, [9007199254740991]],
