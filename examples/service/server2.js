@@ -17,7 +17,8 @@ var exampleIface = {
     methods: {
         doStuff: ['s', 's'],
         timesTwo: ['d', 'd'],
-        respondWithDouble: ['s', 'd']
+        respondWithDouble: ['s', 'd'],
+        getInt: ['i', 'i']
     },
     signals: {
         testsignal: [ 'us', 'name1', 'name2' ]
@@ -38,6 +39,9 @@ var example = {
     },
     doStuff: function(s) {
         return 'Received "' + s + '" - this is a reply'; 
+    },
+    getInt: function(i) {
+        return i;
     },
     TestProperty: 42,
     emit: function(name, param1, param2) {
