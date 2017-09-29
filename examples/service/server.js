@@ -12,6 +12,6 @@ bus.connection.on('message', function(msg) {
            body: [msg.body[0].split('').reverse().join('')],
        };
        bus.invoke(reply);
-   } 
+   }
 });
 bus.requestName(name, 0);

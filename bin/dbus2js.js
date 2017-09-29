@@ -45,7 +45,7 @@ if (!argv.server) {
 
       if (err)
           die(err);
-  
+
       var output = [];
 
       var parser = new xml2js.Parser({explicitArray: true});
@@ -70,13 +70,13 @@ if (!argv.server) {
               output.push('             callback.apply(null, messageBody);');
               output.push('        });');
               output.push('    };');
-                
+
               for (m=0; iface.method && m < iface.method.length; ++m)
               {
                   method = iface.method[m];
                   signature = '';
                   name = method['@'].name;
-                  
+
                   var decl = '    this.' + name + ' = function('
                   var params = [];
                   for (a=0; method.arg && a < method.arg.length; ++a) {
@@ -129,12 +129,12 @@ if (!argv.server) {
                                          callback(err, val[1]);
                                  });
                              };
-                         }, 
+                         },
                          set: function(val) {
-                             console.log('TODO: implement set property. Value passed:' 
+                             console.log('TODO: implement set property. Value passed:'
                                      + val + ', property: ' + JSON.stringify(property, null, 4));
                          }
-                      }); 
+                      });
                   }
                   addReadProp(currentIface, name, property);
                   */

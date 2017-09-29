@@ -37,7 +37,7 @@ var example = {
         return d*2;	
     },
     doStuff: function(s) {
-        return 'Received "' + s + '" - this is a reply'; 
+        return 'Received "' + s + '" - this is a reply';
     },
     TestProperty: 42,
     emit: function(name, param1, param2) {
