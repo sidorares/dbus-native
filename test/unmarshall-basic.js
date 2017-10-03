@@ -13,9 +13,6 @@ var LongMinS53 = Long.fromString("-9007199254740991", false);
 var LongMaxU53 = Long.fromString("9007199254740991", true);
 var LongMinU53 = Long.fromString("0", true);
 
-if( assert.deepStrictEqual === undefined )  // workaround for node 0.12
-    assert.deepStrictEqual = assert.deepEqual;
-
 function testOnly() {};
 
 /** Take the data and marshall it then unmarshall it */

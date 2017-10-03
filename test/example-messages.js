@@ -4,9 +4,6 @@ var unmarshall = require('../lib/message').unmarshall;
 var marshall   = require('../lib/message').marshall;
 var dir = __dirname + '/fixtures/messages/';
 
-if( assert.deepStrictEqual === undefined )  // workaround for node 0.12
-    assert.deepStrictEqual = assert.deepEqual;
-
 describe('given base-64 encoded files with complete messages', function() {
   it('should be able to read them all', function() {
     var messages = fs.readdirSync(dir);
