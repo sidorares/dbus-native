@@ -3,7 +3,7 @@ var binarystream = require('binary');
 var packets = fs.readFileSync('./packets.bin');
 var EventEmitter = require('events').EventEmitter;
 var message = require('./lib/message');
-var hexy = require('./lib/hexy').hexy;
+var hexy = require('hexy').hexy;
 
 //var probBody = packets.slice(2544+16*11+16*4+8, 2544+16*11+16*4+8+0x390);
 //var stream = fs.createWriteStream('./problembody.bin')
@@ -33,7 +33,7 @@ if (1) {
 
 
 function readPacket(offset, data) {
-    
+
     if (offset > data.length)
         return;
     console.log(' ======********====== START : ', offset, data.length);
@@ -46,12 +46,12 @@ function readPacket(offset, data) {
         packet = data.slice(offset, data.length);
         //console.error(hexy(packet, {prefix: 'problem packet: '}));
         //return
-        console.log(hexy(packet, {prefix: 'packet: '}));    
+        console.log(hexy(packet, {prefix: 'packet: '}));
         debugger;
     } else {
         console.log("SLICING:", len, offset+4, offset+len+4);
         packet = data.slice(offset+4, offset+len+4);
-        console.log(hexy(packet, {prefix: 'packet: '}));    
+        console.log(hexy(packet, {prefix: 'packet: '}));
     }
     var dbus = new EventEmitter();
     var stream = binarystream.parse(packet);
