@@ -10,7 +10,7 @@ describe('given base-64 encoded files with complete messages', function() {
     messages.forEach(function(name) {
       var msg = fs.readFileSync(dir + name, 'ascii');
       var msgBin = new Buffer(msg, 'base64');
-      //var hexy = require('../lib/hexy').hexy;
+      //var hexy = require('hexy').hexy;
       //console.log(hexy(msgBin));
       //console.log(unmarshall(msgBin));
       var unmarshalledMsg = unmarshall(msgBin);
