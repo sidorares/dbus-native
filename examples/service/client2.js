@@ -7,11 +7,11 @@ var name = 'some.name';
 var iface = 'com.example.service';
 
 function test() {
-bus.invoke({ 
-    path: '/', 
-    destination: name, 
-    'interface': iface, 
-    member: 'doStuff', 
+bus.invoke({
+    path: '/',
+    destination: name,
+    'interface': iface,
+    member: 'doStuff',
     signature: 's', body: ['does it really work?']
 }, function(err, res) {
     console.log(err, res);
