@@ -110,7 +110,7 @@ function createConnection(opts) {
     self.emit('connect');
     message.unmarshalMessages(stream, function(message) {
       self.emit('message', message);
-    });
+    }, opts);
   });
 
   self._messages = [];
@@ -147,7 +147,7 @@ module.exports.createClient = function(params) {
 
 module.exports.systemBus = function() {
   return module.exports.createClient({
-    socket: '/var/run/dbus/system_bus_socket'
+    busAddress: process.env.DBUS_SYSTEM_BUS_ADDRESS || 'unix:path=/var/run/dbus/system_bus_socket'
   });
 };
 

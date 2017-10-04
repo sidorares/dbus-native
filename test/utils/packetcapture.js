@@ -1,5 +1,5 @@
 var net = require('net');
-var hexy = require('./lib/hexy').hexy;
+var hexy = require('hexy').hexy;
 require('abstractsocket')(net);
 var buffs = require('buffers');
 
@@ -13,7 +13,7 @@ function nextPacketPos(b)
       if (b.get(i) == 0x6c && b.get(i+3) == 1 && b.get(i+1) < 5 && b.get(i+2) < 4 && b.get(i+10) < 9)
         return i;
     return -1;
-    
+
 }
 
 var packetfile = fs.createWriteStream('./packets.bin');
@@ -78,7 +78,7 @@ net.createServer(function(s)
             packetfile.write(packet);
             }
             extractPacket();
-        } 
+        }
         }
         extractPacket()
     });
