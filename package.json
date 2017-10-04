@@ -32,11 +32,12 @@
     "dbus2js": "./bin/dbus2js.js"
   },
   "dependencies": {
+    "abstract-socket": "^2.0.0",
     "event-stream": "^3.1.7",
     "hexy": "^0.2.10",
     "long": "^3.0.1",
     "put": "0.0.6",
-    "xml2js": "0.1.14"
+    "xml2js": "0.4.17"
   },
   "optionalDependencies": {
     "abstract-socket": "^2.0.0"
