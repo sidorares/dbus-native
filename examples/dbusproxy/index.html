@@ -38,7 +38,7 @@
       <div></div>
       <form>
         <textarea autocomplete="off" value="Type here..."></textarea>
-        <input type="submit"></input> 
+        <input type="submit"></input>
       </form>
    </div>
 
@@ -81,7 +81,7 @@
            sockjs.send(JSON.stringify(o));
         };
 
-        sockjs.onopen    = function()  { 
+        sockjs.onopen    = function()  {
             //print('[*] open', sockjs.protocol);
             var addMatch = {
                "path": "/org/freedesctop/DBus",
@@ -94,9 +94,9 @@
                ]
             }
             sockjs.s(addMatch);
-            addMatch.body[0] = "type='method_call'"; 
+            addMatch.body[0] = "type='method_call'";
             sockjs.s(addMatch);
-            addMatch.body[0] = "type='method_return'"; 
+            addMatch.body[0] = "type='method_return'";
             sockjs.s(addMatch);
         };
         sockjs.onmessage = function(e) {print('[.] message', e.data);};
