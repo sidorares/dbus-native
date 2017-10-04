@@ -4,7 +4,9 @@ var node_static = require('node-static');
 var dbus = require('../../index.js');
 
 // 1. Echo sockjs server
-var sockjs_opts = {sockjs_url: "./sockjs-0.3.min.js"};
+var sockjs_opts = {
+    sockjs_url: "https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"
+};
 
 var sockjs_echo = sockjs.createServer(sockjs_opts);
 sockjs_echo.on('connection', function(conn) {
