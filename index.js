@@ -4,27 +4,24 @@ var EventEmitter = require('events').EventEmitter;
 var net = require('net');
 
 var constants = require('./lib/constants');
-var message   = require('./lib/message');
+var message = require('./lib/message');
 var clientHandshake = require('./lib/handshake.js');
 var serverHandshake = require('./lib/server-handshake.js');
-var helloMessage    = require('./lib/hello-message.js');
+var helloMessage = require('./lib/hello-message.js');
 
 function createStream(opts) {
-  if (opts.stream)
-    return opts.stream;
+  if (opts.stream) return opts.stream;
   var host = opts.host;
   var port = opts.port;
   var socket = opts.socket;
   var stream;
-  if (socket)
-    return net.createConnection(socket);
-  if (port)
-    return net.createConnection(port, host);
+  if (socket) return net.createConnection(socket);
+  if (port) return net.createConnection(port, host);
 
   var busAddress = opts.busAddress || process.env.DBUS_SESSION_BUS_ADDRESS;
   if (!busAddress) throw new Error('unknown bus address');
 
-  var addresses = busAddress.split(';')
+  var addresses = busAddress.split(';');
   for (var i in addresses) {
     var address = addresses[i];
     var familyParams = address.split(':');
@@ -36,52 +33,47 @@ function createStream(opts) {
     });
 
     try {
-
       switch (family.toLowerCase()) {
         case 'tcp':
           host = params.host || 'localhost';
           port = params.port;
           return net.createConnection(port, host);
         case 'unix':
-          if (params.socket)
-            return net.createConnection(params.socket);
+          if (params.socket) return net.createConnection(params.socket);
           if (params.abstract) {
             var abs = require('abstract-socket');
             return abs.connect('\u0000' + params.abstract);
           }
-          if (params.path)
-            return net.createConnection(params.path);
-          throw new Error('not enough parameters for \'unix\' connection - you need to specify \'socket\' or \'abstract\' or \'path\' parameter');
+          if (params.path) return net.createConnection(params.path);
+          throw new Error(
+            "not enough parameters for 'unix' connection - you need to specify 'socket' or 'abstract' or 'path' parameter"
+          );
         case 'unixexec':
           var eventStream = require('event-stream');
           var spawn = require('child_process').spawn;
           var args = [];
-          for (var n = 1; params['arg' + n]; n++)
-            args.push(params['arg' + n]);
+          for (var n = 1; params['arg' + n]; n++) args.push(params['arg' + n]);
           spawn(params.path, args);
           return eventStream.duplex(child.stdin, child.stdout);
         default:
           throw new Error('unknown address type:' + family);
       }
-
     } catch (e) {
-
       if (i < addresses.length - 1) {
-        if (console && console.warn instanceof Function) console.warn(e.message);
+        if (console && console.warn instanceof Function)
+          console.warn(e.message);
         continue;
       } else {
         throw e;
       }
-
     }
   }
-
 }
 
 function createConnection(opts) {
   var self = new EventEmitter();
   if (!opts) opts = {};
-  var stream = self.stream = createStream(opts);
+  var stream = (self.stream = createStream(opts));
   stream.setNoDelay();
 
   stream.on('error', function(err) {
@@ -108,9 +100,13 @@ function createConnection(opts) {
     }
     self.guid = guid;
     self.emit('connect');
-    message.unmarshalMessages(stream, function(message) {
-      self.emit('message', message);
-    }, opts);
+    message.unmarshalMessages(
+      stream,
+      function(message) {
+        self.emit('message', message);
+      },
+      opts
+    );
   });
 
   self._messages = [];
@@ -123,7 +119,7 @@ function createConnection(opts) {
   self.once('connect', function() {
     self.state = 'connected';
     for (var i = 0; i < self._messages.length; ++i) {
-       stream.write(message.marshall(self._messages[i]));
+      stream.write(message.marshall(self._messages[i]));
     }
     self._messages.length = 0;
 
@@ -134,7 +130,7 @@ function createConnection(opts) {
   });
 
   return self;
-};
+}
 
 var MessageBus = require('./lib/bus.js');
 
@@ -147,7 +143,9 @@ module.exports.createClient = function(params) {
 
 module.exports.systemBus = function() {
   return module.exports.createClient({
-    busAddress: process.env.DBUS_SYSTEM_BUS_ADDRESS || 'unix:path=/var/run/dbus/system_bus_socket'
+    busAddress:
+      process.env.DBUS_SYSTEM_BUS_ADDRESS ||
+      'unix:path=/var/run/dbus/system_bus_socket'
   });
 };
 
