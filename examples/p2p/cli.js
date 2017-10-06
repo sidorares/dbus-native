@@ -3,8 +3,11 @@ var dbus = require('../../index.js');
 var count = 0;
 conn = dbus.createConnection({ port: 3333, handshake: 'none' });
 conn.on('message', function(msg) {
-  if (msg.serial) msg.serial += 1;
-  else msg.serial = 1;
+  if (msg.serial) {
+    msg.serial += 1;
+  } else {
+    msg.serial = 1;
+  }
   conn.message(msg);
   count++;
 });
