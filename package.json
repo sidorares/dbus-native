@@ -43,11 +43,29 @@
     "abstract-socket": "^2.0.0"
   },
   "devDependencies": {
-    "mocha": "*"
+    "husky": "^0.14.3",
+    "lint-staged": "^4.2.3",
+    "mocha": "*",
+    "prettier": "^1.7.4"
   },
   "scripts": {
     "test": "mocha",
+    "prettier": "prettier --single-quote --trailing-comma none --write '{bin,lib,examples,test}/**/*.js'",
+    "prettier": "prettier --write index.js '{bin,lib,examples,test}/**/*.js'",
+    "prettier:docs": "prettier-markdown README.md",
+    "precommit": "lint-staged",
     "prepublish": "npm prune"
+  },
+  "lint-staged": {
+    "*.js": [
+      "prettier --write",
+      "git add"
+    ]
+  },
+  "prettier": {
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "none"
   },
   "engine": {
     "node": ">=4.0"

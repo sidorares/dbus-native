@@ -1,7 +1,7 @@
 var fs = require('fs');
 var assert = require('assert');
 var unmarshall = require('../lib/message').unmarshall;
-var marshall   = require('../lib/message').marshall;
+var marshall = require('../lib/message').marshall;
 var dir = __dirname + '/fixtures/messages/';
 
 describe('given base-64 encoded files with complete messages', function() {
