@@ -30,18 +30,22 @@ function marshallAndUnmarshall(signature, data, unmarshall_opts) {
 function test(signature, data, other_result, unmarshall_opts) {
   var result = marshallAndUnmarshall(signature, data, unmarshall_opts);
   try {
-    if (other_result != undefined) assert.deepStrictEqual(result, other_result);
-    else assert.deepStrictEqual(data, result);
+    if (other_result != undefined) {
+      assert.deepStrictEqual(result, other_result);
+    } else {
+      assert.deepStrictEqual(data, result);
+    }
   } catch (e) {
     console.log('signature   :', signature);
     console.log('orig        :', data);
     console.log('unmarshalled:', result);
-    if (other_result != undefined)
+    if (other_result != undefined) {
       throw new Error(
         "results don't match (" + result + ') != (' + other_result + ')'
       );
-    else
+    } else {
       throw new Error("results don't match (" + data + ') != (' + result + ')');
+    }
   }
 }
 

@@ -10,8 +10,11 @@ function die(err) {
 }
 
 var bus;
-if (argv.bus == 'system') bus = dbus.systemBus();
-else bus = dbus.sessionBus();
+if (argv.bus == 'system') {
+  bus = dbus.systemBus();
+} else {
+  bus = dbus.sessionBus();
+}
 
 function getXML(callback) {
   if (argv.xml) {
@@ -139,10 +142,11 @@ if (!argv.server) {
                                  }, function(err, val) {
                                      if (err) callback(err);
                                      var signature = val[0];
-                                     if (signature.length === 1)
+                                     if (signature.length === 1) {
                                          callback(err, val[1][0]);
-                                     else
+                                     } else {
                                          callback(err, val[1]);
+                                     }
                                  });
                              };
                          },

@@ -16,9 +16,11 @@ function waitHandshake(stream, prefix, cb) {
     if (
       line.toString().slice(0, 5) == 'BEGIN' ||
       line.toString().slice(0, 2) == 'OK'
-    )
+    ) {
       cb();
-    else waitHandshake(stream, prefix, cb);
+    } else {
+      waitHandshake(stream, prefix, cb);
+    }
   });
 }
 
@@ -28,9 +30,11 @@ net
     var connected = false;
     var cli;
 
-    if (process.argv[2] == '--system')
+    if (process.argv[2] == '--system') {
       cli = net.connect('/var/run/dbus/system_bus_socket');
-    else cli = abs.connect('\0' + m[1]);
+    } else {
+      cli = abs.connect('\0' + m[1]);
+    }
 
     s.on('data', function(d) {
       if (connected) {
