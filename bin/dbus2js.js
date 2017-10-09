@@ -51,18 +51,7 @@ if (!argv.server) {
       if (err) die(err);
 
       var proxy = {};
-      var i,
-        m,
-        s,
-        ifaceName,
-        method,
-        property,
-        signal,
-        iface,
-        a,
-        arg,
-        signature,
-        currentIface;
+      var i, m, ifaceName, method, property, iface, a, arg, signature;
       var ifaces = result['interface'];
       for (i = 0; i < ifaces.length; ++i) {
         iface = ifaces[i];
@@ -125,48 +114,7 @@ if (!argv.server) {
           property = iface.property[p];
           name = property['@'].name;
           console.log('    property: \n', property);
-          /*
-                  // get = function(err, result) {}
-                  //TODO: move up
-                  function addReadProp(iface, propName, property) {
-                      Object.defineProperty(iface, propName, {
-                         get: function() {
-                             return function(callback) {
-                                 bus.invoke({
-                                     destination: obj.service.name,
-                                     path: obj.name,
-                                     'interface': 'org.freedesktop.DBus.Properties',
-                                     member: 'Get',
-                                     signature: 'ss',
-                                     body: [ifaceName, propName]
-                                 }, function(err, val) {
-                                     if (err) callback(err);
-                                     var signature = val[0];
-                                     if (signature.length === 1) {
-                                         callback(err, val[1][0]);
-                                     } else {
-                                         callback(err, val[1]);
-                                     }
-                                 });
-                             };
-                         },
-                         set: function(val) {
-                             console.log('TODO: implement set property. Value passed:'
-                                     + val + ', property: ' + JSON.stringify(property, null, 4));
-                         }
-                      });
-                  }
-                  addReadProp(currentIface, name, property);
-                  */
         }
-        /*
-              for (s=0; iface.signal && s < iface.signal.length; ++s)
-              {
-                  signal = iface.signal[s];
-                  name = signal['@'].name;
-                  console.log('============    signal: ', name, signal);
-              }
-              */
         output.push('}');
       }
       console.log(output.join('\n'));

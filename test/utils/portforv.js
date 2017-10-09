@@ -7,7 +7,6 @@ net
     console.log('connection!');
     var buff = '';
     var connected = false;
-    //var cli = net.createConnection('/var/run/dbus/system_bus_socket');
     var cli = net.createConnection('\0/tmp/dbus-0PpuqHgmcw');
     s.on('data', function(d) {
       console.log('');
@@ -35,7 +34,6 @@ net
       console.error(hexy(d, { prefix: 'from bus   ' }));
     });
     cli.on('connect', function() {
-      //console.log('connected to 3000');
       connected = true;
       cli.write(buff);
     });
