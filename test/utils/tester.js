@@ -5,11 +5,6 @@ var EventEmitter = require('events').EventEmitter;
 var message = require('./lib/message');
 var hexy = require('hexy').hexy;
 
-//var probBody = packets.slice(2544+16*11+16*4+8, 2544+16*11+16*4+8+0x390);
-//var stream = fs.createWriteStream('./problembody.bin')
-//stream.write(probBody);
-//console.log(hexy(probBody, {prefix: 'BODY BODY: '}));
-
 function nextPacketPos(b) {
   console.log(hexy(b, { prefix: 'SEARCHING : ' }));
   if (b.length < 10) {
@@ -50,8 +45,6 @@ if (1) {
     var packet;
     if (len > 100000) {
       packet = data.slice(offset, data.length);
-      //console.error(hexy(packet, {prefix: 'problem packet: '}));
-      //return
       console.log(hexy(packet, { prefix: 'packet: ' }));
       debugger;
     } else {
