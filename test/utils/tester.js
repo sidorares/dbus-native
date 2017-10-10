@@ -47,7 +47,6 @@ if (1) {
     if (len > 100000) {
       packet = data.slice(offset, data.length);
       console.log(hexy(packet, { prefix: 'packet: ' }));
-      debugger;
     } else {
       console.log('SLICING:', len, offset + 4, offset + len + 4);
       packet = data.slice(offset + 4, offset + len + 4);
@@ -68,7 +67,6 @@ if (1) {
     dbus.on('header', function(msg) {
       console.log('header: ', msg);
       if (msg.signature.length > 1) {
-        debugger;
       }
     });
     message.read.call(stream, dbus);
