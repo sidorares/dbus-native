@@ -1,8 +1,6 @@
 'use strict';
 
 const dbus = require('../index');
-const EventEmitter = require('events');
-const inspect = require('util').inspect;
 
 /*
 	This test file's purpose is to show how to query a simple, basic DBus service with this library.

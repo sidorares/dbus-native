@@ -52,7 +52,6 @@ if (!argv.server) {
     parser.parseString(xml, function(err, result) {
       if (err) die(err);
 
-      var proxy = {};
       var i, m, ifaceName, method, property, iface, a, arg, signature;
       var ifaces = result['interface'];
       for (i = 0; i < ifaces.length; ++i) {
@@ -86,9 +85,9 @@ if (!argv.server) {
         for (m = 0; iface.method && m < iface.method.length; ++m) {
           method = iface.method[m];
           signature = '';
-          name = method['@'].name;
+          const methodName = method['@'].name;
 
-          var decl = '    this.' + name + ' = function(';
+          var decl = '    this.' + methodName + ' = function(';
           var params = [];
           for (a = 0; method.arg && a < method.arg.length; ++a) {
             arg = method.arg[a]['@'];
@@ -104,7 +103,7 @@ if (!argv.server) {
           output.push("            destination: '" + argv.service + "',");
           output.push("            path: '" + argv.path + "',");
           output.push("            interface: '" + ifaceName + "',");
-          output.push("            member: '" + name + "',");
+          output.push("            member: '" + methodName + "',");
           if (params != '') {
             output.push('            body: [' + params.join(', ') + '], ');
             output.push("            signature: '" + signature + "',");
@@ -114,7 +113,6 @@ if (!argv.server) {
         }
         for (p = 0; iface.property && p < iface.property.length; ++p) {
           property = iface.property[p];
-          name = property['@'].name;
           console.log('    property: \n', property);
         }
         output.push('}');

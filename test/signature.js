@@ -1,6 +1,3 @@
-const assert = require('assert');
-const parse = require('../lib/signature');
-
 describe('Signature parser', function() {
   //beforeEach(function(done) {
   //});
