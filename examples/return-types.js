@@ -1,5 +1,3 @@
-'use strict';
-
 const dbus = require('../index');
 
 /*
