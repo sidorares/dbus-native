@@ -1,4 +1,5 @@
-var dbus = require('../index.js');
+const dbus = require('../index');
+
 var bus = dbus.systemBus();
 bus.invoke({
   member: 'AddMatch',

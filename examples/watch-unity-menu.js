@@ -1,4 +1,5 @@
-var dbus = require('../index.js');
+const dbus = require('../index');
+
 var bus = dbus.sessionBus();
 var panel = bus.getService('com.canonical.Unity.Panel.Service');
 panel.getInterface(

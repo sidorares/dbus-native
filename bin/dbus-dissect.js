@@ -1,13 +1,14 @@
 // simple script to monitor incoming/outcoming dbus messages
 // needs a lot of cleanup but does the job
 
-var net = require('net');
-var abs = require('abstract-socket');
+const net = require('net');
+const abs = require('abstract-socket');
+const through2 = require('through2');
+const message = require('../lib/message');
+const readLine = require('../lib/readline');
+
 var address = process.env.DBUS_SESSION_BUS_ADDRESS;
 var m = address.match(/abstract=([^,]+)/);
-
-var readLine = require('../lib/readline.js');
-var message = require('../lib/message.js');
 
 function waitHandshake(stream, prefix, cb) {
   readLine(stream, function(line) {
@@ -46,7 +47,6 @@ net
     cli.write(buff);
     cli.pipe(s);
 
-    var through2 = require('through2');
     var cc = through2();
     var ss = through2();
 

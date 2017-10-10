@@ -1,7 +1,7 @@
-var marshall = require('../lib/marshall');
-var unmarshall = require('../lib/unmarshall');
-var assert = require('assert');
-var hexy = require('hexy').hexy;
+const marshall = require('../lib/marshall');
+const unmarshall = require('../lib/unmarshall');
+const assert = require('assert');
+const hexy = require('hexy').hexy;
 
 function testOnly() {}
 

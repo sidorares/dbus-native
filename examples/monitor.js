@@ -1,4 +1,5 @@
-var dbus = require('../index.js');
+const dbus = require('../index');
+
 //var conn = dbus({socket: '/var/run/dbus/system_bus_socket'});
 var conn = dbus();
 

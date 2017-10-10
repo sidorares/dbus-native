@@ -1,8 +1,9 @@
-var fs = require('fs');
-var assert = require('assert');
-var unmarshall = require('../lib/message').unmarshall;
-var marshall = require('../lib/message').marshall;
-var dir = __dirname + '/fixtures/messages/';
+const fs = require('fs');
+const assert = require('assert');
+const unmarshall = require('../lib/message').unmarshall;
+const marshall = require('../lib/message').marshall;
+
+const dir = __dirname + '/fixtures/messages/';
 
 describe('given base-64 encoded files with complete messages', function() {
   it('should be able to read them all', function() {

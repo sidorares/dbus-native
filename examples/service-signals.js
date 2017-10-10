@@ -1,6 +1,6 @@
 'use strict';
 
-const dbus = require('../index.js');
+const dbus = require('../index');
 const inspect = require('util').inspect;
 
 /*

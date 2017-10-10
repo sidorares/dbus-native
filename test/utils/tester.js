@@ -1,9 +1,10 @@
-var fs = require('fs');
-var binarystream = require('binary');
-var packets = fs.readFileSync('./packets.bin');
-var EventEmitter = require('events').EventEmitter;
-var message = require('./lib/message');
-var hexy = require('hexy').hexy;
+const fs = require('fs');
+const binarystream = require('binary');
+const EventEmitter = require('events').EventEmitter;
+const message = require('./lib/message');
+const hexy = require('hexy').hexy;
+
+const packets = fs.readFileSync('./packets.bin');
 
 function nextPacketPos(b) {
   console.log(hexy(b, { prefix: 'SEARCHING : ' }));

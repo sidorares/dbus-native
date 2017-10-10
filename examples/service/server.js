@@ -1,4 +1,5 @@
-var dbus = require('../../index.js');
+const dbus = require('../../index');
+
 var bus = dbus.sessionBus();
 var name = 'vasya.pupkin';
 bus.connection.on('message', function(msg) {

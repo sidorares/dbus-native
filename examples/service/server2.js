@@ -1,10 +1,10 @@
-var dbus = require('../../index.js');
+const dbus = require('../../index');
 
 // command line to test:
 // dbus-send --print-reply --type=method_call --dest='some.name' '/com/github/sidorares/1' com.example.service.respondWithDouble string:'test123'
 // dbus-send --print-reply --type=method_call --dest='some.name' '/com/github/sidorares/1' com.example.service.timesTwo double:123.4567
 
-//var addrx11 = require('../../lib/address-x11');
+//const addrx11 = require('../../lib/address-x11');
 //addrx11(function(err, address) {
 //var bus = dbus.sessionBus({busAddress: address});
 
