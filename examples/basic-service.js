@@ -1,6 +1,6 @@
 'use strict';
 
-const dbus = require('../index.js');
+const dbus = require('../index');
 
 /*
 	This test file's purpose is to show how to write a simple, basic DBus service with this library.

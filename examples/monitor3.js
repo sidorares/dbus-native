@@ -1,4 +1,5 @@
-var dbus = require('../index.js');
+const dbus = require('../index');
+
 var bus = dbus.sessionBus();
 bus.connection.on('message', console.log);
 bus.addMatch("type='signal'");

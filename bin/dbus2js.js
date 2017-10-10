@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 
-var xml2js = require('xml2js');
-var dbus = require('../index.js');
-var argv = require('optimist').boolean(['server', 'dump']).argv;
+const fs = require('fs');
+const xml2js = require('xml2js');
+const dbus = require('../index');
+const optimist = require('optimist');
+
+var argv = optimist.boolean(['server', 'dump']).argv;
 
 function die(err) {
   console.log(err);
@@ -18,7 +21,6 @@ if (argv.bus == 'system') {
 
 function getXML(callback) {
   if (argv.xml) {
-    var fs = require('fs');
     fs.readFile(argv.xml, 'ascii', callback);
   } else {
     bus.invoke(

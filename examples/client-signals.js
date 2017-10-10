@@ -1,6 +1,6 @@
 'use strict';
 
-const dbus = require('../index.js');
+const dbus = require('../index');
 
 /*
 	This example shows how to query a DBus service and listen for its signals.

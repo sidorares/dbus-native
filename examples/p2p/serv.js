@@ -1,4 +1,4 @@
-var dbus = require('../../index.js');
+const dbus = require('../../index');
 
 dbus
   .createServer(function(conn) {

@@ -1,6 +1,6 @@
 'use strict';
 
-const dbus = require('../index.js');
+const dbus = require('../index');
 
 /*
 	This test file's purpose is to show example of possible return types for functions.

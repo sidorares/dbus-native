@@ -1,7 +1,7 @@
-var http = require('http');
-var sockjs = require('sockjs');
-var node_static = require('node-static');
-var dbus = require('../../index.js');
+const http = require('http');
+const sockjs = require('sockjs');
+const node_static = require('node-static');
+const dbus = require('../../index');
 
 // 1. Echo sockjs server
 var sockjs_opts = {

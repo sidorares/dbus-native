@@ -1,4 +1,4 @@
-var dbus = require('../../index.js');
+const dbus = require('../../index');
 
 var count = 0;
 conn = dbus.createConnection({ port: 3333, handshake: 'none' });

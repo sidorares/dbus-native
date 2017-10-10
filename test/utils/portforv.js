@@ -1,5 +1,6 @@
-var net = require('net');
-var hexy = require('hexy').hexy;
+const net = require('net');
+const hexy = require('hexy').hexy;
+
 require('abstractsocket')(net);
 
 net

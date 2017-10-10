@@ -1,5 +1,6 @@
-var dbus = require('../../index.js');
-var addrx11 = require('../../lib/address-x11');
+const dbus = require('../../index');
+const addrx11 = require('../../lib/address-x11');
+
 addrx11(function(err, address) {
   var bus = dbus.sessionBus({ busAddress: address });
   var name = 'some.name';

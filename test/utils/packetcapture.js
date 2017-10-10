@@ -1,9 +1,9 @@
-var net = require('net');
-var hexy = require('hexy').hexy;
-require('abstractsocket')(net);
-var buffs = require('buffers');
+const net = require('net');
+const hexy = require('hexy').hexy;
+const buffs = require('buffers');
+const fs = require('fs');
 
-var fs = require('fs');
+require('abstractsocket')(net);
 
 function nextPacketPos(b) {
   if (b.length < 10) return -1;

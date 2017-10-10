@@ -1,9 +1,9 @@
-var marshall = require('../lib/marshall');
-var unmarshall = require('../lib/unmarshall');
-var assert = require('assert');
-var hexy = require('hexy').hexy;
+const marshall = require('../lib/marshall');
+const unmarshall = require('../lib/unmarshall');
+const assert = require('assert');
+const hexy = require('hexy').hexy;
+const Long = require('long');
 
-var Long = require('long');
 var LongMaxS64 = Long.fromString('9223372036854775807', false);
 var LongMinS64 = Long.fromString('-9223372036854775808', false);
 var LongMaxU64 = Long.fromString('18446744073709551615', true);

@@ -1,13 +1,15 @@
 // dbus.freedesktop.org/doc/dbus-specification.html
 
-var EventEmitter = require('events').EventEmitter;
-var net = require('net');
+const EventEmitter = require('events').EventEmitter;
+const net = require('net');
 
-var constants = require('./lib/constants');
-var message = require('./lib/message');
-var clientHandshake = require('./lib/handshake.js');
-var serverHandshake = require('./lib/server-handshake.js');
-var helloMessage = require('./lib/hello-message.js');
+const constants = require('./lib/constants');
+const message = require('./lib/message');
+const clientHandshake = require('./lib/handshake');
+const serverHandshake = require('./lib/server-handshake');
+const MessageBus = require('./lib/bus');
+const server = require('./lib/server');
+const helloMessage = require('./lib/hello-message');
 
 function createStream(opts) {
   if (opts.stream) return opts.stream;
@@ -132,8 +134,6 @@ function createConnection(opts) {
   return self;
 }
 
-var MessageBus = require('./lib/bus.js');
-
 module.exports = createConnection;
 
 module.exports.createClient = function(params) {
@@ -156,5 +156,4 @@ module.exports.sessionBus = function(opts) {
 module.exports.messageType = constants.messageType;
 module.exports.createConnection = module.exports;
 
-var server = require('./lib/server.js');
 module.exports.createServer = server.createServer;
