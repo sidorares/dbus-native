@@ -55,7 +55,8 @@ function createStream(opts) {
           var spawn = require('child_process').spawn;
           var args = [];
           for (var n = 1; params['arg' + n]; n++) args.push(params['arg' + n]);
-          spawn(params.path, args);
+          var child = spawn(params.path, args);
+
           return eventStream.duplex(child.stdin, child.stdout);
         default:
           throw new Error('unknown address type:' + family);
