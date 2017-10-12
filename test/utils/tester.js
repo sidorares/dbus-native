@@ -12,7 +12,7 @@ function nextPacketPos(b) {
     console.log('TOO SHORT');
     return -1;
   }
-  for (i = 1; i < b.length; ++i) {
+  for (var i = 1; i < b.length; ++i) {
     if (b.get(i) == 0x6c) {
       console.log(
         'possible match at ' + i,

@@ -1,7 +1,7 @@
 const dbus = require('../../index');
 
 var count = 0;
-conn = dbus.createConnection({ port: 3333, handshake: 'none' });
+const conn = dbus.createConnection({ port: 3333, handshake: 'none' });
 conn.on('message', function(msg) {
   if (msg.serial) {
     msg.serial += 1;

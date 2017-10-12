@@ -7,7 +7,7 @@ require('abstractsocket')(net);
 
 function nextPacketPos(b) {
   if (b.length < 10) return -1;
-  for (i = 1; i < b.length; ++i)
+  for (var i = 1; i < b.length; ++i)
     if (
       b.get(i) == 0x6c &&
       b.get(i + 3) == 1 &&
