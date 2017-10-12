@@ -167,7 +167,7 @@ describe('marshall/unmarshall', function() {
   var tests = {
     'simple types': [
       ['s', ['short string']],
-      ['s', ['str30000chars']],
+      ['s', [str30000chars]],
       ['o', ['/object/path']],
       ['o', ['invalid/object/path'], false],
       ['g', ['xxxtt(t)s{u}uuiibb']],
