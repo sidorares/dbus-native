@@ -52,9 +52,9 @@ if (!argv.server) {
     parser.parseString(xml, function(err, result) {
       if (err) die(err);
 
-      var i, m, ifaceName, method, property, iface, a, arg, signature;
+      var ifaceName, method, property, iface, arg, signature;
       var ifaces = result['interface'];
-      for (i = 0; i < ifaces.length; ++i) {
+      for (var i = 0; i < ifaces.length; ++i) {
         iface = ifaces[i];
         ifaceName = iface['@'].name;
 
@@ -82,14 +82,14 @@ if (!argv.server) {
         output.push('        });');
         output.push('    };');
 
-        for (m = 0; iface.method && m < iface.method.length; ++m) {
+        for (var m = 0; iface.method && m < iface.method.length; ++m) {
           method = iface.method[m];
           signature = '';
           const methodName = method['@'].name;
 
           var decl = '    this.' + methodName + ' = function(';
           var params = [];
-          for (a = 0; method.arg && a < method.arg.length; ++a) {
+          for (var a = 0; method.arg && a < method.arg.length; ++a) {
             arg = method.arg[a]['@'];
             if (arg.direction === 'in') {
               decl += arg.name + ', ';
@@ -111,7 +111,7 @@ if (!argv.server) {
           output.push('        }, callback);');
           output.push('    };');
         }
-        for (p = 0; iface.property && p < iface.property.length; ++p) {
+        for (var p = 0; iface.property && p < iface.property.length; ++p) {
           property = iface.property[p];
           console.log('    property: \n', property);
         }
