@@ -1,10 +1,10 @@
 node-dbus
 ===========
 
-[![Greenkeeper badge](https://badges.greenkeeper.io/sidorares/node-dbus.svg)](https://greenkeeper.io/)
+[![Greenkeeper badge](https://badges.greenkeeper.io/sidorares/dbus-native.svg)](https://greenkeeper.io/)
 D-bus protocol client and server for node.js
 
-[![Build Status](https://secure.travis-ci.org/sidorares/node-dbus.png)](http://travis-ci.org/sidorares/node-dbus)
+[![Build Status](https://secure.travis-ci.org/sidorares/dbus-native.png)](http://travis-ci.org/sidorares/dbus-native)
 
 Installation
 ------------
