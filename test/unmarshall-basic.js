@@ -1,7 +1,6 @@
 const marshall = require('../lib/marshall');
 const unmarshall = require('../lib/unmarshall');
 const assert = require('assert');
-const hexy = require('hexy').hexy;
 const Long = require('long');
 
 var LongMaxS64 = Long.fromString('9223372036854775807', false);
@@ -12,8 +11,6 @@ var LongMaxS53 = Long.fromString('9007199254740991', false);
 var LongMinS53 = Long.fromString('-9007199254740991', false);
 var LongMaxU53 = Long.fromString('9007199254740991', true);
 var LongMinU53 = Long.fromString('0', true);
-
-function testOnly() {}
 
 /** Take the data and marshall it then unmarshall it */
 function marshallAndUnmarshall(signature, data, unmarshall_opts) {
@@ -170,7 +167,7 @@ describe('marshall/unmarshall', function() {
   var tests = {
     'simple types': [
       ['s', ['short string']],
-      ['s', ['str30000chars']],
+      ['s', [str30000chars]],
       ['o', ['/object/path']],
       ['o', ['invalid/object/path'], false],
       ['g', ['xxxtt(t)s{u}uuiibb']],

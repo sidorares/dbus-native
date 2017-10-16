@@ -1,5 +1,3 @@
-'use strict';
-
 const dbus = require('../index');
 const inspect = require('util').inspect;
 
@@ -33,11 +31,11 @@ if (!sessionBus) {
 	The 0x4 flag means that we don't want to be queued if the service name we are requesting is already
 	owned by another service ;we want to fail instead.
 */
-sessionBus.requestName(serviceName, 0x4, (e, retCode) => {
+sessionBus.requestName(serviceName, 0x4, (err, retCode) => {
   // If there was an error, warn user and fail
-  if (e) {
+  if (err) {
     throw new Error(
-      `Could not request service name ${serviceName}, the error was: ${e}.`
+      `Could not request service name ${serviceName}, the error was: ${err}.`
     );
   }
 

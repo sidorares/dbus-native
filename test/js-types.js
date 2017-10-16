@@ -1,9 +1,6 @@
 const marshall = require('../lib/marshall');
 const unmarshall = require('../lib/unmarshall');
 const assert = require('assert');
-const hexy = require('hexy').hexy;
-
-function testOnly() {}
 
 function test(signature, data) {
   var marshalledBuffer = marshall(signature, data);

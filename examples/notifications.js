@@ -22,7 +22,8 @@ notify.getInterface(
       ['xxx yyy', 'test2', 'test3', 'test4'],
       [],
       5,
-      function(err, id) {
+      function(err /*, id*/) {
+        console.log(err);
         //setTimeout(function() { n.CloseNotification(id, console.log); }, 4000);
       }
     );

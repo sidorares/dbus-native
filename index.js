@@ -9,14 +9,12 @@ const clientHandshake = require('./lib/handshake');
 const serverHandshake = require('./lib/server-handshake');
 const MessageBus = require('./lib/bus');
 const server = require('./lib/server');
-const helloMessage = require('./lib/hello-message');
 
 function createStream(opts) {
   if (opts.stream) return opts.stream;
   var host = opts.host;
   var port = opts.port;
   var socket = opts.socket;
-  var stream;
   if (socket) return net.createConnection(socket);
   if (port) return net.createConnection(port, host);
 

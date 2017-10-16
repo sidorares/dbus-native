@@ -52,10 +52,9 @@ if (!argv.server) {
     parser.parseString(xml, function(err, result) {
       if (err) die(err);
 
-      var proxy = {};
-      var i, m, ifaceName, method, property, iface, a, arg, signature;
+      var ifaceName, method, property, iface, arg, signature;
       var ifaces = result['interface'];
-      for (i = 0; i < ifaces.length; ++i) {
+      for (var i = 0; i < ifaces.length; ++i) {
         iface = ifaces[i];
         ifaceName = iface['@'].name;
 
@@ -83,14 +82,14 @@ if (!argv.server) {
         output.push('        });');
         output.push('    };');
 
-        for (m = 0; iface.method && m < iface.method.length; ++m) {
+        for (var m = 0; iface.method && m < iface.method.length; ++m) {
           method = iface.method[m];
           signature = '';
-          name = method['@'].name;
+          const methodName = method['@'].name;
 
-          var decl = '    this.' + name + ' = function(';
+          var decl = '    this.' + methodName + ' = function(';
           var params = [];
-          for (a = 0; method.arg && a < method.arg.length; ++a) {
+          for (var a = 0; method.arg && a < method.arg.length; ++a) {
             arg = method.arg[a]['@'];
             if (arg.direction === 'in') {
               decl += arg.name + ', ';
@@ -104,7 +103,7 @@ if (!argv.server) {
           output.push("            destination: '" + argv.service + "',");
           output.push("            path: '" + argv.path + "',");
           output.push("            interface: '" + ifaceName + "',");
-          output.push("            member: '" + name + "',");
+          output.push("            member: '" + methodName + "',");
           if (params != '') {
             output.push('            body: [' + params.join(', ') + '], ');
             output.push("            signature: '" + signature + "',");
@@ -112,9 +111,8 @@ if (!argv.server) {
           output.push('        }, callback);');
           output.push('    };');
         }
-        for (p = 0; iface.property && p < iface.property.length; ++p) {
+        for (var p = 0; iface.property && p < iface.property.length; ++p) {
           property = iface.property[p];
-          name = property['@'].name;
           console.log('    property: \n', property);
         }
         output.push('}');

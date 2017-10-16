@@ -1,8 +1,4 @@
-'use strict';
-
 const dbus = require('../index');
-const EventEmitter = require('events');
-const inspect = require('util').inspect;
 
 /*
 	This test file's purpose is to show how to query a simple, basic DBus service with this library.
@@ -32,8 +28,8 @@ if (!sessionBus) {
 
 let service = sessionBus.getService(serviceName);
 
-service.getInterface(objectPath, interfaceName, (e, iface) => {
-  if (e) {
+service.getInterface(objectPath, interfaceName, (err, iface) => {
+  if (err) {
     console.error(
       "Failed to request interface '" +
       interfaceName +
@@ -47,16 +43,16 @@ service.getInterface(objectPath, interfaceName, (e, iface) => {
     process.exit(1);
   }
 
-  iface.GiveTime((e, str) => {
-    if (e) {
-      console.error('Error while calling GiveTime: ' + e);
+  iface.GiveTime((err, str) => {
+    if (err) {
+      console.error('Error while calling GiveTime: ' + err);
     } else {
       console.log('GiveTime returned: ' + str);
     }
 
-    iface.Capitalize('Hello, World!', (e, str) => {
-      if (e) {
-        console.error('Error while calling Capitalize: ' + e);
+    iface.Capitalize('Hello, World!', (err, str) => {
+      if (err) {
+        console.error('Error while calling Capitalize: ' + err);
       } else {
         console.log('Capitalize returned: ' + str);
       }

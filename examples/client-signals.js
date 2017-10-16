@@ -1,5 +1,3 @@
-'use strict';
-
 const dbus = require('../index');
 
 /*
@@ -33,9 +31,9 @@ if (!sessionBus) {
 let targetService = sessionBus.getService(targetServiceName);
 
 // Then we must query it's interface, this is callback-based
-targetService.getInterface(targetObjectPath, targetIfaceName, (e, iface) => {
+targetService.getInterface(targetObjectPath, targetIfaceName, (err, iface) => {
   // we need to check for error
-  if (e || !iface) {
+  if (err || !iface) {
     console.error(
       "Could not query interface '" +
       targetIfaceName +

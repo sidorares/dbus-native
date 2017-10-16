@@ -1,8 +1,5 @@
-const marshall = require('../lib/marshall');
-const unmarshall = require('../lib/unmarshall');
 const message = require('../lib/message');
 const assert = require('assert');
-const hexy = require('hexy').hexy;
 
 function msg2buff(msg) {
   return message.marshall(msg);

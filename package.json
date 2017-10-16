@@ -43,15 +43,24 @@
     "abstract-socket": "^2.0.0"
   },
   "devDependencies": {
+    "eslint": "^4.8.0",
+    "eslint-config-prettier": "^2.6.0",
+    "eslint-plugin-markdown": "^1.0.0-beta.6",
+    "eslint-plugin-prettier": "^2.3.1",
     "husky": "^0.14.3",
     "lint-staged": "^4.2.3",
     "mocha": "*",
     "prettier": "^1.7.4"
   },
   "scripts": {
-    "test": "mocha",
+    "lint": "npm run lint:docs && npm run lint:code",
+    "lint:code": "eslint index.js 'bin/*.js' 'lib/**/*.js' 'test/**/*.js'",
+    "lint:docs": "eslint 'examples/**/*.js'",
+    "test": "npm run lint && npm run test:raw",
+    "test:raw": "mocha",
     "prettier": "prettier --write index.js '{bin,lib,examples,test}/**/*.js'",
     "prettier:docs": "prettier-markdown README.md",
+    "eslint-check": "eslint --print-config .eslintrc | eslint-config-prettier-check",
     "precommit": "lint-staged",
     "prepublish": "npm prune"
   },
