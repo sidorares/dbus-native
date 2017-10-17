@@ -1,14 +1,13 @@
 const net = require('net');
+const abs = require('abstract-socket');
 const hexy = require('hexy').hexy;
-
-require('abstractsocket')(net);
 
 net
   .createServer(function(s) {
     console.log('connection!');
     var buff = '';
     var connected = false;
-    var cli = net.createConnection('\0/tmp/dbus-0PpuqHgmcw');
+    var cli = abs.createConnection('\0/tmp/dbus-0PpuqHgmcw');
     s.on('data', function(d) {
       console.log('');
       var len = d.length;
