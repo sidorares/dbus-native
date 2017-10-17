@@ -1,7 +1,7 @@
 const fs = require('fs');
 const binarystream = require('binary');
 const EventEmitter = require('events').EventEmitter;
-const message = require('./lib/message');
+const message = require('../../lib/message');
 const hexy = require('hexy').hexy;
 
 const packets = fs.readFileSync('./packets.bin');
