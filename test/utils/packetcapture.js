@@ -1,9 +1,8 @@
 const net = require('net');
+const abs = require('abstract-socket');
 const hexy = require('hexy').hexy;
 const buffs = require('buffers');
 const fs = require('fs');
-
-require('abstractsocket')(net);
 
 function nextPacketPos(b) {
   if (b.length < 10) return -1;
@@ -26,7 +25,7 @@ net
     var buff = '';
     var b = buffs();
     var connected = false;
-    var cli = net.createConnection('\0/tmp/dbus-WDSwP4V64O');
+    var cli = abs.createConnection('\0/tmp/dbus-WDSwP4V64O');
     s.on('data', function(d) {
       if (connected) {
         cli.write(d);
