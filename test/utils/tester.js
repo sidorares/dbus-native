@@ -13,7 +13,7 @@ function nextPacketPos(b) {
     return -1;
   }
   for (var i = 1; i < b.length; ++i) {
-    if (b.get(i) == 0x6c) {
+    if (b.get(i) === 0x6c) {
       console.log(
         'possible match at ' + i,
         b.get(i + 3),
@@ -22,7 +22,7 @@ function nextPacketPos(b) {
         b.get(i + 8)
       );
       if (
-        b.get(i + 3) == 1 &&
+        b.get(i + 3) === 1 &&
         b.get(i + 1) < 5 &&
         b.get(i + 2) < 4 &&
         b.get(i + 8) < 9

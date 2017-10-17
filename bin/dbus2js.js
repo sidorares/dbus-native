@@ -13,7 +13,7 @@ function die(err) {
 }
 
 var bus;
-if (argv.bus == 'system') {
+if (argv.bus === 'system') {
   bus = dbus.systemBus();
 } else {
   bus = dbus.sessionBus();
@@ -104,7 +104,7 @@ if (!argv.server) {
           output.push("            path: '" + argv.path + "',");
           output.push("            interface: '" + ifaceName + "',");
           output.push("            member: '" + methodName + "',");
-          if (params != '') {
+          if (params.length > 0) {
             output.push('            body: [' + params.join(', ') + '], ');
             output.push("            signature: '" + signature + "',");
           }

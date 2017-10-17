@@ -14,8 +14,8 @@ function waitHandshake(stream, prefix, cb) {
   readLine(stream, function(line) {
     console.log(prefix, line.toString());
     if (
-      line.toString().slice(0, 5) == 'BEGIN' ||
-      line.toString().slice(0, 2) == 'OK'
+      line.toString().slice(0, 5) === 'BEGIN' ||
+      line.toString().slice(0, 2) === 'OK'
     ) {
       cb();
     } else {
@@ -30,7 +30,7 @@ net
     var connected = false;
     var cli;
 
-    if (process.argv[2] == '--system') {
+    if (process.argv[2] === '--system') {
       cli = net.connect('/var/run/dbus/system_bus_socket');
     } else {
       cli = abs.connect('\0' + m[1]);
