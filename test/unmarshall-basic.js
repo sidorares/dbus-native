@@ -53,10 +53,6 @@ var b30000bytes = Buffer(30000);
 b30000bytes.fill(60);
 var str30000chars = b30000bytes.toString('ascii');
 
-if (typeof describe == 'undefined') {
-  global.describe = function() {};
-}
-
 function expectMarshallToThrowOnBadArguments(badSig, badData, errorRegex) {
   assert.throws(function() {
     marshall(badSig, badData);
