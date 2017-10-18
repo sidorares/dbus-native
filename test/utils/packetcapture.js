@@ -1,3 +1,4 @@
+const Buffer = require('safe-buffer').Buffer;
 const net = require('net');
 const abs = require('abstract-socket');
 const hexy = require('hexy').hexy;
@@ -56,7 +57,7 @@ net
           console.error(hexy(packet, { prefix: 'packet: ' }));
           console.error(' ====== PACKET END ====== ');
           if (packet[0] === 0x6c) {
-            var len = new Buffer(4);
+            var len = Buffer.alloc(4);
             len.writeUInt32LE(packet.length, 0);
             console.error(hexy(len, { prefix: 'packet header: ' }));
             packetfile.write(len);
