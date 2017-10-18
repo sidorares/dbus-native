@@ -1,3 +1,4 @@
+const Buffer = require('safe-buffer').Buffer;
 const marshall = require('../lib/marshall');
 const unmarshall = require('../lib/unmarshall');
 const assert = require('assert');
@@ -49,8 +50,7 @@ function test(signature, data, other_result, unmarshall_opts) {
 var str300chars = '';
 for (var i = 0; i < 300; ++i) str300chars += 'i';
 
-var b30000bytes = Buffer(30000);
-b30000bytes.fill(60);
+var b30000bytes = Buffer.alloc(30000, 60);
 var str30000chars = b30000bytes.toString('ascii');
 
 function expectMarshallToThrowOnBadArguments(badSig, badData, errorRegex) {
@@ -343,7 +343,9 @@ describe('marshall/unmarshall', function() {
       ['a(ai)', [[[[1, 2, 3, 4, 5, 6]], [[15, 4, 5, 6]]]]],
       ['aai', [[[1, 2, 3, 4, 5, 6], [15, 4, 5, 6]]]]
     ],
-    buffers: [['ayay', [Buffer([0, 1, 2, 3, 4, 5, 6, 0xff]), Buffer([])]]]
+    buffers: [
+      ['ayay', [Buffer.from([0, 1, 2, 3, 4, 5, 6, 0xff]), Buffer.from([])]]
+    ]
   };
 
   var testName, testData, testNum;

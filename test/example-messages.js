@@ -1,3 +1,4 @@
+const Buffer = require('safe-buffer').Buffer;
 const fs = require('fs');
 const assert = require('assert');
 const unmarshall = require('../lib/message').unmarshall;
@@ -10,7 +11,7 @@ describe('given base-64 encoded files with complete messages', function() {
     var messages = fs.readdirSync(dir);
     messages.forEach(function(name) {
       var msg = fs.readFileSync(dir + name, 'ascii');
-      var msgBin = new Buffer(msg, 'base64');
+      var msgBin = Buffer.from(msg, 'base64');
       var unmarshalledMsg = unmarshall(msgBin);
       var marshalled = marshall(unmarshalledMsg);
       assert.deepStrictEqual(unmarshalledMsg, unmarshall(marshalled));
