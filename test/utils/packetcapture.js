@@ -8,8 +8,8 @@ function nextPacketPos(b) {
   if (b.length < 10) return -1;
   for (var i = 1; i < b.length; ++i)
     if (
-      b.get(i) == 0x6c &&
-      b.get(i + 3) == 1 &&
+      b.get(i) === 0x6c &&
+      b.get(i + 3) === 1 &&
       b.get(i + 1) < 5 &&
       b.get(i + 2) < 4 &&
       b.get(i + 10) < 9
@@ -45,7 +45,7 @@ net
       function extractPacket() {
         var pos = nextPacketPos(b);
         console.log('NEXT PACKET POS:', pos);
-        if (pos != -1) {
+        if (pos !== -1) {
           var packet = b.splice(0, pos).toBuffer();
           console.error(
             ' ====== PACKET START ====== ',
@@ -55,7 +55,7 @@ net
           );
           console.error(hexy(packet, { prefix: 'packet: ' }));
           console.error(' ====== PACKET END ====== ');
-          if (packet[0] == 0x6c) {
+          if (packet[0] === 0x6c) {
             var len = new Buffer(4);
             len.writeUInt32LE(packet.length, 0);
             console.error(hexy(len, { prefix: 'packet header: ' }));
