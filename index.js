@@ -61,8 +61,7 @@ function createStream(opts) {
       }
     } catch (e) {
       if (i < addresses.length - 1) {
-        if (console && console.warn instanceof Function)
-          console.warn(e.message);
+        console.warn(e.message);
         continue;
       } else {
         throw e;
