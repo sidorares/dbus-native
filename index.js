@@ -132,8 +132,6 @@ function createConnection(opts) {
   return self;
 }
 
-module.exports = createConnection;
-
 module.exports.createClient = function(params) {
   var connection = createConnection(params || {});
   return new MessageBus(connection, params || {});
@@ -152,6 +150,6 @@ module.exports.sessionBus = function(opts) {
 };
 
 module.exports.messageType = constants.messageType;
-module.exports.createConnection = module.exports;
+module.exports.createConnection = createConnection;
 
 module.exports.createServer = server.createServer;

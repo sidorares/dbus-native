@@ -1,7 +1,7 @@
 const dbus = require('../index');
 
-//var conn = dbus({socket: '/var/run/dbus/system_bus_socket'});
-var conn = dbus();
+//var conn = dbus.createConnection({socket: '/var/run/dbus/system_bus_socket'});
+var conn = dbus.createConnection();
 
 conn.message({
   type: 1,
