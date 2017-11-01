@@ -33,7 +33,7 @@ net
     if (process.argv[2] === '--system') {
       cli = net.connect('/var/run/dbus/system_bus_socket');
     } else {
-      cli = abs.connect('\0' + m[1]);
+      cli = abs.connect(`\0${m[1]}`);
     }
 
     s.on('data', function(d) {

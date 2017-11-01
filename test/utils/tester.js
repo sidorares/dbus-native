@@ -15,7 +15,7 @@ function nextPacketPos(b) {
   for (var i = 1; i < b.length; ++i) {
     if (b.get(i) === 0x6c) {
       console.log(
-        'possible match at ' + i,
+        `possible match at ${i}`,
         b.get(i + 3),
         b.get(i + 1),
         b.get(i + 2),

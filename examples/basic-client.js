@@ -16,7 +16,7 @@ const serviceName = 'com.dbus.native.basic.service'; // the service we request
 const interfaceName = serviceName;
 
 // The object we request
-const objectPath = '/' + serviceName.replace(/\./g, '/');
+const objectPath = `/${serviceName.replace(/\./g, '/')}`;
 
 // First, connect to the session bus (works the same on the system bus, it's just less permissive)
 const sessionBus = dbus.sessionBus();
@@ -31,12 +31,7 @@ let service = sessionBus.getService(serviceName);
 service.getInterface(objectPath, interfaceName, (err, iface) => {
   if (err) {
     console.error(
-      "Failed to request interface '" +
-      interfaceName +
-      "' at '" +
-      objectPath +
-      "' : " +
-      err
+      `Failed to request interface '${interfaceName}' at '${objectPath}' : ${err}`
         ? err
         : '(no error)'
     );
@@ -45,21 +40,21 @@ service.getInterface(objectPath, interfaceName, (err, iface) => {
 
   iface.GiveTime((err, str) => {
     if (err) {
-      console.error('Error while calling GiveTime: ' + err);
+      console.error(`Error while calling GiveTime: ${err}`);
     } else {
-      console.log('GiveTime returned: ' + str);
+      console.log(`GiveTime returned: ${str}`);
     }
 
     iface.Capitalize('Hello, World!', (err, str) => {
       if (err) {
-        console.error('Error while calling Capitalize: ' + err);
+        console.error(`Error while calling Capitalize: ${err}`);
       } else {
-        console.log('Capitalize returned: ' + str);
+        console.log(`Capitalize returned: ${str}`);
       }
     });
   });
 
   iface.on('Rand', nb => {
-    console.log('Received Rand: ' + nb);
+    console.log(`Received Rand: ${nb}`);
   });
 });

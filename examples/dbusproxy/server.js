@@ -26,7 +26,7 @@ sockjs_echo.on('connection', function(conn) {
     } catch (e) {}
   });
   dbusConn.on('message', function(msg) {
-    //console.log("GOT MESSAGE", msg);
+    //console.log('GOT MESSAGE', msg);
     conn.write(JSON.stringify(msg));
     //conn.write(msg);
   });

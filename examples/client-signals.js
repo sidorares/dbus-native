@@ -17,7 +17,7 @@ const targetServiceName = 'com.dbus.native.signals';
 const targetIfaceName = targetServiceName; // note that is it equal to the service name, but this is not mandatory at all
 
 // This is the service's DBus object path that we will query for the properties
-const targetObjectPath = '/' + targetServiceName.replace(/\./g, '/');
+const targetObjectPath = `/${targetServiceName.replace(/\./g, '/')}`;
 
 // First, connect to the session bus (works the same on the system bus, it's just less permissive)
 const sessionBus = dbus.sessionBus();
@@ -35,10 +35,7 @@ targetService.getInterface(targetObjectPath, targetIfaceName, (err, iface) => {
   // we need to check for error
   if (err || !iface) {
     console.error(
-      "Could not query interface '" +
-      targetIfaceName +
-      "', the error was: " +
-      err
+      `Could not query interface '${targetIfaceName}', the error was: ${err}`
         ? err
         : '(no error)'
     );
@@ -57,6 +54,6 @@ targetService.getInterface(targetObjectPath, targetIfaceName, (err, iface) => {
 		Here we listen for the second signal.
 	*/
   iface.on('Rand', randomNumber => {
-    console.log("We've got our random number: " + randomNumber);
+    console.log(`We've got our random number: ${randomNumber}`);
   });
 });

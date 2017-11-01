@@ -15,14 +15,9 @@ describe('message marshall/unmarshall', function() {
   for (testName in tests) {
     for (testNum = 0; testNum < tests[testName].length; ++testNum) {
       testData = tests[testName][testNum];
-      var testDesc =
-        testName +
-        ' ' +
-        testNum +
-        ' ' +
-        testData[0] +
-        '<-' +
-        JSON.stringify(testData[1]);
+      var testDesc = `${testName} ${testNum} ${testData[0]}<-${JSON.stringify(
+        testData[1]
+      )}`;
       if (testData[2] !== false) {
         (function(testData) {
           it(testDesc, function() {

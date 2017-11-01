@@ -11,7 +11,7 @@ net
     s.on('data', function(d) {
       console.log('');
       var len = d.length;
-      console.log('length: ' + len + ' ' + len.toString(16));
+      console.log(`length: ${len} ${len.toString(16)}`);
       console.error(hexy(d, { prefix: 'from client' }));
       if (connected) {
         cli.write(d);
@@ -30,7 +30,7 @@ net
     cli.on('data', function(d) {
       console.log('');
       var len = d.length;
-      console.log('length: ' + len + ' ' + len.toString(16));
+      console.log(`length: ${len} ${len.toString(16)}`);
       console.error(hexy(d, { prefix: 'from bus   ' }));
     });
     cli.on('connect', function() {
