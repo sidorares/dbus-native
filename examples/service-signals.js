@@ -16,7 +16,7 @@ const interfaceName = serviceName;
 	interface) name, with the dots replaced by slashes (because objects path must be on the form of UNIX paths)
 	But again, we could chose anything. This is just a demo here.
 */
-const objectPath = '/' + serviceName.replace(/\./g, '/');
+const objectPath = `/${serviceName.replace(/\./g, '/')}`;
 
 // First, connect to the session bus (works the same on the system bus, it's just less permissive)
 const sessionBus = dbus.sessionBus();

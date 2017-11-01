@@ -58,7 +58,7 @@ if (!argv.server) {
         iface = ifaces[i];
         ifaceName = iface['@'].name;
 
-        output.push("module.exports['" + ifaceName + "'] = function(bus) {");
+        output.push(`module.exports['${ifaceName}'] = function(bus) {`);
         output.push(
           '    this.addListener = this.on = function(signame, callback) {'
         );
@@ -69,11 +69,7 @@ if (!argv.server) {
         output.push('            if (err) throw new Error(err);');
         output.push('        });');
         output.push(
-          "        var signalFullName = bus.mangle('" +
-            argv.path +
-            "', '" +
-            ifaceName +
-            "', signame);"
+          `        var signalFullName = bus.mangle('${argv.path}', '${ifaceName}', signame);`
         );
         output.push(
           '        bus.signals.on(signalFullName, function(messageBody) {'
@@ -87,12 +83,12 @@ if (!argv.server) {
           signature = '';
           const methodName = method['@'].name;
 
-          var decl = '    this.' + methodName + ' = function(';
+          var decl = `    this.${methodName} = function(`;
           var params = [];
           for (var a = 0; method.arg && a < method.arg.length; ++a) {
             arg = method.arg[a]['@'];
             if (arg.direction === 'in') {
-              decl += arg.name + ', ';
+              decl += `${arg.name}, `;
               params.push(arg.name);
               signature += arg.type;
             }
@@ -100,13 +96,13 @@ if (!argv.server) {
           decl += 'callback) {';
           output.push(decl);
           output.push('        bus.invoke({');
-          output.push("            destination: '" + argv.service + "',");
-          output.push("            path: '" + argv.path + "',");
-          output.push("            interface: '" + ifaceName + "',");
-          output.push("            member: '" + methodName + "',");
+          output.push(`            destination: '${argv.service}',`);
+          output.push(`            path: '${argv.path}',`);
+          output.push(`            interface: '${ifaceName}',`);
+          output.push(`            member: '${methodName}',`);
           if (params.length > 0) {
-            output.push('            body: [' + params.join(', ') + '], ');
-            output.push("            signature: '" + signature + "',");
+            output.push(`            body: [${params.join(', ')}], `);
+            output.push(`            signature: '${signature}',`);
           }
           output.push('        }, callback);');
           output.push('    };');

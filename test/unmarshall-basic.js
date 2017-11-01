@@ -38,11 +38,9 @@ function test(signature, data, other_result, unmarshall_opts) {
     console.log('orig        :', data);
     console.log('unmarshalled:', result);
     if (other_result !== undefined) {
-      throw new Error(
-        "results don't match (" + result + ') != (' + other_result + ')'
-      );
+      throw new Error(`results don't match (${result}) != (${other_result})`);
     } else {
-      throw new Error("results don't match (" + data + ') != (' + result + ')');
+      throw new Error(`results don't match (${data}) != (${result})`);
     }
   }
 }
@@ -352,14 +350,9 @@ describe('marshall/unmarshall', function() {
   for (testName in tests) {
     for (testNum = 0; testNum < tests[testName].length; ++testNum) {
       testData = tests[testName][testNum];
-      var testDesc =
-        testName +
-        ' ' +
-        testNum +
-        ' ' +
-        testData[0] +
-        '<-' +
-        JSON.stringify(testData[1]);
+      var testDesc = `${testName} ${testNum} ${testData[0]}<-${JSON.stringify(
+        testData[1]
+      )}`;
       if (testData[2] === false) {
         // should fail
         (function(testData) {
