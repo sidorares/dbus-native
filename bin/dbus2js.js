@@ -12,12 +12,7 @@ function die(err) {
   process.exit(-1);
 }
 
-var bus;
-if (argv.bus === 'system') {
-  bus = dbus.systemBus();
-} else {
-  bus = dbus.sessionBus();
-}
+var bus = argv.bus === 'system' ? dbus.systemBus() : dbus.sessionBus();
 
 function getXML(callback) {
   if (argv.xml) {
