@@ -4,11 +4,16 @@
 const net = require('net');
 const abs = require('abstract-socket');
 const through2 = require('through2');
+const optimist = require('optimist');
 const message = require('../lib/message');
 const readLine = require('../lib/readline');
 
-var address = process.env.DBUS_SESSION_BUS_ADDRESS;
-var m = address.match(/abstract=([^,]+)/);
+var sessionBusAddress = process.env.DBUS_SESSION_BUS_ADDRESS;
+var m = sessionBusAddress.match(/abstract=([^,]+)/);
+
+var isSystemBus = optimist.boolean(['system']).argv.system;
+
+var address = isSystemBus ? '/var/run/dbus/system_bus_socket' : `\0${m[1]}`;
 
 function waitHandshake(stream, prefix, cb) {
   readLine(stream, function(line) {
@@ -28,13 +33,9 @@ net
   .createServer(function(s) {
     var buff = '';
     var connected = false;
-    var cli;
 
-    if (process.argv[2] === '--system') {
-      cli = net.connect('/var/run/dbus/system_bus_socket');
-    } else {
-      cli = abs.connect(`\0${m[1]}`);
-    }
+    var socket = isSystemBus ? net : abs;
+    var cli = socket.connect(address);
 
     s.on('data', function(d) {
       if (connected) {
