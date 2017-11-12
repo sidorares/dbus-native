@@ -22,7 +22,7 @@ function createStream(opts) {
   if (!busAddress) throw new Error('unknown bus address');
 
   var addresses = busAddress.split(';');
-  for (var i in addresses) {
+  for (var i = 0; i < addresses.length; ++i) {
     var address = addresses[i];
     var familyParams = address.split(':');
     var family = familyParams[0];
