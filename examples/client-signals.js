@@ -28,7 +28,7 @@ if (!sessionBus) {
 }
 
 // First, we must query the bus for the desired DBus service:
-let targetService = sessionBus.getService(targetServiceName);
+const targetService = sessionBus.getService(targetServiceName);
 
 // Then we must query it's interface, this is callback-based
 targetService.getInterface(targetObjectPath, targetIfaceName, (err, iface) => {
