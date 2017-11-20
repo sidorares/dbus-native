@@ -55,15 +55,17 @@ sessionBus.requestName(serviceName, 0x4, (err, retCode) => {
 	information
 	*/
     throw new Error(
-      `Failed to request service name "${serviceName}". Check what return code "${retCode}" means.`
+      `Failed to request service name "${
+        serviceName
+      }". Check what return code "${retCode}" means.`
     );
   }
 });
 
 // Function called when we have successfully got the service name we wanted
 function proceed() {
-  let ifaceDesc;
-  let iface;
+  var ifaceDesc;
+  var iface;
 
   // First, we need to create our interface description (here we will only expose method calls)
   ifaceDesc = {
@@ -100,23 +102,23 @@ function proceed() {
       return 'Hello, world!'; // This is how to return a single string
     },
     GetInt16: function() {
-      let min = -0x7fff - 1;
-      let max = 0x7fff;
+      var min = -0x7fff - 1;
+      var max = 0x7fff;
       return Math.round(Math.random() * (max - min) + min);
     },
     GetUInt16: function() {
-      let min = 0;
-      let max = 0xffff;
+      var min = 0;
+      var max = 0xffff;
       return Math.round(Math.random() * (max - min) + min);
     },
     GetInt32: function() {
-      let min = -0x7fffffff - 1;
-      let max = 0x7fffffff;
+      var min = -0x7fffffff - 1;
+      var max = 0x7fffffff;
       return Math.round(Math.random() * (max - min) + min);
     },
     GetUInt32: function() {
-      let min = 0;
-      let max = 0xffffffff;
+      var min = 0;
+      var max = 0xffffffff;
       return Math.round(Math.random() * (max - min) + min);
     },
     GetBool: function() {
@@ -131,13 +133,11 @@ function proceed() {
       return Math.random();
     },
     GetByte: function() {
-      let min = 0x00;
-      let max = 0xff;
+      var min = 0x00;
+      var max = 0xff;
       return Math.round(Math.random() * (max - min) + min);
     },
     GetArrayOfStrings: function(n) {
-      let ret = [];
-
       // Check that we requested a positive number of elements, and not a too big one
       if (n < 0 || n > 255) {
         // Return a DBus error to indicate a problem (shows how to send DBus errors)
@@ -146,6 +146,7 @@ function proceed() {
         );
       }
 
+      var ret = [];
       while (n--) {
         ret.unshift(`String #${n}`);
       }
@@ -153,12 +154,12 @@ function proceed() {
       return ret; // 'ret' is an array, to return an array, we simply return it
     },
     GetCustomStruct: function() {
-      let min = -0x7fffffff - 1;
-      let max = 0x7fffffff;
-      let string =
+      var min = -0x7fffffff - 1;
+      var max = 0x7fffffff;
+      var string =
         'Im sorry, my responses are limited, you must ask the right question.';
-      let int32 = Math.round(Math.random() * (max - min) + min);
-      let bool = Math.random() >= 0.5 ? true : false;
+      var int32 = Math.round(Math.random() * (max - min) + min);
+      var bool = Math.random() >= 0.5 ? true : false;
 
       /*
 				Important note here: for the DBus type STRUCT, you need to return a Javascript ARRAY, with the field in
@@ -167,14 +168,14 @@ function proceed() {
       return [string, int32, bool];
     },
     GetDictEntry: function() {
-      let min = -0x7fffffff - 1;
-      let max = 0x7fffffff;
-      let key1 = 'str1';
-      let key2 = 'str2';
-      let key3 = 'str3';
-      let i1 = Math.round(Math.random() * (max - min) + min);
-      let i2 = Math.round(Math.random() * (max - min) + min);
-      let i3 = Math.round(Math.random() * (max - min) + min);
+      var min = -0x7fffffff - 1;
+      var max = 0x7fffffff;
+      var key1 = 'str1';
+      var key2 = 'str2';
+      var key3 = 'str3';
+      var i1 = Math.round(Math.random() * (max - min) + min);
+      var i2 = Math.round(Math.random() * (max - min) + min);
+      var i3 = Math.round(Math.random() * (max - min) + min);
 
       /*
 				This is how DICT_ENTRIES are returned: in JS side, it's an array of arrays.

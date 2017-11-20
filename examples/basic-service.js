@@ -54,18 +54,17 @@ sessionBus.requestName(serviceName, 0x4, (err, retCode) => {
 	information
 	*/
     throw new Error(
-      `Failed to request service name "${serviceName}". Check what return code "${retCode}" means.`
+      `Failed to request service name "${
+        serviceName
+      }". Check what return code "${retCode}" means.`
     );
   }
 });
 
 // Function called when we have successfully got the service name we wanted
 function proceed() {
-  let ifaceDesc;
-  let iface;
-
   // First, we need to create our interface description (here we will only expose method calls)
-  ifaceDesc = {
+  var ifaceDesc = {
     name: interfaceName,
     methods: {
       // Simple types
@@ -83,7 +82,7 @@ function proceed() {
   };
 
   // Then we need to create the interface implementation (with actual functions)
-  iface = {
+  var iface = {
     SayHello: function() {
       return 'Hello, world!';
     },
@@ -107,7 +106,7 @@ function proceed() {
   console.log('Interface exposed to DBus, ready to receive function calls!');
 
   setInterval(() => {
-    let rand = Math.round(Math.random() * 100);
+    var rand = Math.round(Math.random() * 100);
     if (rand > 75) {
       iface.emit('Rand', Math.round(Math.random() * 100));
     }
