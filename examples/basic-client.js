@@ -26,12 +26,14 @@ if (!sessionBus) {
   throw new Error('Could not connect to the DBus session bus.');
 }
 
-let service = sessionBus.getService(serviceName);
+const service = sessionBus.getService(serviceName);
 
 service.getInterface(objectPath, interfaceName, (err, iface) => {
   if (err) {
     console.error(
-      `Failed to request interface '${interfaceName}' at '${objectPath}' : ${err}`
+      `Failed to request interface '${interfaceName}' at '${objectPath}' : ${
+        err
+      }`
         ? err
         : '(no error)'
     );
