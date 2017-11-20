@@ -49,18 +49,17 @@ sessionBus.requestName(serviceName, 0x4, (err, retCode) => {
 	information
 	*/
     throw new Error(
-      `Failed to request service name "${serviceName}". Check what return code "${retCode}" means.`
+      `Failed to request service name "${
+        serviceName
+      }". Check what return code "${retCode}" means.`
     );
   }
 });
 
 // Function called when we have successfully got the service name we wanted
 function proceed() {
-  let ifaceDesc;
-  let iface;
-
   // First, we need to create our interface description (here we will only expose method calls)
-  ifaceDesc = {
+  var ifaceDesc = {
     name: interfaceName,
     signals: {
       // Defines a signal whose name is 'Tick' and whose output param is: string (s)
@@ -74,7 +73,7 @@ function proceed() {
   };
 
   // Then we need to create the interface implementation, with the 'emit' field
-  iface = {
+  var iface = {
     /*
 			So what's going one here, in order for your DBus service to be able to emit signals, you must define one
 			function in your interface object with name 'emit'. This should be a function which takes several
@@ -127,10 +126,10 @@ function proceed() {
 		The random here is just so that the signals are not emitted too regularly (contrary to 'Tick')
 	*/
   setInterval(() => {
-    let proba = Math.round(Math.random() * 100);
+    var proba = Math.round(Math.random() * 100);
 
     if (proba > 70) {
-      let randomNumber = Math.round(Math.random() * 100);
+      var randomNumber = Math.round(Math.random() * 100);
       iface.emit('Rand', randomNumber);
     }
   }, 2000);
