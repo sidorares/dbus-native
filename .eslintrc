@@ -11,7 +11,7 @@
   ],
   "rules": {
     "no-constant-condition": ["error", { "checkLoops": false }],
-    "eqeqeq": ["error", "always"],
+    "eqeqeq": ["error", "always", {"null": "ignore"}],
     "no-console": "off",
     "no-empty": "off"
   },
