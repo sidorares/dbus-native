@@ -64,7 +64,9 @@ if (!argv.server) {
         output.push('            if (err) throw new Error(err);');
         output.push('        });');
         output.push(
-          `        var signalFullName = bus.mangle('${argv.path}', '${ifaceName}', signame);`
+          `        var signalFullName = bus.mangle('${argv.path}', '${
+            ifaceName
+          }', signame);`
         );
         output.push(
           '        bus.signals.on(signalFullName, function(messageBody) {'
