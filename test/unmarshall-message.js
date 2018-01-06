@@ -23,6 +23,7 @@ describe('message marshall/unmarshall', function() {
           it(testDesc, function() {
             var msg = {
               type: 1,
+              serial: 1,
               destination: 'final',
               flags: 1,
               signature: testData[0],
