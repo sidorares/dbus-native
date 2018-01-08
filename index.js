@@ -96,7 +96,7 @@ function createConnection(opts) {
   var handshake = opts.server ? serverHandshake : clientHandshake;
   handshake(stream, opts, function(error, guid) {
     if (error) {
-      return self.emit('error');
+      return self.emit('error', error);
     }
     self.guid = guid;
     self.emit('connect');
