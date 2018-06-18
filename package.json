@@ -11,6 +11,11 @@
     "kde"
   ],
   "description": "D-bus protocol implementation in native javascript",
+  "files": [
+    "lib/*",
+    "index.js",
+    "package.json"
+  ],
   "directories": {
     "lib": "lib",
     "test": "test",
