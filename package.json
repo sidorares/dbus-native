@@ -1,6 +1,5 @@
 {
-  "name": "dbus-native",
-  "author": "Andrey Sidorov <sidorares@yandex.com>",
+  "name": "dbus-next",
   "version": "0.2.4",
   "keywords": [
     "dbus",
@@ -10,7 +9,7 @@
     "gnome",
     "kde"
   ],
-  "description": "D-bus protocol implementation in native javascript",
+  "description": "The next great DBus library for Node",
   "files": [
     "lib/*",
     "index.js",
@@ -24,14 +23,14 @@
   "main": "index.js",
   "maintainers": [
     {
-      "name": "Andrey Sidorov",
-      "email": "sidoares@yandex.ru"
+      "name": "Tony Crisci",
+      "email": "tony@dubstepdish.com"
     }
   ],
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "http://github.com/sidorares/node-dbus.git"
+    "url": "http://github.com/acrisci/node-dbus-next.git"
   },
   "bin": {
     "dbus2js": "./bin/dbus2js.js"
@@ -67,7 +66,6 @@
     "prettier": "prettier --write index.js '{bin,lib,examples,test}/**/*.js'",
     "prettier:docs": "prettier-markdown README.md",
     "eslint-check": "eslint --print-config .eslintrc | eslint-config-prettier-check",
-    "precommit": "lint-staged",
     "prepublish": "npm prune"
   },
   "lint-staged": {
