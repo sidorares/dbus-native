@@ -14,35 +14,72 @@ Here are some goals for the project:
 * Redesign the service interface
 * Fix some outstanding bugs on the issue tracker
 
-## The Service Interface (Proposed)
+## The Service Interface
 
 You can use the `Interface` class to define your interfaces. This interfaces uses the proposed [decorators syntax](https://github.com/tc39/proposal-decorators) which is not yet part of the ECMAScript standard, but should be included one day. Unfortunately, you'll need a [Babel plugin](https://www.npmjs.com/package/@babel/plugin-proposal-decorators) to make this code work for now.
 
 ```js
 let dbus = require('dbus-next');
-let service = dbus.service;
 let Variant = dbus.Variant;
+
+let {
+  Interface, property, method, signal, MethodError,
+  ACCESS_READ, ACCESS_WRITE, ACCESS_READWRITE
+} = dbus.interface;
 
 let bus = dbus.sessionBus();
 
-class ExampleInterface extends service.Interface {
-  @service.property({signature: 's', access: service.ACCESS_READWRITE})
-  StringProperty = 'foo';
+class ExampleInterface extends Interface {
+  @property({signature: 's', access: ACCESS_READWRITE})
+  SimpleProperty = 'foo';
 
-  @service.property({signature: 'a{sv}', access: service.ACCESS_READ})
-  VariantMapProperty = {
-    foo: new Variant('s', 'bar'),
-    bat: new Variant('d', 53)
+  _MapProperty = {
+    'foo': new Variant('s', 'bar'),
+    'bat': new Variant('i', 53)
+  };
+
+  @property({signature: 'a{sv}'})
+  get MapProperty() {
+    return this._MapProperty;
   }
 
-  @service.method({inSignature: 's', outSignature: 's'})
+  set MapProperty(value) {
+    this._MapProperty = value;
+
+    this.PropertiesChanged({
+      MapProperty: value
+    });
+  }
+
+  @method({inSignature: 's', outSignature: 's'})
   Echo(what) {
     return what;
   }
 
-  @service.signal({signature: 'd'})
-  HelloWorld(x) {
-    return x;
+  @method({inSignature: 'ss', outSignature: 'vv'})
+  ReturnsMultiple(what, what2) {
+    return [
+      new Variant('s', what),
+      new Variant('s', what2)
+    ];
+  }
+
+  @method({inSignature: '', outSignature: ''})
+  ThrowsError() {
+    throw new MethodError('org.test.iface.Error', 'something went wrong');
+  }
+
+  @signal({signature: 's'})
+  HelloWorld(value) {
+    return value;
+  }
+
+  @signal({signature: 'ss'})
+  SignalMultiple(x) {
+    return [
+      'hello',
+      'world'
+    ];
   }
 }
 
@@ -50,10 +87,9 @@ let example = new ExampleInterface('org.test.iface');
 
 setTimeout(() => {
   // emit the HelloWorld signal
-  example.HelloWorld(53);
+  example.HelloWorld('hello');
 }, 500);
 
-// export the service on the bus on the given name with the given object path.
 bus.export('org.test.name',
            '/org/test/path',
            example);
@@ -79,4 +115,5 @@ TODO:
 
 You can use this code under an MIT license (see LICENSE).
 
-© Andrey Sidorov 2012
+© 2012, Andrey Sidorov
+© 2018, Tony Crisci
