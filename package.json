@@ -32,9 +32,6 @@
     "type": "git",
     "url": "http://github.com/acrisci/node-dbus-next.git"
   },
-  "bin": {
-    "dbus2js": "./bin/dbus2js.js"
-  },
   "dependencies": {
     "event-stream": "^4.0.0",
     "hexy": "^0.2.10",
