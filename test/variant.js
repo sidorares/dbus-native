@@ -371,3 +371,5 @@ let listOfVariantDictsMarshal = [
   ]
 ];
 assert.deepEqual(variant.jsToMarshalFmt(listOfVariantDictsSignature, listOfVariantDictsJS), listOfVariantDictsMarshal);
+
+// TODO variant within a variant

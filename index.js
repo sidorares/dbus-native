@@ -156,6 +156,8 @@ module.exports.createServer = server.createServer;
 
 // new stuff
 const variant = require('./lib/service/variant');
-const interface = require('./lib/service/interface');
-module.exports.interface = interface;
+const iface = require('./lib/service/interface');
+module.exports.interface = iface;
 module.exports.Variant = variant.Variant;
+// TODO move me off the interface
+module.exports.MethodError = iface.MethodError;
