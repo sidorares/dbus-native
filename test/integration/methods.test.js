@@ -78,6 +78,7 @@ let echoVariant = new Variant('a{sv}', {
       new Variant('as', [ 'four', 'five' ]) ]
     ]
   ]),
+  kevin: new Variant('(vs)', [ new Variant('s', 'foo'), 'foo' ]),
   buz: new Variant('av', [
     new Variant('as', ['foo']),
     new Variant('a{ss}', { foo: 'bar' }),

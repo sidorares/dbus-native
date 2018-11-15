@@ -72,6 +72,7 @@
     "prettier:docs": "prettier-markdown README.md",
     "eslint-check": "eslint --print-config .eslintrc | eslint-config-prettier-check",
     "integration": "dbus-run-session -- jest ./test/integration",
+    "coverage": "dbus-run-session -- jest --coverage",
     "prepublish": "npm prune"
   },
   "lint-staged": {
