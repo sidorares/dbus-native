@@ -1,6 +1,7 @@
 {
-  "name": "dbus-next",
-  "version": "0.0.1",
+  "name": "dbus-native",
+  "author": "Andrey Sidorov <sidorares@yandex.com>",
+  "version": "0.2.4",
   "keywords": [
     "dbus",
     "dcop",
@@ -9,7 +10,7 @@
     "gnome",
     "kde"
   ],
-  "description": "The next great DBus library for Node",
+  "description": "D-bus protocol implementation in native javascript",
   "files": [
     "lib/*",
     "index.js",
@@ -23,6 +24,10 @@
   "main": "index.js",
   "maintainers": [
     {
+      "name": "Andrey Sidorov",
+      "email": "sidoares@yandex.ru"
+    },
+    {
       "name": "Tony Crisci",
       "email": "tony@dubstepdish.com"
     }
@@ -30,7 +35,10 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "http://github.com/acrisci/node-dbus-next.git"
+    "url": "http://github.com/sidorares/node-dbus.git"
+  },
+  "bin": {
+    "dbus2js": "./bin/dbus2js.js"
   },
   "dependencies": {
     "event-stream": "^4.0.0",
