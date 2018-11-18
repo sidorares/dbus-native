@@ -9,7 +9,10 @@ afterAll(() => {
 });
 
 test('lists names on the bus', async () => {
-  let object = await bus.getProxyObject('org.freedesktop.DBus', '/org/freedesktop/DBus');
+  let object = await bus.getProxyObject(
+    'org.freedesktop.DBus',
+    '/org/freedesktop/DBus'
+  );
   let iface = object.getInterface('org.freedesktop.DBus');
   expect(iface).toBeDefined();
   let names = await iface.ListNames();
@@ -18,7 +21,10 @@ test('lists names on the bus', async () => {
 });
 
 test('get stats', async () => {
-  let object = await bus.getProxyObject('org.freedesktop.DBus', '/org/freedesktop/DBus');
+  let object = await bus.getProxyObject(
+    'org.freedesktop.DBus',
+    '/org/freedesktop/DBus'
+  );
   let iface = object.getInterface('org.freedesktop.DBus.Debug.Stats');
   let stats = await iface.GetStats();
   expect(stats).toBeInstanceOf(Object);

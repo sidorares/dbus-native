@@ -5,8 +5,13 @@ let Variant = dbus.Variant;
 let MethodError = dbus.MethodError;
 
 let {
-  Interface, property, method, signal,
-  ACCESS_READ, ACCESS_WRITE, ACCESS_READWRITE
+  Interface,
+  property,
+  method,
+  signal,
+  ACCESS_READ,
+  ACCESS_WRITE,
+  ACCESS_READWRITE
 } = dbus.interface;
 
 const TEST_NAME = 'org.test.name';
@@ -16,46 +21,41 @@ const TEST_IFACE = 'org.test.iface';
 let bus = dbus.sessionBus();
 
 class SignalsInterface extends Interface {
-  @signal({signature: 's'})
+  @signal({ signature: 's' })
   HelloWorld(value) {
     return value;
   }
 
-  @signal({signature: 'ss'})
+  @signal({ signature: 'ss' })
   SignalMultiple() {
-    return [
-      'hello',
-      'world'
-    ];
+    return ['hello', 'world'];
   }
 
   // a really complicated variant
   complicated = new Variant('a{sv}', {
     foo: new Variant('s', 'bar'),
     bar: new Variant('d', 53),
-    bat: new Variant('v', new Variant('as', [ 'foo', 'bar', 'bat'])),
-    baz: new Variant('(doodoo)', [ 1, '/', '/', 1, '/', '/' ]),
+    bat: new Variant('v', new Variant('as', ['foo', 'bar', 'bat'])),
+    baz: new Variant('(doodoo)', [1, '/', '/', 1, '/', '/']),
     fiz: new Variant('(as(s(v)))', [
-      [ 'one', 'two' ],
-      ['three', [
-        new Variant('as', [ 'four', 'five' ]) ]
-      ]
+      ['one', 'two'],
+      ['three', [new Variant('as', ['four', 'five'])]]
     ]),
     buz: new Variant('av', [
       new Variant('as', ['foo']),
       new Variant('a{ss}', { foo: 'bar' }),
       new Variant('v', new Variant('(asas)', [['bar'], ['foo']])),
-      new Variant('v', new Variant('v', new Variant('as', [ 'one', 'two' ]))),
+      new Variant('v', new Variant('v', new Variant('as', ['one', 'two']))),
       new Variant('a{ss}', { foo: 'bar' })
     ])
   });
 
-  @signal({signature: 'v'})
+  @signal({ signature: 'v' })
   SignalComplicated() {
     return this.complicated;
   }
 
-  @method({inSignature: '', outSignature: ''})
+  @method({ inSignature: '', outSignature: '' })
   EmitSignals() {
     this.HelloWorld('hello');
     this.SignalMultiple();

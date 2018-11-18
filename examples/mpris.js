@@ -9,7 +9,10 @@ const PROPERTIES_IFACE = 'org.freedesktop.DBus.Properties';
 async function listAll() {
   let result = [];
   let bus = dbus.sessionBus();
-  let obj = await bus.getProxyObject('org.freedesktop.DBus', '/org/freedesktop/DBus');
+  let obj = await bus.getProxyObject(
+    'org.freedesktop.DBus',
+    '/org/freedesktop/DBus'
+  );
   let iface = obj.getInterface('org.freedesktop.DBus');
   let names = await iface.ListNames();
   for (let n of names) {
@@ -33,7 +36,7 @@ program
   .option('-l, --list-all', 'List all players and exit');
 
 program.on('--help', printEpilogue);
-program.parse(process.argv)
+program.parse(process.argv);
 
 if (!program.listAll && !program.args.length) {
   program.outputHelp();
@@ -49,7 +52,7 @@ async function printNames() {
 }
 
 function printMetadata(metadata) {
-  for (k of Object.keys(metadata.value)) {
+  for (let k of Object.keys(metadata.value)) {
     let value = metadata.value[k].value;
     console.log(k.padEnd(23) + value);
   }
@@ -71,9 +74,10 @@ function printNowPlaying(metadata) {
 }
 
 async function nowPlaying(obj) {
-  return new Promise(resolve => {
+  return new Promise(() => {
+    // does not return
     let props = obj.getInterface(PROPERTIES_IFACE);
-    props.on('PropertiesChanged', (iface, changed, invalidated) => {
+    props.on('PropertiesChanged', (iface, changed) => {
       if (changed.hasOwnProperty('Metadata')) {
         printNowPlaying(changed['Metadata']);
       }
@@ -88,7 +92,9 @@ async function main() {
   }
 
   let command = program.args[0];
-  if (['play', 'pause', 'stop', 'metadata', 'now-playing'].indexOf(command) === -1) {
+  if (
+    ['play', 'pause', 'stop', 'metadata', 'now-playing'].indexOf(command) === -1
+  ) {
     program.outputHelp();
     printEpilogue();
     return 1;

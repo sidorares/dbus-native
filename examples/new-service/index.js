@@ -2,22 +2,26 @@ let dbus = require('../../../');
 let Variant = dbus.Variant;
 
 let {
-  Interface, property, method, signal, MethodError,
-  ACCESS_READ, ACCESS_WRITE, ACCESS_READWRITE
+  Interface,
+  property,
+  method,
+  signal,
+  MethodError,
+  ACCESS_READWRITE
 } = dbus.interface;
 
 let bus = dbus.sessionBus();
 
 class ExampleInterface extends Interface {
-  @property({signature: 's', access: ACCESS_READWRITE})
+  @property({ signature: 's', access: ACCESS_READWRITE })
   SimpleProperty = 'foo';
 
   _MapProperty = {
-    'foo': new Variant('s', 'bar'),
-    'bat': new Variant('i', 53)
+    foo: new Variant('s', 'bar'),
+    bat: new Variant('i', 53)
   };
 
-  @property({signature: 'a{sv}'})
+  @property({ signature: 'a{sv}' })
   get MapProperty() {
     return this._MapProperty;
   }
@@ -30,42 +34,36 @@ class ExampleInterface extends Interface {
     });
   }
 
-  @method({inSignature: 's', outSignature: 's'})
+  @method({ inSignature: 's', outSignature: 's' })
   Echo(what) {
     return what;
   }
 
-  @method({inSignature: 'ss', outSignature: 'vv'})
+  @method({ inSignature: 'ss', outSignature: 'vv' })
   ReturnsMultiple(what, what2) {
-    return [
-      new Variant('s', what),
-      new Variant('s', what2)
-    ];
+    return [new Variant('s', what), new Variant('s', what2)];
   }
 
-  @method({inSignature: '', outSignature: ''})
+  @method({ inSignature: '', outSignature: '' })
   ThrowsError() {
     throw new MethodError('org.test.iface.Error', 'something went wrong');
   }
 
-  @signal({signature: 's'})
+  @signal({ signature: 's' })
   HelloWorld(value) {
     return value;
   }
 
-  @signal({signature: 'ss'})
-  SignalMultiple(x) {
-    return [
-      'hello',
-      'world'
-    ];
+  @signal({ signature: 'ss' })
+  SignalMultiple() {
+    return ['hello', 'world'];
   }
 }
 
 class ExampleInterface2 extends Interface {
-  @method({inSignature: '', outSignature: 's'})
+  @method({ inSignature: '', outSignature: 's' })
   SomeMethod() {
-    return 'ok'
+    return 'ok';
   }
 }
 
@@ -77,10 +75,6 @@ setTimeout(() => {
   example.HelloWorld('hello');
 }, 500);
 
-bus.export('org.test.name',
-           '/org/test/path',
-           example);
+bus.export('org.test.name', '/org/test/path', example);
 
-bus.export('org.test.name',
-           '/org/test/path',
-           example2);
+bus.export('org.test.name', '/org/test/path', example2);

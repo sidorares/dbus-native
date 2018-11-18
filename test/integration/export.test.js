@@ -3,8 +3,13 @@ let Variant = dbus.Variant;
 let MethodError = dbus.MethodError;
 
 let {
-  Interface, property, method, signal,
-  ACCESS_READ, ACCESS_WRITE, ACCESS_READWRITE
+  Interface,
+  property,
+  method,
+  signal,
+  ACCESS_READ,
+  ACCESS_WRITE,
+  ACCESS_READWRITE
 } = dbus.interface;
 
 const TEST_NAME = 'org.test.name';
@@ -43,7 +48,7 @@ let testIface1 = new ExampleInterfaceOne();
 let testIface2 = new ExampleInterfaceTwo();
 
 test('stub', async () => {
-    await bus.getProxyObject('org.freedesktop.DBus', '/org/freedesktop/DBus')
+  await bus.getProxyObject('org.freedesktop.DBus', '/org/freedesktop/DBus');
 });
 
 test('export and unexport interfaces and paths', async () => {
@@ -66,7 +71,7 @@ test('export and unexport interfaces and paths', async () => {
     'org.freedesktop.DBus.Introspectable'
   ];
   for (let name of expectedIfaces) {
-    expect(obj.interfaces.find((i) => i.$name === name)).toBeDefined();
+    expect(obj.interfaces.find(i => i.$name === name)).toBeDefined();
   }
 
   // unexport the name and make sure it leaves the bus
@@ -92,7 +97,7 @@ test('export and unexport interfaces and paths', async () => {
 });
 
 test('export two interfaces on different names', async () => {
-  let [result1, result2, object ] = await Promise.all([
+  let [result1, result2, object] = await Promise.all([
     bus.export(TEST_NAME1, TEST_PATH1, testIface1),
     bus.export(TEST_NAME2, TEST_PATH2, testIface2),
     bus.getProxyObject('org.freedesktop.DBus', '/org/freedesktop/DBus')
@@ -110,7 +115,7 @@ test('export two interfaces on different names', async () => {
 });
 
 test('export two interfaces on the same name on different paths', async () => {
-  let [result1, result2, dbusObject ] = await Promise.all([
+  let [result1, result2, dbusObject] = await Promise.all([
     bus.export(TEST_NAME1, TEST_PATH1, testIface1),
     bus.export(TEST_NAME1, TEST_PATH2, testIface2),
     bus.getProxyObject('org.freedesktop.DBus', '/org/freedesktop/DBus')
@@ -119,7 +124,7 @@ test('export two interfaces on the same name on different paths', async () => {
   expect(Object.keys(bus._names).length).toEqual(1);
   let dbusIface = dbusObject.getInterface('org.freedesktop.DBus');
 
-  let [ names, obj1, obj2 ] = await Promise.all([
+  let [names, obj1, obj2] = await Promise.all([
     dbusIface.ListNames(),
     bus.getProxyObject(TEST_NAME1, TEST_PATH1),
     bus.getProxyObject(TEST_NAME1, TEST_PATH2)
@@ -135,7 +140,7 @@ test('export two interfaces on the same name on different paths', async () => {
 test('export a name taken by another bus and queue', async () => {
   await bus.export(TEST_NAME1, TEST_PATH1, testIface1);
 
-  let [result1, dbusObject ] = await Promise.all([
+  let [result1, dbusObject] = await Promise.all([
     bus2.export(TEST_NAME1, TEST_PATH1, testIface2),
     bus.getProxyObject('org.freedesktop.DBus', '/org/freedesktop/DBus')
   ]);
@@ -144,7 +149,7 @@ test('export a name taken by another bus and queue', async () => {
   expect(Object.keys(bus2._names).length).toEqual(1);
 
   let dbusIface = dbusObject.getInterface('org.freedesktop.DBus');
-  let [ names, obj ] = await Promise.all([
+  let [names, obj] = await Promise.all([
     dbusIface.ListNames(),
     bus.getProxyObject(TEST_NAME1, TEST_PATH1)
   ]);
@@ -156,7 +161,7 @@ test('export a name taken by another bus and queue', async () => {
   // should give it to bus2
   await bus.unexportName(TEST_NAME1);
 
-  [ names, obj ] = await Promise.all([
+  [names, obj] = await Promise.all([
     dbusIface.ListNames(),
     bus.getProxyObject(TEST_NAME1, TEST_PATH1)
   ]);

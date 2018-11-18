@@ -4,14 +4,20 @@ let dbus = require('../../');
 let Variant = dbus.Variant;
 
 let {
-  Interface, property, method, signal, MethodError,
-  ACCESS_READ, ACCESS_WRITE, ACCESS_READWRITE
+  Interface,
+  property,
+  method,
+  signal,
+  MethodError,
+  ACCESS_READ,
+  ACCESS_WRITE,
+  ACCESS_READWRITE
 } = dbus.interface;
 
 const TEST_NAME = 'org.test.name';
 const TEST_PATH = '/org/test/path';
 const TEST_IFACE = 'org.test.iface';
-const INVALID_ARGS = 'org.freedesktop.DBus.Error.InvalidArgs'
+const INVALID_ARGS = 'org.freedesktop.DBus.Error.InvalidArgs';
 
 let bus = dbus.sessionBus();
 
@@ -20,17 +26,17 @@ class TestInterface extends Interface {
     super(name);
   }
 
-  @property({signature: 's'})
+  @property({ signature: 's' })
   SimpleProperty = 'foo';
 
-  @property({signature: 'v'})
+  @property({ signature: 'v' })
   VariantProperty = new Variant('s', 'foo');
 
-  @property({signature: '(a{sv}sv)'})
+  @property({ signature: '(a{sv}sv)' })
   ComplicatedProperty = [
     {
       foo: new Variant('s', 'bar'),
-      bar: new Variant('as', [ 'fiz', 'buz' ])
+      bar: new Variant('as', ['fiz', 'buz'])
     },
     'bat',
     new Variant('d', 53)
@@ -38,21 +44,24 @@ class TestInterface extends Interface {
 
   _NotifyingProperty = 'foo';
 
-  @property({signature: 's'})
+  @property({ signature: 's' })
   get NotifyingProperty() {
     return this._NotifyingProperty;
   }
   set NotifyingProperty(value) {
     this._NotifyingProperty = value;
-    this.PropertiesChanged({
-      NotifyingProperty: value
-    }, ['invalid']);
+    this.PropertiesChanged(
+      {
+        NotifyingProperty: value
+      },
+      ['invalid']
+    );
   }
 
-  @property({signature: 's', access: ACCESS_READ})
+  @property({ signature: 's', access: ACCESS_READ })
   ReadOnly = 'only read';
 
-  @property({signature: 's', access: ACCESS_WRITE})
+  @property({ signature: 's', access: ACCESS_WRITE })
   WriteOnly = 'only write';
 }
 
@@ -93,16 +102,26 @@ test('test simple property get and set', async () => {
   expect(prop.value).toBeInstanceOf(Variant);
   expect(prop.value).toEqual(testIface.VariantProperty);
 
-  await properties.Set(TEST_IFACE, 'VariantProperty', new Variant('v', new Variant('d', 53)));
+  await properties.Set(
+    TEST_IFACE,
+    'VariantProperty',
+    new Variant('v', new Variant('d', 53))
+  );
   prop = await properties.Get(TEST_IFACE, 'VariantProperty');
   expect(prop).toBeInstanceOf(Variant);
-  expect(prop.value).toEqual(new Variant('d', 53))
+  expect(prop.value).toEqual(new Variant('d', 53));
   expect(prop.value).toEqual(testIface.VariantProperty);
 
   // test get all properties
   let all = await properties.GetAll(TEST_IFACE);
-  expect(all).toHaveProperty('SimpleProperty', new Variant('s', testIface.SimpleProperty));
-  expect(all).toHaveProperty('VariantProperty', new Variant('v', testIface.VariantProperty));
+  expect(all).toHaveProperty(
+    'SimpleProperty',
+    new Variant('s', testIface.SimpleProperty)
+  );
+  expect(all).toHaveProperty(
+    'VariantProperty',
+    new Variant('v', testIface.VariantProperty)
+  );
 });
 
 test('test complicated property get and set', async () => {
@@ -115,16 +134,20 @@ test('test complicated property get and set', async () => {
   let updatedProp = [
     {
       oof: new Variant('s', 'rab'),
-      rab: new Variant('as', [ 'zif', 'zub', 'zork' ]),
+      rab: new Variant('as', ['zif', 'zub', 'zork']),
       kevin: new Variant('a{sv}', {
-        'foo': new Variant('s', 'bar')
+        foo: new Variant('s', 'bar')
       })
     },
     'tab',
     new Variant('d', 23)
   ];
 
-  await properties.Set(TEST_IFACE, 'ComplicatedProperty', new Variant('(a{sv}sv)', updatedProp));
+  await properties.Set(
+    TEST_IFACE,
+    'ComplicatedProperty',
+    new Variant('(a{sv}sv)', updatedProp)
+  );
   prop = await properties.Get(TEST_IFACE, 'ComplicatedProperty');
   expect(prop).toBeInstanceOf(Variant);
   expect(prop.value).toEqual(testIface.ComplicatedProperty);
@@ -139,11 +162,15 @@ test('test properties changed signal', async () => {
   });
   properties.on('PropertiesChanged', onPropertiesChanged);
 
-  await properties.Set(TEST_IFACE, 'NotifyingProperty', new Variant('s', 'bar'));
+  await properties.Set(
+    TEST_IFACE,
+    'NotifyingProperty',
+    new Variant('s', 'bar')
+  );
   let e = {
     NotifyingProperty: new Variant('s', 'bar')
   };
-  expect(onPropertiesChanged).toHaveBeenCalledWith(TEST_IFACE, e, [ 'invalid' ]);
+  expect(onPropertiesChanged).toHaveBeenCalledWith(TEST_IFACE, e, ['invalid']);
 });
 
 test('test read and write access', async () => {
@@ -161,7 +188,11 @@ test('test properties interface specific errors', async () => {
   let object = await bus.getProxyObject(TEST_NAME, TEST_PATH);
   let properties = object.getInterface('org.freedesktop.DBus.Properties');
 
-  let req = properties.Set('not.an.interface', 'ReadOnly', new Variant('s', 'foo'));
+  let req = properties.Set(
+    'not.an.interface',
+    'ReadOnly',
+    new Variant('s', 'foo')
+  );
   await expect(req).rejects.toBeInstanceOf(MethodError);
 
   req = properties.Get(TEST_IFACE, 'NotAProperty');
@@ -170,6 +201,10 @@ test('test properties interface specific errors', async () => {
   req = properties.Set(TEST_IFACE, 'NotAProperty', new Variant('s', 'foo'));
   await expect(req).rejects.toBeInstanceOf(MethodError);
 
-  req = properties.Set(TEST_IFACE, 'WriteOnly', new Variant('as', ['wrong', 'type']));
+  req = properties.Set(
+    TEST_IFACE,
+    'WriteOnly',
+    new Variant('as', ['wrong', 'type'])
+  );
   await expect(req).rejects.toBeInstanceOf(MethodError);
 });
