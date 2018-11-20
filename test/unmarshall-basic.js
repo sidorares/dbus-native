@@ -346,6 +346,44 @@ describe('marshall/unmarshall', function() {
     ]
   };
 
+  if (typeof BigInt === 'function') {
+    // BigInt presently has issue with JSON.stringify, so check for a toJSON() override for our testing manifold
+    if (typeof BigInt.prototype.toJSON !== 'function')
+      BigInt.prototype.toJSON = function() {
+        return this.toString();
+      };
+    // Check the extremes
+    var BigIntMaxS64 = BigInt('9223372036854775807');
+    var BigIntMinS64 = BigInt('-9223372036854775808');
+    var BigIntMaxU64 = BigInt('18446744073709551615');
+    // Returning Long.js
+    tests['simple types'].push([
+      'x',
+      [BigIntMaxS64],
+      false,
+      [LongMaxS64],
+      { ReturnLongjs: true }
+    ]);
+    tests['simple types'].push([
+      'x',
+      [BigIntMinS64],
+      false,
+      [LongMinS64],
+      { ReturnLongjs: true }
+    ]);
+    tests['simple types'].push([
+      't',
+      [BigIntMaxU64],
+      false,
+      [LongMaxU64],
+      { ReturnLongjs: true }
+    ]);
+    // Returning BigInt (when value exceeds safe Number range)
+    tests['simple types'].push(['x', [BigIntMaxS64]]);
+    tests['simple types'].push(['x', [BigIntMinS64]]);
+    tests['simple types'].push(['t', [BigIntMaxU64]]);
+  }
+
   var testName, testData, testNum;
   for (testName in tests) {
     for (testNum = 0; testNum < tests[testName].length; ++testNum) {
