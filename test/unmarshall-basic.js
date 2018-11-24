@@ -3,6 +3,7 @@ const marshall = require('../lib/marshall');
 const unmarshall = require('../lib/unmarshall');
 const assert = require('assert');
 const Long = require('long');
+const constants = require('../lib/constants');
 
 var LongMaxS64 = Long.fromString('9223372036854775807', false);
 var LongMinS64 = Long.fromString('-9223372036854775808', false);
@@ -202,7 +203,7 @@ describe('marshall/unmarshall', function() {
         ['0x7FFFFFFFFFFFFFFF'],
         false,
         [LongMaxS64],
-        { ReturnLongjs: true }
+        { returnType64: constants.types64.longjs }
       ],
       ['t', ['0x1FFFFFFFFFFFFF'], false, [9007199254740991]],
       ['t', ['0x0000'], false, [0]],
@@ -211,42 +212,42 @@ describe('marshall/unmarshall', function() {
         ['0xFFFFFFFFFFFFFFFF'],
         false,
         [LongMaxU64],
-        { ReturnLongjs: true }
+        { returnType64: constants.types64.longjs }
       ],
       ['x', [LongMaxS53], false, [9007199254740991]], // make sure Longjs objects convert to 53bit numbers
       ['x', [LongMinS53], false, [-9007199254740991]],
       ['t', [LongMaxU53], false, [9007199254740991]],
       ['t', [LongMinU53], false, [0]],
-      ['x', [9007199254740991], false, [LongMaxS53], { ReturnLongjs: true }], // 53bit numbers to objects
-      ['x', [-9007199254740991], false, [LongMinS53], { ReturnLongjs: true }],
-      ['t', [9007199254740991], false, [LongMaxU53], { ReturnLongjs: true }],
-      ['t', [0], false, [LongMinU53], { ReturnLongjs: true }],
+      ['x', [9007199254740991], false, [LongMaxS53], { returnType64: constants.types64.longjs }], // 53bit numbers to objects
+      ['x', [-9007199254740991], false, [LongMinS53], { returnType64: constants.types64.longjs }],
+      ['t', [9007199254740991], false, [LongMaxU53], { returnType64: constants.types64.longjs }],
+      ['t', [0], false, [LongMinU53], { returnType64: constants.types64.longjs }],
       [
         'x',
         ['9223372036854775807'],
         false,
         [LongMaxS64],
-        { ReturnLongjs: true }
+        { returnType64: constants.types64.longjs }
       ], // strings to objects
       [
         'x',
         ['-9223372036854775808'],
         false,
         [LongMinS64],
-        { ReturnLongjs: true }
+        { returnType64: constants.types64.longjs }
       ],
       [
         't',
         ['18446744073709551615'],
         false,
         [LongMaxU64],
-        { ReturnLongjs: true }
+        { returnType64: constants.types64.longjs }
       ],
-      ['t', ['0'], false, [LongMinU64], { ReturnLongjs: true }],
-      ['x', [LongMaxS64], false, [LongMaxS64], { ReturnLongjs: true }], // Longjs object to objects
-      ['x', [LongMinS64], false, [LongMinS64], { ReturnLongjs: true }],
-      ['t', [LongMaxU64], false, [LongMaxU64], { ReturnLongjs: true }],
-      ['t', [LongMinU64], false, [LongMinU64], { ReturnLongjs: true }],
+      ['t', ['0'], false, [LongMinU64], { returnType64: constants.types64.longjs }],
+      ['x', [LongMaxS64], false, [LongMaxS64], { returnType64: constants.types64.longjs }], // Longjs object to objects
+      ['x', [LongMinS64], false, [LongMinS64], { returnType64: constants.types64.longjs }],
+      ['t', [LongMaxU64], false, [LongMaxU64], { returnType64: constants.types64.longjs }],
+      ['t', [LongMinU64], false, [LongMinU64], { returnType64: constants.types64.longjs }],
       [
         'x',
         [
@@ -258,7 +259,7 @@ describe('marshall/unmarshall', function() {
         ],
         false,
         [LongMaxS64],
-        { ReturnLongjs: true }
+        { returnType64: constants.types64.longjs }
       ], // non-instance Longjs object to objects
       [
         'x',
@@ -283,7 +284,7 @@ describe('marshall/unmarshall', function() {
         ],
         false,
         [LongMaxU64],
-        { ReturnLongjs: true }
+        { returnType64: constants.types64.longjs }
       ],
       [
         't',
@@ -346,6 +347,7 @@ describe('marshall/unmarshall', function() {
     ]
   };
 
+  // If BigInt is supported, test it.
   if (typeof BigInt === 'function') {
     // BigInt presently has issue with JSON.stringify, so check for a toJSON() override for our testing manifold
     if (typeof BigInt.prototype.toJSON !== 'function')
@@ -356,32 +358,34 @@ describe('marshall/unmarshall', function() {
     var BigIntMaxS64 = BigInt('9223372036854775807');
     var BigIntMinS64 = BigInt('-9223372036854775808');
     var BigIntMaxU64 = BigInt('18446744073709551615');
-    // Returning Long.js
-    tests['simple types'].push([
-      'x',
-      [BigIntMaxS64],
-      false,
-      [LongMaxS64],
-      { ReturnLongjs: true }
-    ]);
-    tests['simple types'].push([
-      'x',
-      [BigIntMinS64],
-      false,
-      [LongMinS64],
-      { ReturnLongjs: true }
-    ]);
-    tests['simple types'].push([
-      't',
-      [BigIntMaxU64],
-      false,
-      [LongMaxU64],
-      { ReturnLongjs: true }
-    ]);
-    // Returning BigInt (when value exceeds safe Number range)
-    tests['simple types'].push(['x', [BigIntMaxS64]]);
-    tests['simple types'].push(['x', [BigIntMinS64]]);
-    tests['simple types'].push(['t', [BigIntMaxU64]]);
+    tests['BigInt support'] = [
+      // Returning Long.js
+      [
+        'x',
+        [BigIntMaxS64],
+        false,
+        [LongMaxS64],
+        { returnType64: constants.types64.longjs }
+      ],
+      [
+        'x',
+        [BigIntMinS64],
+        false,
+        [LongMinS64],
+        { returnType64: constants.types64.longjs }
+      ],
+      [
+        't',
+        [BigIntMaxU64],
+        false,
+        [LongMaxU64],
+        { returnType64: constants.types64.longjs }
+      ],
+      // Returning BigInt
+      ['x', [BigIntMaxS64], false, [BigIntMaxS64], { returnType64: constants.types64.bigint }],
+      ['x', [BigIntMinS64], false, [BigIntMinS64], { returnType64: constants.types64.bigint }],
+      ['t', [BigIntMaxU64], false, [BigIntMaxU64], { returnType64: constants.types64.bigint }],
+    ];
   }
 
   var testName, testData, testNum;
