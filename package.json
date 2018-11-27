@@ -1,7 +1,7 @@
 {
   "name": "dbus-native",
   "author": "Andrey Sidorov <sidorares@yandex.com>",
-  "version": "0.2.4",
+  "version": "0.3.0",
   "keywords": [
     "dbus",
     "dcop",
