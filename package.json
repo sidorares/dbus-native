@@ -12,6 +12,7 @@
   ],
   "description": "D-bus protocol implementation in native javascript",
   "files": [
+    "bin/dbus2js.js",
     "lib/*",
     "index.js",
     "package.json"
