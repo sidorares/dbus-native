@@ -27,6 +27,10 @@
     {
       "name": "Andrey Sidorov",
       "email": "sidoares@yandex.ru"
+    },
+    {
+      "name": "Tony Crisci",
+      "email": "tony@dubstepdish.com"
     }
   ],
   "license": "MIT",
@@ -50,14 +54,23 @@
     "abstract-socket": "^2.0.0"
   },
   "devDependencies": {
+    "@babel/core": "^7.1.5",
+    "@babel/plugin-proposal-class-properties": "^7.1.0",
+    "@babel/plugin-proposal-decorators": "^7.1.2",
+    "babel-core": "^7.0.0-bridge.0",
+    "babel-eslint": "^10.0.1",
+    "babel-jest": "^23.6.0",
+    "commander": "^2.19.0",
     "eslint": "^5.0.0",
     "eslint-config-prettier": "^3.0.0",
     "eslint-plugin-markdown": "^1.0.0-beta.6",
     "eslint-plugin-prettier": "^3.0.0",
     "husky": "^1.0.0",
+    "jest": "^23.6.0",
     "lint-staged": "^8.0.0",
     "mocha": "*",
-    "prettier": "^1.7.4"
+    "prettier": "^1.7.4",
+    "regenerator-runtime": "^0.12.1"
   },
   "scripts": {
     "lint": "npm run lint:docs && npm run lint:code",
@@ -68,7 +81,8 @@
     "prettier": "prettier --write index.js '{bin,lib,examples,test}/**/*.js'",
     "prettier:docs": "prettier-markdown README.md",
     "eslint-check": "eslint --print-config .eslintrc | eslint-config-prettier-check",
-    "precommit": "lint-staged",
+    "integration": "dbus-run-session -- jest ./test/integration",
+    "coverage": "dbus-run-session -- jest --coverage",
     "prepublish": "npm prune"
   },
   "lint-staged": {
