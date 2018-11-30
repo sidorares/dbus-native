@@ -57,7 +57,7 @@
     "husky": "^1.0.0",
     "lint-staged": "^8.0.0",
     "mocha": "*",
-    "prettier": "^1.7.4"
+    "prettier": "^1.15.3"
   },
   "scripts": {
     "lint": "npm run lint:docs && npm run lint:code",
