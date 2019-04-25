@@ -51,7 +51,7 @@
   },
   "devDependencies": {
     "eslint": "^5.0.0",
-    "eslint-config-prettier": "^3.0.0",
+    "eslint-config-prettier": "^4.2.0",
     "eslint-plugin-markdown": "^1.0.0-beta.6",
     "eslint-plugin-prettier": "^3.0.0",
     "husky": "^1.0.0",
