@@ -44,7 +44,7 @@
     "optimist": "^0.6.1",
     "put": "0.0.6",
     "safe-buffer": "^5.1.1",
-    "xml2js": "^0.4.17"
+    "xml2js": "^0.4.23"
   },
   "optionalDependencies": {
     "abstract-socket": "^2.0.0"
