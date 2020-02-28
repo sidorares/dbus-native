@@ -56,7 +56,7 @@
     "eslint-plugin-prettier": "^3.0.0",
     "husky": "^1.0.0",
     "lint-staged": "^8.0.0",
-    "mocha": "*",
+    "mocha": ">=7.1.0",
     "prettier": "^1.7.4"
   },
   "scripts": {
