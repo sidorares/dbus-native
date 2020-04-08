@@ -83,6 +83,6 @@
     "trailingComma": "none"
   },
   "engine": {
-    "node": ">=4.0"
+    "node": ">=8.0"
   }
 }
