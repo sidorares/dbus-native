@@ -60,7 +60,8 @@ options:
    - busAddress - encoded bus address. Default is `DBUS_SESSION_BUS_ADDRESS` environment variable. See http://dbus.freedesktop.org/doc/dbus-specification.html#addresses
    - authMethods - array of authentication methods, which are attempted in the order provided (default:['EXTERNAL', 'DBUS_COOKIE_SHA1', 'ANONYMOUS'])
    - ayBuffer - boolean (default:true): if true 'ay' dbus fields are returned as buffers
-   - ReturnLongjs - boolean (default:false): if true 64 bit dbus fields (x/t) are read out as Long.js objects, otherwise they are converted to numbers (which should be good up to 53 bits)
+   - ReturnLongjs - boolean (default:false): **DEPRECATED** See returnType64.
+   - returnType64 - string (default:'number'): Sets the return type for unmarshalling 64 bit fields (x/t). Options are: 'number', 'bigint', 'longjs'.
    - ( TODO: add/document option to use adress from X11 session )
 
 connection has only one method, `message(msg)`
@@ -102,10 +103,12 @@ conn.on('message', function(msg) { console.log(msg); });
 Long.js is used for 64 Bit support. https://github.com/dcodeIO/long.js
 The following javascript types can be marshalled into 64 bit dbus fields:
    - typeof 'number' up to 53bits
+   - typeof 'bigint' (if available)
    - typeof 'string' (consisting of decimal digits with no separators or '0x' prefixed hexadecimal) up to full 64bit range
    - Long.js objects (or object with compatible properties)
 
-By default 64 bit dbus fields are unmarshalled into a 'number' (with precision loss beyond 53 bits). Use {ReturnLongjs:true} option to return the actual Long.js object and preserve the entire 64 bits.
+By default 64 bit dbus fields are unmarshalled into a 'number' with precision loss beyond 53 bits.
+To preserve all 64 bits: If BigInt is available, you can use the option {returnType64:'bigint'}. Otherwise you can use {returnType64:'longjs'}.
 
 ### Links
    - http://cgit.freedesktop.org/dbus - freedesktop reference C library
