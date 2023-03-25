@@ -39,7 +39,7 @@
   },
   "dependencies": {
     "event-stream": "^4.0.0",
-    "hexy": "^0.2.10",
+    "hexy": "^0.3.0",
     "long": "^4.0.0",
     "optimist": "^0.6.1",
     "put": "0.0.6",
