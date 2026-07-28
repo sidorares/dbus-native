@@ -151,6 +151,52 @@ conn.on('message', function (msg) {
 });
 ```
 
+### Reading values: variants and dicts
+
+A variant currently unmarshals as `[parsedSignature, [value]]` and a dict as an
+array of `[key, value]` pairs. Both shapes change in 2.0 — see
+[RELEASE_PLAN.md](./RELEASE_PLAN.md). Two helpers read either shape, so code
+written against them behaves the same before and after:
+
+```js
+const { variantValue, toPlain } = require('dbus-native');
+
+// instead of result[1][0]
+const greeting = variantValue(result);
+
+// instead of walking an array of pairs
+const props = toPlain(getAllResult); // { Greeting: 'hello', Count: 7 }
+```
+
+`toPlain()` only converts arrays this library parsed as dicts, so an `a(ss)`
+(array of two-string structs) is left as an array rather than being guessed at.
+
+For writing, `Variant` is accepted anywhere a `[signature, value]` pair is:
+
+```js
+const { Variant } = require('dbus-native');
+
+bus.invoke({
+  /* ... */
+  signature: 'ssv',
+  body: [iface, 'Greeting', new Variant('s', 'hello')]
+});
+```
+
+### Errors
+
+A failed call currently passes the raw message body — an array — to the
+callback. Since 0.6 that array also carries `message`, `dbusName` and `name`,
+which is the shape it becomes in 1.0:
+
+```js
+bus.invoke(msg, err => {
+  if (err?.dbusName === 'org.freedesktop.DBus.Error.ServiceUnknown') {
+    // ...
+  }
+});
+```
+
 ### Note on INT64 'x' and UINT64 't'
 
 Long.js is used for 64 Bit support. https://github.com/dcodeIO/long.js

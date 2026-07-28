@@ -115,14 +115,24 @@ useful thing in the plan, and it costs almost nothing.
     variantValue(). See https://github.com/sidorares/dbus-native/blob/master/docs/deprecations.md#dbus_dep0002
 ```
 
-Each code gets a documentation anchor. Crucially this gives users a mechanical
-way to find every affected line in their own codebase:
+Each code gets a documentation anchor, and `--throw-deprecation` turns them
+into thrown errors so a consumer's own test suite locates the call sites:
 
 ```sh
-node --throw-deprecation ./node_modules/.bin/mocha    # every usage becomes a stack trace
+node --throw-deprecation ./node_modules/.bin/mocha
 ```
 
-Warnings fire once per code per process by default, so normal runs stay quiet.
+**Correction to an earlier draft of this plan:** that only works for
+deprecations whose trigger _is_ a call the user makes — passing `ReturnLongjs`,
+calling `connection.end()`. It does **not** work for the value-shape changes in
+2.0. A warning there would have to fire inside the parser when the value is
+read, so the stack would point at this library rather than at the line that
+unpacks the value: it would tell you that you are affected without telling you
+where. Those codes are therefore documentation-only, and finding call sites is
+the lint rule's job. `docs/deprecations.md` labels each code **runtime** or
+**documentation** so the distinction is visible at the point of use.
+
+Warnings fire once per code per process, so normal runs stay quiet.
 
 **Also in 0.6, all additive:** `AbortSignal` on calls,
 `diagnostics_channel` instrumentation, a hand-written `index.d.ts`

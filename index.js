@@ -11,6 +11,8 @@ const clientHandshake = require('./lib/handshake');
 const serverHandshake = require('./lib/server-handshake');
 const MessageBus = require('./lib/bus');
 const server = require('./lib/server');
+const deprecate = require('./lib/deprecate');
+const values = require('./lib/values');
 
 // A d-bus address is `family:key=value,key=value`, and DBUS_SESSION_BUS_ADDRESS
 // may hold several of them separated by `;`. See
@@ -77,6 +79,13 @@ function createStream(opts) {
 function createConnection(opts) {
   const self = new EventEmitter();
   if (!opts) opts = {};
+
+  if (opts.ReturnLongjs) {
+    deprecate(
+      'DBUS_DEP0001',
+      "The 'ReturnLongjs' option is deprecated. 64-bit values (x/t) become native BigInt in 2.0, which represents the full range without a dependency."
+    );
+  }
   const stream = (self.stream = createStream(opts));
   stream.setNoDelay?.();
 
@@ -209,6 +218,14 @@ module.exports.sessionBus = function (opts) {
 };
 
 module.exports.messageType = constants.messageType;
+
+// Forward-compatible value helpers. Code written against these behaves the
+// same before and after the 2.0 type-system change -- see docs/deprecations.md
+// and RELEASE_PLAN.md.
+module.exports.Variant = values.Variant;
+module.exports.variantValue = values.variantValue;
+module.exports.variantSignature = values.variantSignature;
+module.exports.toPlain = values.toPlain;
 module.exports.createConnection = createConnection;
 
 module.exports.createServer = server.createServer;
