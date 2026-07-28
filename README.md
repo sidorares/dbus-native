@@ -200,6 +200,44 @@ Two things worth knowing:
 - Capturing the call site costs about 1.95 µs against an 85.8 µs round trip
   (~2%), and only on the promise path.
 
+### Observability
+
+Traffic and call timing are published on
+[`diagnostics_channel`](https://nodejs.org/api/diagnostics_channel.html), so
+you can see what is happening without the library growing a logging API of its
+own:
+
+```js
+const dc = require('node:diagnostics_channel');
+
+// every message, in either direction
+dc.subscribe('dbus:message:send', ({ message }) =>
+  console.log('->', message.destination, message.member)
+);
+dc.subscribe('dbus:message:receive', ({ message }) =>
+  console.log('<-', message.sender, message.member)
+);
+
+// method calls as a tracing channel: start / end / error share a context
+const started = new WeakMap();
+dc.subscribe('tracing:dbus:call:start', ctx => started.set(ctx, Date.now()));
+dc.subscribe('tracing:dbus:call:end', ctx =>
+  console.log(
+    `${ctx.interface}.${ctx.member} took ${Date.now() - started.get(ctx)}ms`
+  )
+);
+dc.subscribe('tracing:dbus:call:error', ctx =>
+  console.error(`${ctx.member} failed:`, ctx.error.message)
+);
+```
+
+Channels are checked for subscribers before any payload is built, so this costs
+nothing when unused — measured at or below run-to-run noise against a ~45 µs
+round trip, both unsubscribed and subscribed.
+
+That makes a `dbus-monitor` equivalent, OpenTelemetry spans, or per-call timing
+a few lines of application code rather than a library feature.
+
 ### Timeouts and cancellation
 
 A call with no reply waits forever by default, which is the behaviour this

@@ -13,6 +13,7 @@ const MessageBus = require('./lib/bus');
 const server = require('./lib/server');
 const deprecate = require('./lib/deprecate');
 const values = require('./lib/values');
+const { publishSend, publishReceive } = require('./lib/diagnostics');
 
 // A d-bus address is `family:key=value,key=value`, and DBUS_SESSION_BUS_ADDRESS
 // may hold several of them separated by `;`. See
@@ -119,6 +120,7 @@ function createConnection(opts) {
   let corked = false;
 
   function writeMessage(msg) {
+    publishSend(msg);
     const buffer = message.marshall(msg);
     if (canCork && !corked) {
       corked = true;
@@ -149,6 +151,7 @@ function createConnection(opts) {
     message.unmarshalMessages(
       stream,
       msg => {
+        publishReceive(msg);
         self.emit('message', msg);
       },
       opts,
