@@ -151,6 +151,35 @@ conn.on('message', function (msg) {
 });
 ```
 
+### TypeScript
+
+Types ship with the package — no `@types/` install, and nothing to keep in
+sync separately. They are checked in CI against a usage fixture, so they
+cannot drift from the implementation without the build failing.
+
+```ts
+import dbus = require('dbus-native');
+import { MessageBus, DBusInterface, TimeoutError } from 'dbus-native';
+
+const bus: MessageBus = dbus.sessionBus({ timeout: 25000 });
+const names: string[] = await bus.listNames();
+
+// describe a remote interface for a checked surface
+interface Player extends DBusInterface {
+  PlayPause(): Promise<void>;
+}
+const player = await bus
+  .getService('org.mpris.MediaPlayer2.vlc')
+  .getInterface<Player>(
+    '/org/mpris/MediaPlayer2',
+    'org.mpris.MediaPlayer2.Player'
+  );
+await player.PlayPause();
+```
+
+Note that a call with no callback is typed as `DBusPromise<T>`, not
+`Promise<T>` — see the note under [Promises](#promises) for why.
+
 ### Promises
 
 Every callback-taking method returns a promise when you omit the callback. The
