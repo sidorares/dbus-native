@@ -338,10 +338,15 @@ Named subclasses for the errors people actually branch on —
 `ServiceUnknownError`, `NoReplyError`, `AccessDeniedError`, `TimeoutError` —
 so `err instanceof NoReplyError` works without string comparison.
 
-**Async stack traces are the real prize.** Today a failed call gives you a
+**Locatable stack traces are the real prize.** Today a failed call gives you a
 stack rooted in the socket read handler, with no trace of your own code.
-Promise rejections carry the caller's frames, so the stack points at the line
-that made the call.
+
+Worth correcting an assumption in an earlier draft: promises do **not** fix
+this for free. V8 stitches async frames only along an unbroken await chain, and
+a reply arriving on a socket is a fresh I/O callback with no link back to the
+caller. The frames have to be captured deliberately at call time and attached
+to the rejection — which is what `lib/promisify.js` now does, measured at
+1.95 µs against an 85.8 µs round trip, so about 2% of a call.
 
 ---
 
