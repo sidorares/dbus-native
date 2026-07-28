@@ -131,13 +131,18 @@ describe('message framing', () => {
     assert.strictEqual(errors[0].code, 'EPROTO');
   });
 
-  it('rejects big-endian messages instead of misreading them', async () => {
-    const be = methodCall();
-    be[0] = constants.endianness.be;
-    const { messages, errors } = await parse([be]);
-    assert.deepStrictEqual(messages, []);
-    assert.strictEqual(errors.length, 1);
-    assert.match(errors[0].message, /byte order/);
+  // Big-endian is now read properly (see test/big-endian.js); anything that is
+  // neither 'l' nor 'B' is still a protocol error.
+  it('rejects an invalid byte order flag', async () => {
+    for (const flag of [0x00, 0x41, 0xff]) {
+      const bad = methodCall();
+      bad[0] = flag;
+      const { messages, errors } = await parse([bad]);
+      assert.deepStrictEqual(messages, [], `flag 0x${flag.toString(16)}`);
+      assert.strictEqual(errors.length, 1);
+      assert.strictEqual(errors[0].code, 'EPROTO');
+      assert.match(errors[0].message, /byte order/);
+    }
   });
 
   it('stops parsing after a framing error', async () => {
