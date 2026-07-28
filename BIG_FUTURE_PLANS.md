@@ -567,28 +567,33 @@ Native ESM, with a real `exports` map:
   "type": "module",
   "exports": {
     ".": "./lib/index.js",
+    "./next": "./lib/next/index.js",
+    "./classic": "./lib/classic/index.js",
+    "./compat": "./lib/compat.js",
     "./variant": "./lib/variant.js",
-    "./loader": "./lib/loader.js",
-    "./testing": "./lib/testing.js",
-    "./legacy": "./legacy/index.cjs"
-  },
-  "engines": { "node": ">=24" }
+    "./testing": "./lib/testing.js"
+  }
 }
 ```
 
-Two deliberate choices:
+Three deliberate choices:
 
-- **ESM-only, not dual.** Dual packages cause the "two copies of the same
-  class" problem, which for a library exporting a `Variant` that people
-  `instanceof` is a genuine hazard, not a theoretical one.
-- **`./legacy` keeps 0.5.x available** under the same package name during
-  migration. You said backwards compatibility is not a requirement, and I have
-  designed accordingly — but a subpath costs almost nothing and means an
-  existing app can upgrade the dependency without rewriting on the same day.
+- **This API ships as `dbus-native/next`** while it is being built, alongside
+  the existing surface, and becomes the default only once it has real users.
+  One package, one repo, one test suite — see
+  [RELEASE_PLAN.md](./RELEASE_PLAN.md) for the sequencing.
+- **ESM-only, not dual**, at the point the default flips. Dual packages cause
+  the "two copies of the same class" problem, which for a library exporting a
+  `Variant` that people `instanceof` is a genuine hazard, not a theoretical
+  one.
+- **`./compat` holds the migration shims**, in a subpath rather than as options
+  on the core, so they are greppable, obviously temporary, and deletable in one
+  commit.
 
-**Node 24 floor**, driven by the `using` syntax. (`Symbol.dispose` itself
-landed in 20.9, but the keyword is native in 24 — the library can implement the
-protocol either way, so this floor is about what the _examples_ can assume.)
+**No Node 24 floor is required.** I said otherwise in an earlier draft and it
+was wrong: the library implements `Symbol.asyncDispose` on any Node that has
+the symbol (20.9+), and only _consumer_ code writing the `using` keyword needs 24. That is the user's choice, not a floor we impose — which matters for a
+library whose users skew embedded and Raspberry Pi.
 
 ---
 
@@ -761,7 +766,9 @@ does not exist is worse than no plan:
 - **Scope.** Everything here is maybe six months of evenings. The sequencing
   below front-loads the parts that stand alone.
 
-**Suggested order**, most value per unit of risk:
+**Suggested order** — superseded by [RELEASE_PLAN.md](./RELEASE_PLAN.md),
+which turns this into a dated release train with migration tooling. Kept here
+because the reasoning about value-per-unit-of-risk still holds:
 
 1. **Promises** (§4 errors, §6 timeouts) — additive, unblocks everything else,
    and [#295](https://github.com/sidorares/dbus-native/pull/295) is a
