@@ -349,7 +349,9 @@ public SCM_RIGHTS API, so it likely means a small native addon or a
 `child_process`-mediated hack — which would undo the "no native dependencies"
 property this package is valued for. Worth scoping before committing.
 
-### 2.9 Small non-canonical cleanups
+### 2.9 Small non-canonical cleanups — DONE
+
+Landed in #312.
 
 **Severity: low — batch them into one tidy-up PR.**
 
@@ -364,6 +366,17 @@ property this package is valued for. Worth scoping before committing.
 - `lib/readline.js` reads **one byte at a time** via `stream.read(1)`.
   Handshake-only so the impact is negligible, but it is not idiomatic.
 - `message.js` never validates the protocol version byte (`header[3]`).
+
+**Outcome (#312).** All done, except `parseInt`/`parseFloat`, which the §2.3
+rewrite had already removed. Two are behaviour changes worth noting in the
+changelog: `unmarshall('')` now returns `[]` rather than an empty `Buffer`, and
+a message declaring a protocol version other than 1 is rejected as the spec
+requires instead of being parsed anyway.
+
+`readOneLine` now reads whole chunks and `unshift()`s the remainder rather than
+calling `stream.read(1)` per byte. It only runs during the SASL handshake, so
+this is tidiness rather than throughput — but it is on the critical path, so it
+gained its own test file alongside the existing real-daemon handshake coverage.
 
 ---
 

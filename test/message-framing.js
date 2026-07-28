@@ -145,6 +145,16 @@ describe('message framing', () => {
     }
   });
 
+  it('rejects an unsupported protocol version', async () => {
+    const bad = methodCall();
+    bad[3] = 2;
+    const { messages, errors } = await parse([bad]);
+    assert.deepStrictEqual(messages, []);
+    assert.strictEqual(errors.length, 1);
+    assert.strictEqual(errors[0].code, 'EPROTO');
+    assert.match(errors[0].message, /protocol version/);
+  });
+
   it('stops parsing after a framing error', async () => {
     const { messages, errors } = await parse([
       header({ fieldsLength: 0xfffffff0 }),
@@ -293,6 +303,41 @@ describe('message.unmarshall', () => {
     const m = message.unmarshall(methodCall());
     assert.strictEqual(m.member, 'Hello');
     assert.strictEqual(m.body, undefined);
+  });
+});
+
+describe('DBusBuffer options handling', () => {
+  it('does not mutate the caller options object', () => {
+    // A connection passes its own opts straight through to every message.
+    const opts = { ReturnLongjs: false };
+    const before = JSON.stringify(opts);
+    message.unmarshall(methodCall({ signature: 's', body: ['x'] }), opts);
+    assert.strictEqual(JSON.stringify(opts), before, 'opts gained a property');
+    assert.ok(!('ayBuffer' in opts));
+  });
+
+  it('tolerates null options', () => {
+    // typeof null === 'object', which used to slip past the guard
+    assert.doesNotThrow(() =>
+      new DBusBuffer(Buffer.alloc(4), 0, null).read('u')
+    );
+  });
+
+  it('tolerates undefined and non-object options', () => {
+    assert.doesNotThrow(() => new DBusBuffer(Buffer.alloc(4), 0).read('u'));
+    assert.doesNotThrow(() => new DBusBuffer(Buffer.alloc(4), 0, 7).read('u'));
+  });
+
+  it('still defaults ayBuffer to true', () => {
+    const buf = require('../lib/marshall')('ay', [Buffer.from([1, 2, 3])]);
+    assert.ok(Buffer.isBuffer(new DBusBuffer(buf, 0, {}).read('ay')[0]));
+  });
+});
+
+describe('unmarshall with an empty signature', () => {
+  it('returns an empty list, like every other signature', () => {
+    const unmarshall = require('../lib/unmarshall');
+    assert.deepStrictEqual(unmarshall(Buffer.alloc(0), ''), []);
   });
 });
 
