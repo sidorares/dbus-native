@@ -200,6 +200,44 @@ Two things worth knowing:
 - Capturing the call site costs about 1.95 µs against an 85.8 µs round trip
   (~2%), and only on the promise path.
 
+### Timeouts and cancellation
+
+A call with no reply waits forever by default, which is the behaviour this
+library has always had — and the reason a long-lived process can accumulate
+pending calls that never resolve. Both a per-call and a per-client timeout are
+available:
+
+```js
+// per call
+await bus.invoke(msg, { timeout: 5000 });
+
+// default for every call on this client
+const bus = dbus.sessionBus({ timeout: 25000 });
+```
+
+A timeout rejects with a `TimeoutError` (`code: 'ETIMEDOUT'`,
+`dbusName: 'org.freedesktop.DBus.Error.NoReply'`) **and removes the pending
+call**, so nothing is left behind.
+
+`AbortSignal` cancels a call, and composes with everything else that takes one:
+
+```js
+const ac = new AbortController();
+process.on('SIGINT', () => ac.abort());
+await bus.invoke(msg, { signal: ac.signal });
+
+await bus.invoke(msg, { signal: AbortSignal.timeout(5000) });
+```
+
+Aborting rejects with an `AbortError` whose `cause` is the signal's reason. If
+the signal is already aborted the message is never written to the socket.
+
+Options work with callbacks too — `bus.invoke(msg, { timeout: 5000 }, cb)`.
+
+The default stays "wait forever" in 0.x: making calls that currently hang start
+failing is a behaviour change, and belongs in a major. See
+[RELEASE_PLAN.md](./RELEASE_PLAN.md).
+
 ### Reading values: variants and dicts
 
 A variant currently unmarshals as `[parsedSignature, [value]]` and a dict as an
