@@ -52,7 +52,15 @@ describe('integration: real session bus', function () {
   let clientBus;
   let impl;
 
-  before(function (done) {
+  // `bus.name` is only populated once the reply to the initial Hello arrives.
+  // Replies come back in order, so round-tripping any call is enough to know
+  // Hello (serial 1) has already been handled.
+  const whenReady = bus =>
+    new Promise((resolve, reject) => {
+      bus.getId(err => (err ? reject(err) : resolve()));
+    });
+
+  before(async function () {
     if (!process.env.DBUS_SESSION_BUS_ADDRESS) {
       return this.skip();
     }
@@ -60,10 +68,14 @@ describe('integration: real session bus', function () {
     clientBus = dbus.sessionBus();
     impl = makeImpl();
 
-    serviceBus.requestName(SERVICE, 0, err => {
-      if (err) return done(err);
-      serviceBus.exportInterface(impl, OBJECT_PATH, ifaceDesc);
-      done();
+    await Promise.all([whenReady(serviceBus), whenReady(clientBus)]);
+
+    await new Promise((resolve, reject) => {
+      serviceBus.requestName(SERVICE, 0, err => {
+        if (err) return reject(err);
+        serviceBus.exportInterface(impl, OBJECT_PATH, ifaceDesc);
+        resolve();
+      });
     });
   });
 
