@@ -35,9 +35,9 @@ targetService.getInterface(targetObjectPath, targetIfaceName, (err, iface) => {
   // we need to check for error
   if (err || !iface) {
     console.error(
-      `Could not query interface '${targetIfaceName}', the error was: ${err}`
-        ? err
-        : '(no error)'
+      `Could not query interface '${targetIfaceName}', the error was: ${
+        err || '(no error)'
+      }`
     );
     process.exit(1);
   }
