@@ -15,6 +15,7 @@
     "bin/dbus2js.js",
     "lib/*",
     "index.js",
+    "index.d.ts",
     "package.json"
   ],
   "directories": {
@@ -48,22 +49,25 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@types/node": "^26.1.2",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.8.0",
     "mocha": "^11.7.6",
-    "prettier": "^3.9.6"
+    "prettier": "^3.9.6",
+    "typescript": "^7.0.2"
   },
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "npm run lint && npm run format:check && npm run test:raw",
+    "test": "npm run lint && npm run format:check && npm run test:types && npm run test:raw",
     "test:raw": "mocha",
     "test:integration": "node scripts/with-dbus.js -- npm run test:integration:raw",
     "test:integration:raw": "mocha --no-config --timeout 10000 test/integration/*.js",
-    "dbus:session": "node scripts/dbus-session.js"
+    "dbus:session": "node scripts/dbus-session.js",
+    "test:types": "tsc --noEmit"
   },
   "overrides": {
     "brace-expansion": "^5.0.8",
@@ -77,5 +81,6 @@
   },
   "engines": {
     "node": ">=20.8.0"
-  }
+  },
+  "types": "index.d.ts"
 }

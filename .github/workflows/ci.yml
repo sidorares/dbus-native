@@ -25,6 +25,7 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check
+      - run: npm run test:types
 
   test:
     name: test (node ${{ matrix.node }}, ${{ matrix.os }})
