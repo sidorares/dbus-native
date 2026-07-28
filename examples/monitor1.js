@@ -1,6 +1,6 @@
 const dbus = require('../index');
 
-var bus = dbus.systemBus();
+const bus = dbus.systemBus();
 bus.invoke({
   member: 'AddMatch',
   signature: 's',

@@ -9,19 +9,19 @@ function buff2msg(buff) {
   return message.unmarshall(buff);
 }
 
-describe('message marshall/unmarshall', function() {
-  var tests = require('./testdata.js');
-  var testName, testData, testNum;
+describe('message marshall/unmarshall', () => {
+  const tests = require('./testdata.js');
+  let testName, testData, testNum;
   for (testName in tests) {
     for (testNum = 0; testNum < tests[testName].length; ++testNum) {
       testData = tests[testName][testNum];
-      var testDesc = `${testName} ${testNum} ${testData[0]}<-${JSON.stringify(
+      const testDesc = `${testName} ${testNum} ${testData[0]}<-${JSON.stringify(
         testData[1]
       )}`;
       if (testData[2] !== false) {
-        (function(testData) {
-          it(testDesc, function() {
-            var msg = {
+        (function (testData) {
+          it(testDesc, () => {
+            const msg = {
               type: 1,
               serial: 1,
               destination: 'final',

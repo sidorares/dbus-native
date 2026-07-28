@@ -59,7 +59,7 @@ sessionBus.requestName(serviceName, 0x4, (err, retCode) => {
 // Function called when we have successfully got the service name we wanted
 function proceed() {
   // First, we need to create our interface description (here we will only expose method calls)
-  var ifaceDesc = {
+  const ifaceDesc = {
     name: interfaceName,
     signals: {
       // Defines a signal whose name is 'Tick' and whose output param is: string (s)
@@ -73,7 +73,7 @@ function proceed() {
   };
 
   // Then we need to create the interface implementation, with the 'emit' field
-  var iface = {
+  const iface = {
     /*
 			So what's going one here, in order for your DBus service to be able to emit signals, you must define one
 			function in your interface object with name 'emit'. This should be a function which takes several
@@ -83,7 +83,7 @@ function proceed() {
 			Here we use the neat ES6 syntax, the spread operator (...), this basically says "bind the first argument in
 			the variable 'signalName' and all others in 'signalOutputParams'"
 		*/
-    emit: function(signalName, ...signalOutputParams) {
+    emit: function (signalName, ...signalOutputParams) {
       /*
 				Now we are in the body of the 'emit()' function of the interface.
 				Just to be clear: you dont NEED to put ANYTHING in this body. When you call 'bus.exportInterface()',
@@ -113,7 +113,7 @@ function proceed() {
 
   /*
 		Here we emit the 'Tick' signal every 10 seconds. As you see, emitting a signal is just calling the 'emit()'
-		function of the interface object with the first parameters being the signal name, and the other paramters, the
+		function of the interface object with the first parameters being the signal name, and the other parameters, the
 		actual output values of the signal.
 	*/
   setInterval(() => {
@@ -126,10 +126,10 @@ function proceed() {
 		The random here is just so that the signals are not emitted too regularly (contrary to 'Tick')
 	*/
   setInterval(() => {
-    var proba = Math.round(Math.random() * 100);
+    const proba = Math.round(Math.random() * 100);
 
     if (proba > 70) {
-      var randomNumber = Math.round(Math.random() * 100);
+      const randomNumber = Math.round(Math.random() * 100);
       iface.emit('Rand', randomNumber);
     }
   }, 2000);

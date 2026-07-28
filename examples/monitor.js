@@ -1,7 +1,7 @@
 const dbus = require('../index');
 
 //var conn = dbus.createConnection({socket: '/var/run/dbus/system_bus_socket'});
-var conn = dbus.createConnection();
+const conn = dbus.createConnection();
 
 conn.message({
   type: 1,
@@ -39,7 +39,7 @@ conn.message({
   body: ["type='method_return'"]
 });
 
-conn.on('message', function(msg) {
+conn.on('message', msg => {
   if (!msg.body) return;
   //console.log(JSON.stringify(msg, 0, 4)); //TODO: dbus-monitor pretty-print
 });

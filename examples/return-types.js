@@ -64,11 +64,8 @@ sessionBus.requestName(serviceName, 0x4, (err, retCode) => {
 
 // Function called when we have successfully got the service name we wanted
 function proceed() {
-  var ifaceDesc;
-  var iface;
-
   // First, we need to create our interface description (here we will only expose method calls)
-  ifaceDesc = {
+  const ifaceDesc = {
     name: interfaceName,
     methods: {
       // Simple types
@@ -97,34 +94,34 @@ function proceed() {
   };
 
   // Then we need to create the interface implementation (with actual functions)
-  iface = {
-    SayHello: function() {
+  const iface = {
+    SayHello: function () {
       return 'Hello, world!'; // This is how to return a single string
     },
-    GetInt16: function() {
-      var min = -0x7fff - 1;
-      var max = 0x7fff;
+    GetInt16: function () {
+      const min = -0x7fff - 1;
+      const max = 0x7fff;
       return Math.round(Math.random() * (max - min) + min);
     },
-    GetUInt16: function() {
-      var min = 0;
-      var max = 0xffff;
+    GetUInt16: function () {
+      const min = 0;
+      const max = 0xffff;
       return Math.round(Math.random() * (max - min) + min);
     },
-    GetInt32: function() {
-      var min = -0x7fffffff - 1;
-      var max = 0x7fffffff;
+    GetInt32: function () {
+      const min = -0x7fffffff - 1;
+      const max = 0x7fffffff;
       return Math.round(Math.random() * (max - min) + min);
     },
-    GetUInt32: function() {
-      var min = 0;
-      var max = 0xffffffff;
+    GetUInt32: function () {
+      const min = 0;
+      const max = 0xffffffff;
       return Math.round(Math.random() * (max - min) + min);
     },
-    GetBool: function() {
+    GetBool: function () {
       return Math.random() >= 0.5 ? true : false;
     },
-    GetDouble: function() {
+    GetDouble: function () {
       /*
 				We are only returning a number between 0 and 1 here, but this is just for the test.
 				Javascript can handle number between Number.MIN_VALUE and Number.MAX_VALUE, which are 5e-234 and 1.7976931348623157e+308 respectively.
@@ -132,12 +129,12 @@ function proceed() {
 			*/
       return Math.random();
     },
-    GetByte: function() {
-      var min = 0x00;
-      var max = 0xff;
+    GetByte: function () {
+      const min = 0x00;
+      const max = 0xff;
       return Math.round(Math.random() * (max - min) + min);
     },
-    GetArrayOfStrings: function(n) {
+    GetArrayOfStrings: function (n) {
       // Check that we requested a positive number of elements, and not a too big one
       if (n < 0 || n > 255) {
         // Return a DBus error to indicate a problem (shows how to send DBus errors)
@@ -146,20 +143,20 @@ function proceed() {
         );
       }
 
-      var ret = [];
+      const ret = [];
       while (n--) {
         ret.unshift(`String #${n}`);
       }
 
       return ret; // 'ret' is an array, to return an array, we simply return it
     },
-    GetCustomStruct: function() {
-      var min = -0x7fffffff - 1;
-      var max = 0x7fffffff;
-      var string =
+    GetCustomStruct: function () {
+      const min = -0x7fffffff - 1;
+      const max = 0x7fffffff;
+      const string =
         'Im sorry, my responses are limited, you must ask the right question.';
-      var int32 = Math.round(Math.random() * (max - min) + min);
-      var bool = Math.random() >= 0.5 ? true : false;
+      const int32 = Math.round(Math.random() * (max - min) + min);
+      const bool = Math.random() >= 0.5 ? true : false;
 
       /*
 				Important note here: for the DBus type STRUCT, you need to return a Javascript ARRAY, with the field in
@@ -167,15 +164,15 @@ function proceed() {
 			*/
       return [string, int32, bool];
     },
-    GetDictEntry: function() {
-      var min = -0x7fffffff - 1;
-      var max = 0x7fffffff;
-      var key1 = 'str1';
-      var key2 = 'str2';
-      var key3 = 'str3';
-      var i1 = Math.round(Math.random() * (max - min) + min);
-      var i2 = Math.round(Math.random() * (max - min) + min);
-      var i3 = Math.round(Math.random() * (max - min) + min);
+    GetDictEntry: function () {
+      const min = -0x7fffffff - 1;
+      const max = 0x7fffffff;
+      const key1 = 'str1';
+      const key2 = 'str2';
+      const key3 = 'str3';
+      const i1 = Math.round(Math.random() * (max - min) + min);
+      const i2 = Math.round(Math.random() * (max - min) + min);
+      const i3 = Math.round(Math.random() * (max - min) + min);
 
       /*
 				This is how DICT_ENTRIES are returned: in JS side, it's an array of arrays.
@@ -183,7 +180,11 @@ function proceed() {
 				MUST be single types, so string, integers, double, booleans, etc.) and the second being
 				the value (here, an int32 ; keys can be any type, including complex one: struct, etc.)
 			*/
-      return [[key1, i1], [key2, i2], [key3, i3]];
+      return [
+        [key1, i1],
+        [key2, i2],
+        [key3, i3]
+      ];
     }
   };
 

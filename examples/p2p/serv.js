@@ -1,8 +1,8 @@
 const dbus = require('../../index');
 
 dbus
-  .createServer(function(conn) {
-    conn.on('message', function(msg) {
+  .createServer(conn => {
+    conn.on('message', msg => {
       if (msg.serial) {
         msg.serial += 1;
       } else {
