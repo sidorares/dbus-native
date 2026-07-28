@@ -45,6 +45,64 @@ describe('marshall: byte arrays', () => {
   });
 });
 
+describe('unmarshall: ay buffer ownership', () => {
+  const message = require('../lib/message');
+
+  // A small ay carried in a large message used to be returned as a view, so
+  // holding four bytes kept the whole message reachable.
+  const wire = message.marshall({
+    serial: 1,
+    type: 1,
+    path: '/p',
+    destination: 'a.b',
+    interface: 'a.b',
+    member: 'M',
+    signature: 'ayay',
+    body: [Buffer.alloc(512 * 1024, 7), Buffer.from([1, 2, 3, 4])]
+  });
+
+  it('does not retain the message buffer by default', () => {
+    const small = message.unmarshall(wire, {}).body[1];
+    assert.strictEqual(small.length, 4);
+    assert.notStrictEqual(
+      small.buffer,
+      wire.buffer,
+      'byte array still aliases the message'
+    );
+    assert.ok(
+      small.buffer.byteLength < wire.length,
+      `retained ${small.buffer.byteLength} bytes for 4 bytes of data`
+    );
+  });
+
+  it("returns a zero-copy view when ayBuffer is 'view'", () => {
+    const small = message.unmarshall(wire, { ayBuffer: 'view' }).body[1];
+    assert.strictEqual(small.buffer, wire.buffer);
+  });
+
+  it('produces identical bytes either way', () => {
+    const copied = message.unmarshall(wire, {}).body[0];
+    const viewed = message.unmarshall(wire, { ayBuffer: 'view' }).body[0];
+    assert.ok(copied.equals(viewed));
+    assert.strictEqual(copied.length, 512 * 1024);
+  });
+
+  it('still returns a plain array when ayBuffer is false', () => {
+    const small = message.unmarshall(wire, { ayBuffer: false }).body[1];
+    assert.ok(Array.isArray(small));
+    assert.deepStrictEqual(small, [1, 2, 3, 4]);
+  });
+
+  it('handles an empty ay in both modes', () => {
+    const empty = marshall('ay', [Buffer.alloc(0)]);
+    assert.strictEqual(unmarshall(empty, 'ay', 0, {})[0].length, 0);
+    assert.strictEqual(
+      unmarshall(empty, 'ay', 0, { ayBuffer: 'view' })[0].length,
+      0
+    );
+  });
+});
+
 describe('marshall: array arguments', () => {
   // The old marshaller iterated `data.length` blindly, so a non-array silently
   // serialised as an empty array instead of raising.
