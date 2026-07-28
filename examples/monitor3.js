@@ -1,6 +1,6 @@
 const dbus = require('../index');
 
-var bus = dbus.sessionBus();
+const bus = dbus.sessionBus();
 bus.connection.on('message', console.log);
 bus.addMatch("type='signal'");
 bus.addMatch("type='method_call'");

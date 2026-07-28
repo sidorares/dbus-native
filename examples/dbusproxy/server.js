@@ -4,18 +4,18 @@ const node_static = require('node-static');
 const dbus = require('../../index');
 
 // 1. Echo sockjs server
-var sockjs_opts = {
+const sockjs_opts = {
   sockjs_url: 'https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js'
 };
 
-var sockjs_echo = sockjs.createServer(sockjs_opts);
-sockjs_echo.on('connection', function(conn) {
-  var dbusConn = dbus.sessionBus().connection;
-  conn.on('data', function(message) {
+const sockjs_echo = sockjs.createServer(sockjs_opts);
+sockjs_echo.on('connection', conn => {
+  const dbusConn = dbus.sessionBus().connection;
+  conn.on('data', message => {
     //conn.write(message);
     try {
       //console.log('about to parse', message)
-      var o = JSON.parse(message);
+      const o = JSON.parse(message);
       //console.log('after parse', [o]);
       try {
         dbusConn.message(o);
@@ -23,9 +23,9 @@ sockjs_echo.on('connection', function(conn) {
         console.log(ee);
       }
       //console.log('sent to dbus');
-    } catch (e) {}
+    } catch {}
   });
-  dbusConn.on('message', function(msg) {
+  dbusConn.on('message', msg => {
     //console.log('GOT MESSAGE', msg);
     conn.write(JSON.stringify(msg));
     //conn.write(msg);
@@ -33,14 +33,14 @@ sockjs_echo.on('connection', function(conn) {
 });
 
 // 2. Static files server
-var static_directory = new node_static.Server(__dirname);
+const static_directory = new node_static.Server(__dirname);
 
 // 3. Usual http stuff
-var server = http.createServer();
-server.addListener('request', function(req, res) {
+const server = http.createServer();
+server.addListener('request', (req, res) => {
   static_directory.serve(req, res);
 });
-server.addListener('upgrade', function(req, res) {
+server.addListener('upgrade', (req, res) => {
   res.end();
 });
 

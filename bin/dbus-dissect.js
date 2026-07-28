@@ -1,22 +1,40 @@
 // simple script to monitor incoming/outcoming dbus messages
-// needs a lot of cleanup but does the job
+//
+// It listens on a TCP port and proxies everything to the real bus, dumping
+// every decoded message from both directions along the way.
 
 const net = require('net');
-const abs = require('abstract-socket');
-const through2 = require('through2');
-const optimist = require('optimist');
+const { PassThrough } = require('stream');
+const { parseArgs } = require('util');
 const message = require('../lib/message');
 const readLine = require('../lib/readline');
 
-var sessionBusAddress = process.env.DBUS_SESSION_BUS_ADDRESS;
-var m = sessionBusAddress.match(/abstract=([^,]+)/);
+const { values: argv } = parseArgs({
+  options: {
+    system: { type: 'boolean', default: false },
+    port: { type: 'string', default: '3334' }
+  }
+});
 
-var isSystemBus = optimist.boolean(['system']).argv.system;
+function sessionBusAddress() {
+  const address = process.env.DBUS_SESSION_BUS_ADDRESS;
+  if (!address) {
+    throw new Error('DBUS_SESSION_BUS_ADDRESS is not set');
+  }
+  const abstract = address.match(/abstract=([^,]+)/);
+  // Node supports Linux abstract sockets natively by prefixing with a NUL byte.
+  if (abstract) return `\0${abstract[1]}`;
+  const path = address.match(/path=([^,]+)/);
+  if (path) return path[1];
+  throw new Error(`Cannot dissect bus address: ${address}`);
+}
 
-var address = isSystemBus ? '/var/run/dbus/system_bus_socket' : `\0${m[1]}`;
+const address = argv.system
+  ? '/var/run/dbus/system_bus_socket'
+  : sessionBusAddress();
 
 function waitHandshake(stream, prefix, cb) {
-  readLine(stream, function(line) {
+  readLine(stream, line => {
     console.log(prefix, line.toString());
     if (
       line.toString().slice(0, 5) === 'BEGIN' ||
@@ -30,49 +48,32 @@ function waitHandshake(stream, prefix, cb) {
 }
 
 net
-  .createServer(function(s) {
-    var buff = '';
-    var connected = false;
+  .createServer(s => {
+    const cli = net.connect(address);
 
-    var socket = isSystemBus ? net : abs;
-    var cli = socket.connect(address);
-
-    s.on('data', function(d) {
-      if (connected) {
-        cli.write(d);
-      } else {
-        buff += d.toString();
-      }
-    });
-    connected = true;
-    cli.write(buff);
+    s.pipe(cli);
     cli.pipe(s);
 
-    var cc = through2();
-    var ss = through2();
+    const fromBus = new PassThrough();
+    const fromClient = new PassThrough();
 
-    // TODO: pipe? streams1 and streams2 here
-    cli.on('data', function(b) {
-      cc.write(b);
-    });
-    s.on('data', function(b) {
-      ss.write(b);
-    });
+    cli.on('data', b => fromBus.write(b));
+    s.on('data', b => fromClient.write(b));
 
-    waitHandshake(cc, 'dbus>', function() {
-      message.unmarshalMessages(cc, function(message) {
-        console.log('dbus>\n', JSON.stringify(message, null, 2));
+    waitHandshake(fromBus, 'dbus>', () => {
+      message.unmarshalMessages(fromBus, msg => {
+        console.log('dbus>\n', JSON.stringify(msg, null, 2));
       });
     });
 
-    waitHandshake(ss, ' cli>', function() {
-      message.unmarshalMessages(ss, function(message) {
-        console.log(' cli>\n', JSON.stringify(message, null, 2));
+    waitHandshake(fromClient, ' cli>', () => {
+      message.unmarshalMessages(fromClient, msg => {
+        console.log(' cli>\n', JSON.stringify(msg, null, 2));
       });
     });
   })
-  .listen(3334, function() {
+  .listen(Number(argv.port), () => {
     console.log(
-      'Server started. connect with DBUS_SESSION_BUS_ADDRESS=tcp:host=127.0.0.1,port=3334'
+      `Server started. connect with DBUS_SESSION_BUS_ADDRESS=tcp:host=127.0.0.1,port=${argv.port}`
     );
   });

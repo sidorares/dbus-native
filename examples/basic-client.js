@@ -32,10 +32,8 @@ service.getInterface(objectPath, interfaceName, (err, iface) => {
   if (err) {
     console.error(
       `Failed to request interface '${interfaceName}' at '${objectPath}' : ${
-        err
+        err || '(no error)'
       }`
-        ? err
-        : '(no error)'
     );
     process.exit(1);
   }

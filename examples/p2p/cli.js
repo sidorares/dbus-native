@@ -1,8 +1,8 @@
 const dbus = require('../../index');
 
-var count = 0;
+let count = 0;
 const conn = dbus.createConnection({ port: 3333, handshake: 'none' });
-conn.on('message', function(msg) {
+conn.on('message', msg => {
   if (msg.serial) {
     msg.serial += 1;
   } else {
@@ -12,7 +12,7 @@ conn.on('message', function(msg) {
   count++;
 });
 
-setInterval(function() {
+setInterval(() => {
   console.log(count);
   count = 0;
 }, 1000);

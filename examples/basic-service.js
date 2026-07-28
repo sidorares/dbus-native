@@ -64,7 +64,7 @@ sessionBus.requestName(serviceName, 0x4, (err, retCode) => {
 // Function called when we have successfully got the service name we wanted
 function proceed() {
   // First, we need to create our interface description (here we will only expose method calls)
-  var ifaceDesc = {
+  const ifaceDesc = {
     name: interfaceName,
     methods: {
       // Simple types
@@ -82,19 +82,19 @@ function proceed() {
   };
 
   // Then we need to create the interface implementation (with actual functions)
-  var iface = {
-    SayHello: function() {
+  const iface = {
+    SayHello: function () {
       return 'Hello, world!';
     },
-    GiveTime: function() {
+    GiveTime: function () {
       return new Date().toString();
     },
-    Capitalize: function(str) {
+    Capitalize: function (str) {
       return str.toUpperCase();
     },
     Flag: true,
     StringProp: 'initial string',
-    emit: function() {
+    emit: function () {
       // no nothing, as usual
     }
   };
@@ -106,7 +106,7 @@ function proceed() {
   console.log('Interface exposed to DBus, ready to receive function calls!');
 
   setInterval(() => {
-    var rand = Math.round(Math.random() * 100);
+    const rand = Math.round(Math.random() * 100);
     if (rand > 75) {
       iface.emit('Rand', Math.round(Math.random() * 100));
     }

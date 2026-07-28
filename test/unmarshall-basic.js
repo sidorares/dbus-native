@@ -1,22 +1,21 @@
-const Buffer = require('safe-buffer').Buffer;
 const marshall = require('../lib/marshall');
 const unmarshall = require('../lib/unmarshall');
 const assert = require('assert');
 const Long = require('long');
 
-var LongMaxS64 = Long.fromString('9223372036854775807', false);
-var LongMinS64 = Long.fromString('-9223372036854775808', false);
-var LongMaxU64 = Long.fromString('18446744073709551615', true);
-var LongMinU64 = Long.fromString('0', true);
-var LongMaxS53 = Long.fromString('9007199254740991', false);
-var LongMinS53 = Long.fromString('-9007199254740991', false);
-var LongMaxU53 = Long.fromString('9007199254740991', true);
-var LongMinU53 = Long.fromString('0', true);
+const LongMaxS64 = Long.fromString('9223372036854775807', false);
+const LongMinS64 = Long.fromString('-9223372036854775808', false);
+const LongMaxU64 = Long.fromString('18446744073709551615', true);
+const LongMinU64 = Long.fromString('0', true);
+const LongMaxS53 = Long.fromString('9007199254740991', false);
+const LongMinS53 = Long.fromString('-9007199254740991', false);
+const LongMaxU53 = Long.fromString('9007199254740991', true);
+const LongMinU53 = Long.fromString('0', true);
 
 /** Take the data and marshall it then unmarshall it */
 function marshallAndUnmarshall(signature, data, unmarshall_opts) {
-  var marshalledBuffer = marshall(signature, data);
-  var result = unmarshall(
+  const marshalledBuffer = marshall(signature, data);
+  const result = unmarshall(
     marshalledBuffer,
     signature,
     undefined,
@@ -26,7 +25,7 @@ function marshallAndUnmarshall(signature, data, unmarshall_opts) {
 }
 
 function test(signature, data, other_result, unmarshall_opts) {
-  var result = marshallAndUnmarshall(signature, data, unmarshall_opts);
+  const result = marshallAndUnmarshall(signature, data, unmarshall_opts);
   try {
     if (other_result !== undefined) {
       assert.deepStrictEqual(result, other_result);
@@ -38,28 +37,32 @@ function test(signature, data, other_result, unmarshall_opts) {
     console.log('orig        :', data);
     console.log('unmarshalled:', result);
     if (other_result !== undefined) {
-      throw new Error(`results don't match (${result}) != (${other_result})`);
+      throw new Error(`results don't match (${result}) != (${other_result})`, {
+        cause: e
+      });
     } else {
-      throw new Error(`results don't match (${data}) != (${result})`);
+      throw new Error(`results don't match (${data}) != (${result})`, {
+        cause: e
+      });
     }
   }
 }
 
-var str300chars = '';
-for (var i = 0; i < 300; ++i) str300chars += 'i';
+let str300chars = '';
+for (let i = 0; i < 300; ++i) str300chars += 'i';
 
-var b30000bytes = Buffer.alloc(30000, 60);
-var str30000chars = b30000bytes.toString('ascii');
+const b30000bytes = Buffer.alloc(30000, 60);
+const str30000chars = b30000bytes.toString('ascii');
 
 function expectMarshallToThrowOnBadArguments(badSig, badData, errorRegex) {
-  assert.throws(function() {
+  assert.throws(() => {
     marshall(badSig, badData);
   }, errorRegex);
 }
 
-describe('marshall', function() {
-  it('throws error on bad data', function() {
-    var badData = [
+describe('marshall', () => {
+  it('throws error on bad data', () => {
+    const badData = [
       ['s', [3], /Expected string or buffer argument/],
       ['s', ['as\0df'], /String contains null byte/],
       ['g', [3], /Expected string or buffer argument/],
@@ -137,17 +140,17 @@ describe('marshall', function() {
       ['d', [NaN], /Data:.*was not a number/],
       ['d', [Number.POSITIVE_INFINITY], /Number outside range/]
     ];
-    for (var ii = 0; ii < badData.length; ++ii) {
-      var badRow = badData[ii];
-      var badSig = badRow[0];
-      var badDatum = badRow[1];
-      var errorRegex = badRow[2];
+    for (let ii = 0; ii < badData.length; ++ii) {
+      const badRow = badData[ii];
+      const badSig = badRow[0];
+      const badDatum = badRow[1];
+      const errorRegex = badRow[2];
       expectMarshallToThrowOnBadArguments(badSig, badDatum, errorRegex);
     }
   });
-  it('throws error on bad signature', function() {
-    var badSig = '1';
-    var badData = 1;
+  it('throws error on bad signature', () => {
+    const badSig = '1';
+    const badData = 1;
     expectMarshallToThrowOnBadArguments(
       badSig,
       badData,
@@ -156,9 +159,9 @@ describe('marshall', function() {
   });
 });
 
-describe('marshall/unmarshall', function() {
+describe('marshall/unmarshall', () => {
   // signature, data, not expected to fail?, data after unmarshall (when expected to convert to canonic form and different from input), unmarshall_options
-  var tests = {
+  const tests = {
     'simple types': [
       ['s', ['short string']],
       ['s', [str30000chars]],
@@ -312,57 +315,116 @@ describe('marshall/unmarshall', function() {
     ],
     'arrays of simple types': [
       ['ai', [[1, 2, 3, 4, 5, 6, 7]]],
-      ['aai', [[[300, 400, 500], [1, 2, 3, 4, 5, 6, 7]]]],
-      ['aiai', [[1, 2, 3], [300, 400, 500]]]
+      [
+        'aai',
+        [
+          [
+            [300, 400, 500],
+            [1, 2, 3, 4, 5, 6, 7]
+          ]
+        ]
+      ],
+      [
+        'aiai',
+        [
+          [1, 2, 3],
+          [300, 400, 500]
+        ]
+      ]
     ],
     'compound types': [
       ['iyai', [10, 100, [1, 2, 3, 4, 5, 6]]],
       // TODO: fix 'array of structs offset problem
-      ['a(iyai)', [[[10, 100, [1, 2, 3, 4, 5, 6]], [11, 200, [15, 4, 5, 6]]]]],
+      [
+        'a(iyai)',
+        [
+          [
+            [10, 100, [1, 2, 3, 4, 5, 6]],
+            [11, 200, [15, 4, 5, 6]]
+          ]
+        ]
+      ],
       [
         'sa(iyai)',
         [
           'test test test test',
-          [[10, 100, [1, 2, 3, 4, 5, 6]], [11, 200, [15, 4, 5, 6]]]
+          [
+            [10, 100, [1, 2, 3, 4, 5, 6]],
+            [11, 200, [15, 4, 5, 6]]
+          ]
         ]
       ],
-      ['a(iyai)', [[[10, 100, [1, 2, 3, 4, 5, 6]], [11, 200, [15, 4, 5, 6]]]]],
-      ['a(yai)', [[[100, [1, 2, 3, 4, 5, 6]], [200, [15, 4, 5, 6]]]]],
+      [
+        'a(iyai)',
+        [
+          [
+            [10, 100, [1, 2, 3, 4, 5, 6]],
+            [11, 200, [15, 4, 5, 6]]
+          ]
+        ]
+      ],
+      [
+        'a(yai)',
+        [
+          [
+            [100, [1, 2, 3, 4, 5, 6]],
+            [200, [15, 4, 5, 6]]
+          ]
+        ]
+      ],
       [
         'a(yyai)',
-        [[[100, 101, [1, 2, 3, 4, 5, 6]], [200, 201, [15, 4, 5, 6]]]]
+        [
+          [
+            [100, 101, [1, 2, 3, 4, 5, 6]],
+            [200, 201, [15, 4, 5, 6]]
+          ]
+        ]
       ],
       [
         'a(yyyai)',
-        [[[100, 101, 102, [1, 2, 3, 4, 5, 6]], [200, 201, 202, [15, 4, 5, 6]]]]
+        [
+          [
+            [100, 101, 102, [1, 2, 3, 4, 5, 6]],
+            [200, 201, 202, [15, 4, 5, 6]]
+          ]
+        ]
       ],
       ['ai', [[1, 2, 3, 4, 5, 6]]],
       ['aii', [[1, 2, 3, 4, 5, 6], 10]],
       ['a(ai)', [[[[1, 2, 3, 4, 5, 6]], [[15, 4, 5, 6]]]]],
-      ['aai', [[[1, 2, 3, 4, 5, 6], [15, 4, 5, 6]]]]
+      [
+        'aai',
+        [
+          [
+            [1, 2, 3, 4, 5, 6],
+            [15, 4, 5, 6]
+          ]
+        ]
+      ]
     ],
     buffers: [
       ['ayay', [Buffer.from([0, 1, 2, 3, 4, 5, 6, 0xff]), Buffer.from([])]]
     ]
   };
 
-  var testName, testData, testNum;
+  let testName, testData, testNum;
   for (testName in tests) {
     for (testNum = 0; testNum < tests[testName].length; ++testNum) {
       testData = tests[testName][testNum];
-      var testDesc = `${testName} ${testNum} ${testData[0]}<-${JSON.stringify(
+      const testDesc = `${testName} ${testNum} ${testData[0]}<-${JSON.stringify(
         testData[1]
       )}`;
       if (testData[2] === false) {
         // should fail
-        (function(testData) {
-          it(testDesc, function() {
+        (function (testData) {
+          it(testDesc, () => {
             test(testData[0], testData[1], testData[3], testData[4]);
           });
         })(testData);
       } else {
-        (function(testData) {
-          it(testDesc, function() {
+        (function (testData) {
+          it(testDesc, () => {
             test(testData[0], testData[1], testData[3], testData[4]);
           });
         })(testData);
@@ -372,9 +434,9 @@ describe('marshall/unmarshall', function() {
 });
 
 // issue-128: marshall/unmarshall of "n"
-var data = [10, 1000];
-var s = 'nn';
-var buf = marshall(s, data);
+const data = [10, 1000];
+const s = 'nn';
+const buf = marshall(s, data);
 assert.equal(buf.toString('hex'), '0a00e803');
 assert.deepStrictEqual(unmarshall(buf, s), data);
 
