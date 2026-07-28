@@ -231,7 +231,9 @@ prototype (2.18 µs vs 1.18 µs on the Notify case) is signature parsing, which
 Sequence with §3.2 (BigInt): both rewrite the same scalar paths. Either do
 BigInt first and rewrite once, or accept touching `x`/`t` twice.
 
-### 2.4 Cache parsed signatures
+### 2.4 Cache parsed signatures — DONE
+
+Landed in #308.
 
 **Severity: medium — pure win, small diff.**
 
@@ -244,6 +246,21 @@ Signatures come from a tiny set in practice. A bounded `Map` cache (capped, so a
 peer sending unique signatures cannot grow it without limit) is a few lines.
 Note the returned tree must then be treated as immutable — check no caller
 mutates it before landing this.
+
+**Outcome (#308).** Cached in `lib/signature.js`, capped at 1000 entries with
+oldest-first eviction. No caller mutates a tree, but `DBusBuffer.readVariant`
+_returns_ one to application code as `variant[0]`, so cached trees are
+deep-frozen rather than merely documented as immutable.
+
+| case                            | before   | after    |      |
+| ------------------------------- | -------- | -------- | ---- |
+| unmarshall `a{sv}`, 500 entries | 243.6 µs | 124.2 µs | 2.0× |
+| unmarshall Notify-like          | 1.33 µs  | 1.03 µs  | 1.3× |
+| marshall Notify-like            | 2.18 µs  | 1.86 µs  | 1.2× |
+| `message.marshall` (full call)  | 5.28 µs  | 4.13 µs  | 1.3× |
+
+This is the first item in §2 to speed up the **read** path, which §2.1–§2.3 left
+untouched.
 
 ### 2.5 `ay` buffer views retain the whole message
 
