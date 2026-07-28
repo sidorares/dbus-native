@@ -80,8 +80,13 @@ function createConnection(opts) {
   const stream = (self.stream = createStream(opts));
   stream.setNoDelay?.();
 
+  // Set once we have reported a fatal protocol error and torn the stream
+  // down ourselves, so the teardown does not surface as a second error.
+  let fatal = false;
+
   stream.on('error', err => {
     // forward network and stream errors
+    if (fatal) return;
     self.emit('error', err);
   });
 
@@ -109,7 +114,15 @@ function createConnection(opts) {
       msg => {
         self.emit('message', msg);
       },
-      opts
+      opts,
+      err => {
+        // Framing is unrecoverable: we no longer know where the next message
+        // starts, so surface the error and drop the connection rather than
+        // resynchronising on garbage.
+        self.emit('error', err);
+        fatal = true;
+        stream.destroy();
+      }
     );
   });
 
