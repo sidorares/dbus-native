@@ -151,6 +151,55 @@ conn.on('message', function (msg) {
 });
 ```
 
+### Promises
+
+Every callback-taking method returns a promise when you omit the callback. The
+callback form is unchanged.
+
+```js
+const bus = dbus.sessionBus();
+
+const iface = await bus
+  .getService('org.freedesktop.Notifications')
+  .getInterface(
+    '/org/freedesktop/Notifications',
+    'org.freedesktop.Notifications'
+  );
+
+const id = await iface.Notify('app', 0, '', 'summary', 'body', [], [], 5000);
+const names = await bus.listNames();
+```
+
+Resolution follows the number of values in the reply: none resolves to
+`undefined`, one resolves to the value, and several resolve to an array.
+
+Rejections are always a `DBusError` with `message`, `dbusName`, `body` and
+`reply`, plus the frames of the call site appended to the stack — a reply
+arrives on the socket, so without that a failed call would only ever point at
+this library's internals.
+
+```js
+try {
+  await iface.Notify(/* ... */);
+} catch (err) {
+  if (err.dbusName === 'org.freedesktop.DBus.Error.ServiceUnknown') {
+    // ...
+  }
+}
+```
+
+Two things worth knowing:
+
+- Omitting the callback has always meant fire-and-forget, and a lot of code
+  does `bus.invoke({ member: 'AddMatch', ... })` without one. So the returned
+  value is a **thenable that only creates its promise when you `await` or
+  `.then()` it** — ignore it and a failure is dropped exactly as it was before,
+  rather than becoming an unhandled rejection that terminates the process. It
+  is not an `instanceof Promise`, though it works with `await`, `Promise.all`
+  and `.catch`/`.finally`.
+- Capturing the call site costs about 1.95 µs against an 85.8 µs round trip
+  (~2%), and only on the promise path.
+
 ### Reading values: variants and dicts
 
 A variant currently unmarshals as `[parsedSignature, [value]]` and a dict as an

@@ -83,7 +83,15 @@ describe('integration: promises', function () {
           assert.ok(err instanceof DBusError);
           assert.strictEqual(err.message, 'deliberate failure');
           assert.strictEqual(err.dbusName, 'com.example.Error.Boom');
-          assert.ok(err.stack.includes('promises.js'), 'stack reaches caller');
+          // The error is built in the socket read handler, so its own frames
+          // are all library internals. The caller's frames are stitched on.
+          assert.match(err.stack, /--- d-bus call made at ---/);
+          assert.ok(
+            err.stack
+              .split('--- d-bus call made at ---')[1]
+              .includes('integration/promises.js'),
+            'stitched frames should name the calling file'
+          );
           return true;
         }
       );
