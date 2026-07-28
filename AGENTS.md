@@ -30,8 +30,7 @@ lib/
   marshallers.js      per-type marshallers + range/type validation
   dbus-buffer.js      the deserialiser (DBusBuffer)
   signature.js        signature string -> tree
-  put.js              tiny byte-buffer builder used by the marshaller
-  align.js            D-Bus padding rules
+  writer.js           growable output buffer with a write cursor
   handshake.js        client SASL auth (EXTERNAL, DBUS_COOKIE_SHA1, ANONYMOUS)
   server-handshake.js server-side auth -- a STUB, see ROADMAP 4.5
   introspect.js       XML introspection -> proxy objects
@@ -108,13 +107,15 @@ These have each bitten someone before:
 
 - **Alignment is the whole ballgame.** D-Bus pads every type to its natural
   boundary, and array lengths _exclude_ the padding that precedes the first
-  element. `lib/align.js`, `marshall.js` case `'a'`, and
+  element. `Writer.align()`, `marshall.js`'s `writeArray`, and
   `DBusBuffer.readArray` must agree. If a round-trip test fails on a compound
   type, suspect alignment first.
-- **`ps._offset` is maintained by hand.** `lib/put.js` does not track the
-  offset within the enclosing message; every caller increments `_offset` itself
-  after writing. Add a write path and you must add the matching `_offset`
-  bookkeeping or everything after it misaligns.
+- **Alignment is relative to the message, not the buffer.** `Writer` takes a
+  `base` offset because the header fields array is marshalled at offset 12
+  within its message. A write method that pads using `pos` instead of
+  `base + pos` will look correct in isolation and corrupt real messages.
+- **`Writer` uses `Buffer.allocUnsafe`.** Any padding you add must be
+  explicitly zero-filled, or uninitialised heap memory goes on the wire.
 - **Variants unmarshal as `[signatureTree, [value]]`.** The value is at
   `[1][0]`. This leaks the parser's internal tree into the public API; it is
   ugly, widely depended on, and changing it is a breaking change (ROADMAP 4.1).
