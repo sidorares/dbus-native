@@ -162,7 +162,10 @@ or losing the rest of the read buffer. Care needed: this changes observable
 behaviour for anyone currently relying on the crash, so it wants a note in the
 changelog.
 
-### 2.3 Rewrite the marshaller onto a single-buffer cursor writer
+### 2.3 Rewrite the marshaller onto a single-buffer cursor writer — DONE
+
+Landed in #307. Kept for the record; the measured result is at the bottom of
+this section.
 
 **Severity: high for throughput — up to 2000× on byte arrays.**
 
@@ -205,6 +208,25 @@ Fold into the same PR, since they touch the same code:
 This obsoletes `lib/put.js`, added in #299. That was the right minimal fix for
 removing the abandoned `put` dependency, but it inherits that package's
 allocation model.
+
+**Outcome (#307).** `lib/writer.js` replaces `lib/put.js` and `lib/align.js`,
+both deleted. Validated by a differential test against the previous
+implementation: **1157/1157 byte-identical** across every type, at twelve
+starting offsets each, plus error-message parity on the failure paths. Measured
+on the same machine as the numbers above:
+
+| case                           | before     | after   |           |
+| ------------------------------ | ---------- | ------- | --------- |
+| Notify-like (`susssasa{sv}i`)  | 5.41 µs    | 2.18 µs | 2.5×      |
+| `message.marshall` (full call) | 10.71 µs   | 5.28 µs | 2.0×      |
+| `ai`, 10k ints                 | 1226 µs    | 403 µs  | 3.0×      |
+| `as`, 1k strings               | 374 µs     | 150 µs  | 2.5×      |
+| `ay` from Buffer, 1 KB         | 105.6 µs   | 0.67 µs | **158×**  |
+| `ay` from Buffer, 1 MB         | 293 204 µs | 127 µs  | **2300×** |
+
+`ay` now runs at 1.5–8 GB/s rather than 3.5 MB/s. The gap to the unvalidated
+prototype (2.18 µs vs 1.18 µs on the Notify case) is signature parsing, which
+§2.4 addresses.
 
 Sequence with §3.2 (BigInt): both rewrite the same scalar paths. Either do
 BigInt first and rewrite once, or accept touching `x`/`t` twice.
