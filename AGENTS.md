@@ -33,7 +33,7 @@ lib/
   put.js              tiny byte-buffer builder used by the marshaller
   align.js            D-Bus padding rules
   handshake.js        client SASL auth (EXTERNAL, DBUS_COOKIE_SHA1, ANONYMOUS)
-  server-handshake.js server-side auth -- a STUB, see ROADMAP 3.5
+  server-handshake.js server-side auth -- a STUB, see ROADMAP 4.5
   introspect.js       XML introspection -> proxy objects
   stdifaces.js        org.freedesktop.DBus.{Introspectable,Properties,Peer}
   constants.js        message types, header fields, endianness
@@ -96,7 +96,7 @@ docker run --rm -it -v "$PWD":/app -w /app node:24 \
   with debug tooling).
 - Callback style is `(err, result)` and is **public API**. Adding promise
   support means returning a promise when no callback is given — never replacing
-  the callback path. See ROADMAP 2.1.
+  the callback path. See ROADMAP 3.1.
 - Commits should be [Conventional Commits](https://www.conventionalcommits.org/)
   (`feat:`, `fix:`, `deps:`, `docs:`, `chore:`). release-please derives the
   changelog and the version bump from them, so a mislabelled commit ships the
@@ -117,11 +117,11 @@ These have each bitten someone before:
   bookkeeping or everything after it misaligns.
 - **Variants unmarshal as `[signatureTree, [value]]`.** The value is at
   `[1][0]`. This leaks the parser's internal tree into the public API; it is
-  ugly, widely depended on, and changing it is a breaking change (ROADMAP 3.1).
+  ugly, widely depended on, and changing it is a breaking change (ROADMAP 4.1).
 - **`ay` is special-cased to a Buffer** (`options.ayBuffer`, default true), so
   byte arrays do not round-trip as plain arrays.
 - **64-bit types go through `long.js` and lose precision above 2^53** unless
-  `ReturnLongjs` is set. Replacing this with BigInt is planned (ROADMAP 2.2).
+  `ReturnLongjs` is set. Replacing this with BigInt is planned (ROADMAP 3.2).
 - **`lib/server-handshake.js` is not a real implementation.** It replies with a
   hardcoded GUID and cookie and logs to stdout. Do not treat `createServer` as
   working infrastructure.
@@ -145,3 +145,9 @@ These have each bitten someone before:
 `ROADMAP.md` has the triaged backlog, including which open PRs are worth
 reviving and the current state of the `dbus-next` / `@homebridge/dbus-native`
 fork situation.
+
+If you are touching the wire layer specifically, read **ROADMAP §2** first. It
+is a measured audit of the marshaller, unmarshaller and stream framing, broken
+into PR-sized blocks — including the known crash-on-malformed-input paths and
+the ~2000× headroom on byte-array marshalling. Several of the landmines above
+are scheduled to change there.
