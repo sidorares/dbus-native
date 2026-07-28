@@ -4,6 +4,13 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Don't adopt a version the week it is published. Compromised releases are
+    # typically caught and yanked within days, and this project has already had
+    # to remove one dependency (event-stream) over exactly that failure mode.
+    # Security updates ignore cooldown, so genuine CVE fixes are not delayed.
+    cooldown:
+      default-days: 7
+      semver-major-days: 14
     open-pull-requests-limit: 10
     groups:
       # Keep lint/test tooling churn to a single PR a week.
