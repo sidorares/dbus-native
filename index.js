@@ -94,8 +94,36 @@ function createConnection(opts) {
     self.emit('end');
     self.message = () => {
       console.warn("Didn't write bytes to closed stream");
+      return false;
     };
   });
+
+  // Forwarded so callers that stopped writing on a `false` from message()
+  // know when it is safe to resume.
+  stream.on('drain', () => self.emit('drain'));
+
+  // Messages written in the same tick are batched into a single flush. Without
+  // this, emitting N signals in one turn of the event loop issues N separate
+  // writes to the socket.
+  const canCork =
+    typeof stream.cork === 'function' && typeof stream.uncork === 'function';
+  let corked = false;
+
+  function writeMessage(msg) {
+    const buffer = message.marshall(msg);
+    if (canCork && !corked) {
+      corked = true;
+      stream.cork();
+      process.nextTick(() => {
+        corked = false;
+        // The stream may have been destroyed between cork and uncork.
+        if (!stream.destroyed) stream.uncork();
+      });
+    }
+    // Propagate the writable's backpressure signal: false means its buffer is
+    // over the high water mark and the caller should wait for 'drain'.
+    return stream.write(buffer);
+  }
 
   self.end = () => {
     stream.end();
@@ -145,21 +173,19 @@ function createConnection(opts) {
   self._messages = [];
 
   // pre-connect version, buffers all messages. replaced after connect
+  // Reports no backpressure: nothing has reached the socket yet.
   self.message = msg => {
     self._messages.push(msg);
+    return true;
   };
 
   self.once('connect', () => {
     self.state = 'connected';
-    for (const msg of self._messages) {
-      stream.write(message.marshall(msg));
-    }
+    for (const msg of self._messages) writeMessage(msg);
     self._messages.length = 0;
 
     // no need to buffer once connected
-    self.message = msg => {
-      stream.write(message.marshall(msg));
-    };
+    self.message = writeMessage;
   });
 
   return self;

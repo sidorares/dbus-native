@@ -323,7 +323,9 @@ round-tripping through this library, so a writer and reader sharing the same
 mistake cannot make the tests pass. That caught a bug in the fixture itself:
 `g` (signature) values take a one-byte length and no alignment, unlike `s`.
 
-### 2.7 Backpressure on the write path
+### 2.7 Backpressure on the write path — DONE
+
+Landed in #313.
 
 **Severity: medium for high-throughput senders.**
 
@@ -334,6 +336,16 @@ tick issues N separate writes.
 
 Work: respect the `false` return, expose `'drain'` (or return a promise from
 `connection.message()`), and consider corking within a tick.
+
+**Outcome (#313).** `connection.message()` now returns the writable's boolean,
+and the connection re-emits `'drain'` — the same contract as `stream.write()`,
+so the idiom is the one Node users already know. Messages written in the same
+tick are corked into a single flush: ten messages in one turn of the event loop
+went from ten `_write` calls to one `_writev`.
+
+Deliberately _not_ returning a promise from `message()`. §3.1 will make the
+proxy layer promise-returning, and having the low-level method already resolve
+to something unrelated would collide with it.
 
 ### 2.8 UNIX_FD (`h`) support
 

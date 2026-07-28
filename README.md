@@ -90,6 +90,20 @@ options:
 
 connection has only one method, `message(msg)`
 
+`message(msg)` returns `false` when the underlying socket's buffer is full,
+following the same convention as [`stream.write()`](https://nodejs.org/api/stream.html#writablewritechunk-encoding-callback).
+A fast producer should stop writing when it sees `false` and resume on the
+connection's `drain` event, otherwise messages queue in memory without bound:
+
+```js
+if (!connection.message(msg)) {
+  await new Promise(resolve => connection.once('drain', resolve));
+}
+```
+
+Messages written during the same tick of the event loop are batched into a
+single write to the socket.
+
 message fields:
 
 - type - methodCall, methodReturn, error or signal
@@ -108,6 +122,8 @@ connection signals:
 
 - connect - emitted after successful authentication
 - message
+- drain - the socket's write buffer has emptied; safe to resume writing after
+  `message()` returned `false`
 - error - transport or protocol failure. A protocol error (a malformed or
   oversized message) is unrecoverable, so the connection is destroyed after it
   is emitted.
