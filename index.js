@@ -122,6 +122,22 @@ function createConnection(opts) {
         self.emit('error', err);
         fatal = true;
         stream.destroy();
+      },
+      err => {
+        // A throw from a 'message' listener is an application bug, not a
+        // transport failure, so it does not go to 'error' -- a handler there
+        // would reasonably assume the connection is gone.
+        if (self.listenerCount('handlerError') > 0) {
+          self.emit('handlerError', err);
+          return;
+        }
+        // Nobody is listening. Preserve Node's default for an exception in an
+        // event listener (crash the process) rather than swallowing an
+        // application bug -- but do it asynchronously, so the read loop still
+        // drains the messages it has already buffered.
+        process.nextTick(() => {
+          throw err;
+        });
       }
     );
   });

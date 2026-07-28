@@ -5,6 +5,7 @@
 
 const assert = require('assert');
 const { PassThrough, Duplex } = require('stream');
+const { execFile } = require('child_process');
 const dbus = require('../index');
 const message = require('../lib/message');
 const constants = require('../lib/constants');
@@ -148,11 +149,49 @@ describe('message framing', () => {
     assert.deepStrictEqual(messages, [], 'delivers nothing after the error');
   });
 
-  // Note: an exception thrown by the onMessage callback still escapes the
-  // read loop as an uncaught exception. Dispatch is deliberately called
-  // outside the framing try/catch so it is never *misreported* as a framing
-  // error, but isolating user handlers properly is a separate change
-  // (ROADMAP 2.2) and is tested there.
+  it('routes a handler exception away from the framing channel', async () => {
+    const stream = new PassThrough();
+    const framing = [];
+    const handler = [];
+    message.unmarshalMessages(
+      stream,
+      () => {
+        throw new Error('application bug');
+      },
+      {},
+      e => framing.push(e),
+      e => handler.push(e)
+    );
+    stream.write(methodCall());
+    await new Promise(setImmediate);
+    assert.deepStrictEqual(framing, [], 'not reported as a framing error');
+    assert.strictEqual(handler.length, 1);
+    assert.strictEqual(handler[0].message, 'application bug');
+  });
+
+  it('keeps parsing the read buffer after a handler throws', async () => {
+    const stream = new PassThrough();
+    const seen = [];
+    const handler = [];
+    message.unmarshalMessages(
+      stream,
+      msg => {
+        seen.push(msg.serial);
+        if (msg.serial === 1) throw new Error('application bug');
+      },
+      {},
+      () => {},
+      e => handler.push(e)
+    );
+    // Both messages arrive in a single chunk: the second used to be discarded
+    // when the first handler unwound through the parser.
+    stream.write(
+      Buffer.concat([methodCall({ serial: 1 }), methodCall({ serial: 2 })])
+    );
+    await new Promise(setImmediate);
+    assert.deepStrictEqual(seen, [1, 2], 'second message still delivered');
+    assert.strictEqual(handler.length, 1);
+  });
 });
 
 describe('connection error handling', () => {
@@ -190,6 +229,49 @@ describe('connection error handling', () => {
       toClient.write(methodCall());
     });
   });
+
+  it("reports a throwing listener on 'handlerError', not 'error'", done => {
+    connect((conn, toClient) => {
+      conn.on('error', () => done(new Error("went to 'error'")));
+      conn.on('message', () => {
+        throw new Error('bug in a message listener');
+      });
+      conn.on('handlerError', err => {
+        assert.strictEqual(err.message, 'bug in a message listener');
+        done();
+      });
+      toClient.write(methodCall());
+    });
+  });
+
+  // With no 'handlerError' listener we must not silently swallow an
+  // application bug -- Node's default for a throwing listener is to crash.
+  // Run it in a child process so the crash is observable.
+  it('still crashes by default when nothing listens for handlerError', done => {
+    const script = `
+      const { PassThrough, Duplex } = require('stream');
+      const dbus = require(${JSON.stringify(require.resolve('../index'))});
+      const message = require(${JSON.stringify(require.resolve('../lib/message'))});
+      const toClient = new PassThrough();
+      const fromClient = new PassThrough();
+      const socket = Duplex.from({ readable: toClient, writable: fromClient });
+      const conn = dbus.createConnection({ stream: socket, direct: true });
+      fromClient.once('data', () => toClient.write('OK 0123456789abcdef\\r\\n'));
+      conn.once('connect', () => {
+        conn.on('message', () => { throw new Error('unhandled listener bug'); });
+        toClient.write(message.marshall({
+          serial: 1, type: 1, path: '/p', destination: 'a.b',
+          interface: 'a.b', member: 'Hello'
+        }));
+      });
+      setTimeout(() => process.exit(0), 1000);
+    `;
+    execFile(process.execPath, ['-e', script], (err, stdout, stderr) => {
+      assert.ok(err, 'expected a non-zero exit');
+      assert.match(stderr, /unhandled listener bug/);
+      done();
+    });
+  }).timeout(10000);
 });
 
 describe('message.unmarshall', () => {

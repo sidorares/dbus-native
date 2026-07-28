@@ -101,7 +101,15 @@ connection signals:
 
 - connect - emitted after successful authentication
 - message
-- error
+- error - transport or protocol failure. A protocol error (a malformed or
+  oversized message) is unrecoverable, so the connection is destroyed after it
+  is emitted.
+- handlerError - an exception thrown by one of your own `message`/signal
+  listeners. It is reported separately from `error` because it is an
+  application bug rather than a connection failure, and the connection stays
+  usable. If nothing is listening for `handlerError` the exception is re-thrown
+  asynchronously, matching Node's default behaviour for a throwing event
+  listener.
 
 example:
 
