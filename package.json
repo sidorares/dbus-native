@@ -32,57 +32,50 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "http://github.com/sidorares/node-dbus.git"
+    "url": "git+https://github.com/sidorares/dbus-native.git"
   },
+  "bugs": {
+    "url": "https://github.com/sidorares/dbus-native/issues"
+  },
+  "homepage": "https://github.com/sidorares/dbus-native#readme",
   "bin": {
     "dbus2js": "./bin/dbus2js.js"
   },
   "dependencies": {
-    "event-stream": "^4.0.0",
-    "hexy": "^0.2.10",
-    "long": "^4.0.0",
-    "optimist": "^0.6.1",
-    "put": "0.0.6",
-    "safe-buffer": "^5.1.1",
-    "xml2js": "^0.4.17"
-  },
-  "optionalDependencies": {
-    "abstract-socket": "^2.0.0"
+    "hexy": "^0.4.0",
+    "long": "^5.3.2",
+    "xml2js": "^0.6.2"
   },
   "devDependencies": {
-    "eslint": "^5.0.0",
-    "eslint-config-prettier": "^3.0.0",
-    "eslint-plugin-markdown": "^1.0.0-beta.6",
-    "eslint-plugin-prettier": "^3.0.0",
-    "husky": "^1.0.0",
-    "lint-staged": "^8.0.0",
-    "mocha": "*",
-    "prettier": "^1.7.4"
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.8.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.8.0",
+    "mocha": "^11.7.6",
+    "prettier": "^3.9.6"
   },
   "scripts": {
-    "lint": "npm run lint:docs && npm run lint:code",
-    "lint:code": "eslint index.js 'bin/*.js' 'lib/**/*.js' 'test/**/*.js'",
-    "lint:docs": "eslint 'examples/**/*.js'",
-    "test": "npm run lint && npm run test:raw",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "npm run lint && npm run format:check && npm run test:raw",
     "test:raw": "mocha",
-    "prettier": "prettier --write index.js '{bin,lib,examples,test}/**/*.js'",
-    "prettier:docs": "prettier-markdown README.md",
-    "eslint-check": "eslint --print-config .eslintrc | eslint-config-prettier-check",
-    "precommit": "lint-staged",
-    "prepublish": "npm prune"
+    "test:integration": "node scripts/with-dbus.js -- npm run test:integration:raw",
+    "test:integration:raw": "mocha --no-config --timeout 10000 test/integration/*.js",
+    "dbus:session": "node scripts/dbus-session.js"
   },
-  "lint-staged": {
-    "*.js": [
-      "prettier --write",
-      "git add"
-    ]
+  "overrides": {
+    "brace-expansion": "^5.0.8",
+    "serialize-javascript": "^7.0.7"
   },
   "prettier": {
     "semi": true,
     "singleQuote": true,
-    "trailingComma": "none"
+    "trailingComma": "none",
+    "arrowParens": "avoid"
   },
-  "engine": {
-    "node": ">=8.0"
+  "engines": {
+    "node": ">=20.8.0"
   }
 }

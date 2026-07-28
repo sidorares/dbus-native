@@ -1,19 +1,53 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
+const { parseArgs } = require('util');
 const xml2js = require('xml2js');
-const xml2js_opts = Object.assign({}, xml2js.defaults["0.1"], { explicitArray: true });
 const dbus = require('../index');
-const optimist = require('optimist');
 
-var argv = optimist.boolean(['server', 'dump']).argv;
+const xml2jsOpts = { ...xml2js.defaults['0.1'], explicitArray: true };
+
+const usage = `Usage: dbus2js [options]
+
+  --service <name>   bus name to introspect, e.g. org.freedesktop.Notifications
+  --path <path>      object path to introspect, e.g. /org/freedesktop/Notifications
+  --bus <session|system>  which bus to connect to (default: session)
+  --xml <file>       read introspection XML from a file instead of the bus
+  --dump             print the raw introspection XML
+  --server           do not generate a client proxy
+  --help             show this message
+`;
+
+let argv;
+try {
+  ({ values: argv } = parseArgs({
+    options: {
+      service: { type: 'string' },
+      path: { type: 'string' },
+      bus: { type: 'string', default: 'session' },
+      xml: { type: 'string' },
+      dump: { type: 'boolean', default: false },
+      server: { type: 'boolean', default: false },
+      help: { type: 'boolean', default: false }
+    }
+  }));
+} catch (err) {
+  console.error(err.message);
+  console.error(`\n${usage}`);
+  process.exit(1);
+}
+
+if (argv.help) {
+  console.log(usage);
+  process.exit(0);
+}
 
 function die(err) {
   console.log(err);
   process.exit(-1);
 }
 
-var bus = argv.bus === 'system' ? dbus.systemBus() : dbus.sessionBus();
+const bus = argv.bus === 'system' ? dbus.systemBus() : dbus.sessionBus();
 
 function getXML(callback) {
   if (argv.xml) {
@@ -32,27 +66,26 @@ function getXML(callback) {
 }
 
 if (argv.dump) {
-  getXML(function(err, xml) {
+  getXML((err, xml) => {
+    if (err) die(err);
     console.log(xml);
     bus.connection.end();
   });
 }
 
 if (!argv.server) {
-  getXML(function(err, xml) {
+  getXML((err, xml) => {
     if (err) die(err);
 
-    var output = [];
+    const output = [];
 
-    var parser = new xml2js.Parser(xml2js_opts);
-    parser.parseString(xml, function(err, result) {
+    const parser = new xml2js.Parser(xml2jsOpts);
+    parser.parseString(xml, (err, result) => {
       if (err) die(err);
 
-      var ifaceName, method, property, iface, arg, signature;
-      var ifaces = result['interface'];
-      for (var i = 0; i < ifaces.length; ++i) {
-        iface = ifaces[i];
-        ifaceName = iface['@'].name;
+      const ifaces = result['interface'];
+      for (const iface of ifaces) {
+        const ifaceName = iface['@'].name;
 
         output.push(`module.exports['${ifaceName}'] = function(bus) {`);
         output.push(
@@ -65,9 +98,7 @@ if (!argv.server) {
         output.push('            if (err) throw new Error(err);');
         output.push('        });');
         output.push(
-          `        var signalFullName = bus.mangle('${argv.path}', '${
-            ifaceName
-          }', signame);`
+          `        var signalFullName = bus.mangle('${argv.path}', '${ifaceName}', signame);`
         );
         output.push(
           '        bus.signals.on(signalFullName, function(messageBody) {'
@@ -76,15 +107,14 @@ if (!argv.server) {
         output.push('        });');
         output.push('    };');
 
-        for (var m = 0; iface.method && m < iface.method.length; ++m) {
-          method = iface.method[m];
-          signature = '';
+        for (const method of iface.method || []) {
+          let signature = '';
           const methodName = method['@'].name;
 
-          var decl = `    this.${methodName} = function(`;
-          var params = [];
-          for (var a = 0; method.arg && a < method.arg.length; ++a) {
-            arg = method.arg[a]['@'];
+          let decl = `    this.${methodName} = function(`;
+          const params = [];
+          for (const methodArg of method.arg || []) {
+            const arg = methodArg['@'];
             if (arg.direction === 'in') {
               decl += `${arg.name}, `;
               params.push(arg.name);
@@ -105,8 +135,7 @@ if (!argv.server) {
           output.push('        }, callback);');
           output.push('    };');
         }
-        for (var p = 0; iface.property && p < iface.property.length; ++p) {
-          property = iface.property[p];
+        for (const property of iface.property || []) {
           console.log('    property: \n', property);
         }
         output.push('}');
