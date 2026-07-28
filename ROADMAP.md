@@ -291,7 +291,9 @@ message, and it is the difference between a 4 byte value retaining 4 bytes and
 retaining 4 MB. Throughput-sensitive callers that consume and drop the value
 promptly can set `'view'`.
 
-### 2.6 Accept big-endian messages
+### 2.6 Accept big-endian messages — DONE
+
+Landed in #311.
 
 **Severity: low frequency, but a spec violation.**
 
@@ -307,6 +309,19 @@ some MIPS/PPC), which is why it has gone unnoticed.
 Work: thread a byte-order flag through `DBusBuffer` and pick `*LE`/`*BE` readers
 from it. Mostly mechanical, but it touches every read method, so it deserves its
 own PR and a round-trip test against a hand-built big-endian fixture.
+
+**Outcome (#311).** Byte order is read from header byte 0 and threaded into
+`DBusBuffer`, which selects `*LE`/`*BE` accessors per read. The 64-bit types
+needed care: both the bytes within each 32-bit word _and_ the order of the two
+words flip. Anything that is neither `'l'` nor `'B'` is still a protocol error.
+
+Senders still emit little-endian, which the spec permits. No measurable cost to
+the read path (1.09 µs vs 1.03 µs on the Notify case, within run-to-run noise).
+
+Fixtures are assembled by hand with Node's own `writeUInt32BE`, not by
+round-tripping through this library, so a writer and reader sharing the same
+mistake cannot make the tests pass. That caught a bug in the fixture itself:
+`g` (signature) values take a one-byte length and no alignment, unlike `s`.
 
 ### 2.7 Backpressure on the write path
 
