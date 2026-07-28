@@ -262,7 +262,9 @@ deep-frozen rather than merely documented as immutable.
 This is the first item in §2 to speed up the **read** path, which §2.1–§2.3 left
 untouched.
 
-### 2.5 `ay` buffer views retain the whole message
+### 2.5 `ay` buffer views retain the whole message — DONE
+
+Landed in #310.
 
 **Severity: medium — unbounded memory growth in long-lived processes.**
 
@@ -278,6 +280,16 @@ Decide deliberately: copy by default (safe, costs a memcpy) or keep the view and
 document it, ideally as an explicit `ayBuffer: 'view' | 'copy'` option. Copy is
 the better default — the current behaviour is a footgun that only shows up under
 load.
+
+**Outcome (#310).** Copy by default; `ayBuffer: 'view'` opts back into the
+zero-copy view, and `ayBuffer: false` still yields a plain array. `slice` also
+became `subarray`.
+
+The copy runs at 5–8.5 GB/s, so it costs 0.18 µs on a 1 KB `ay` and 117 µs on a
+1 MB one. That is real, but small next to the socket read that delivered the
+message, and it is the difference between a 4 byte value retaining 4 bytes and
+retaining 4 MB. Throughput-sensitive callers that consume and drop the value
+promptly can set `'view'`.
 
 ### 2.6 Accept big-endian messages
 

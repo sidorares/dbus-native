@@ -77,7 +77,14 @@ options:
 - host - TCP host
 - busAddress - encoded bus address. Default is `DBUS_SESSION_BUS_ADDRESS` environment variable. See http://dbus.freedesktop.org/doc/dbus-specification.html#addresses
 - authMethods - array of authentication methods, which are attempted in the order provided (default:['EXTERNAL', 'DBUS_COOKIE_SHA1', 'ANONYMOUS'])
-- ayBuffer - boolean (default:true): if true 'ay' dbus fields are returned as buffers
+- ayBuffer - `true` (default), `false` or `'view'`: how `ay` (byte array) fields
+  are returned.
+  - `true` returns a `Buffer` holding its own copy of the bytes.
+  - `'view'` returns a `Buffer` that shares memory with the received message.
+    This avoids a copy, but the whole message stays in memory for as long as
+    you hold the byte array — a 4 byte `ay` taken from a 4 MB message keeps all
+    4 MB alive. Only use it if you consume the value and drop it promptly.
+  - `false` returns a plain array of numbers.
 - ReturnLongjs - boolean (default:false): if true 64 bit dbus fields (x/t) are read out as Long.js objects, otherwise they are converted to numbers (which should be good up to 53 bits)
 - ( TODO: add/document option to use address from X11 session )
 
