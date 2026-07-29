@@ -21,7 +21,7 @@ Two tracks, one package, no new npm name.
 
 The second track is the departure from "add alongside forever". The reason is
 the flag-sprawl failure mode: `ayBuffer: true|false|'view'`, `ReturnLongjs`,
-plus a hypothetical `ReturnBigInt` and `variants: 'plain'|'tree'` gives a
+plus a hypothetical `returnBigInt` and `variants: 'plain'|'tree'` gives a
 combinatorial test matrix and documentation that has to explain the wrong way
 first. A deliberate break, well supported, is cheaper for everyone than
 permanent duality.

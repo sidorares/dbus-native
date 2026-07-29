@@ -89,7 +89,15 @@ options:
     you hold the byte array — a 4 byte `ay` taken from a 4 MB message keeps all
     4 MB alive. Only use it if you consume the value and drop it promptly.
   - `false` returns a plain array of numbers.
-- ReturnLongjs - boolean (default:false): if true 64 bit dbus fields (x/t) are read out as Long.js objects, otherwise they are converted to numbers (which should be good up to 53 bits)
+- returnBigInt - boolean (default:false): if true 64 bit dbus fields (x/t) are read
+  out as native `bigint`, which covers the whole range exactly. This is what they
+  become by default in 2.0, so opting in now means nothing changes then. Wins over
+  `ReturnLongjs` if both are set.
+- ReturnLongjs - boolean (default:false): **deprecated** (`DBUS_DEP0001`). If true
+  64 bit dbus fields (x/t) are read out as Long.js objects, otherwise they are
+  converted to numbers (which should be good up to 53 bits). The capital R is a
+  historical accident — it is the only PascalCase option in the API, and fixing
+  it would break the callers who set it.
 - ( TODO: add/document option to use address from X11 session )
 
 connection has only one method, `message(msg)`
@@ -447,16 +455,43 @@ rest rather than guessing. See
 [`dbus-native/compat`](docs/migrating-to-0.7.md#the-escape-hatch) if you need the
 old shape while you migrate.
 
-### Note on INT64 'x' and UINT64 't'
+### 64-bit values: INT64 'x' and UINT64 't'
 
-Long.js is used for 64 Bit support. https://github.com/dcodeIO/long.js
-The following javascript types can be marshalled into 64 bit dbus fields:
+By default these are unmarshalled into a `number`, which **loses precision
+above 2⁵³** — `9223372036854775807` comes back as `9223372036854776000`. Ask
+for `bigint` and you get the whole range, exactly:
 
-- typeof 'number' up to 53bits
-- typeof 'string' (consisting of decimal digits with no separators or '0x' prefixed hexadecimal) up to full 64bit range
-- Long.js objects (or object with compatible properties)
+```js
+const bus = dbus.sessionBus({ returnBigInt: true });
+const size = await disk.Size(); // 2000398934016n
+```
 
-By default 64 bit dbus fields are unmarshalled into a 'number' (with precision loss beyond 53 bits). Use {ReturnLongjs:true} option to return the actual Long.js object and preserve the entire 64 bits.
+This is what 64-bit values become **by default in 2.0**, so opting in now means
+nothing changes then. It is per connection, so services and clients can be
+migrated one at a time — though note a service reads its _arguments_ through
+the same parser, so it needs the option too if it handles large 64-bit inputs.
+
+`bigint` is not a drop-in for `number`, and the failure mode is a `TypeError`
+in production rather than a subtly wrong value. Plan for it:
+
+```js
+size + 1; // TypeError: Cannot mix BigInt and other types
+JSON.stringify({ size }); // TypeError: Do not know how to serialize a BigInt
+size > 100; // fine, comparisons work
+Number(size); // fine, if you accept the precision loss you already had
+```
+
+These can be **written** to a 64-bit field, whatever the read option:
+
+- `bigint`, over the full range
+- `number`, up to 53 bits
+- `string`, decimal or `0x`-prefixed hex, over the full range
+- Long.js objects, or anything with compatible `low`/`high`/`unsigned`
+
+`{ ReturnLongjs: true }` still returns [Long.js](https://github.com/dcodeIO/long.js)
+objects and is **deprecated** (`DBUS_DEP0001`); `returnBigInt` wins if both are
+set. Dropping Long.js also removes the ARMv6 crash that made downstream forks
+vendor their own copy.
 
 Development
 -----------

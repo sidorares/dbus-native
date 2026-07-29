@@ -423,6 +423,30 @@ Plan: read `x`/`t` with `readBigInt64LE`/`readBigUInt64LE`; accept
 return type behind an option (`ReturnBigInt`) for one minor release alongside
 the existing `ReturnLongjs`, then flip the default in 0.7 and drop `long`.
 
+**Half done.** The option, the BigInt read path and `bigint` on marshall are
+all in — see [docs/deprecations.md](./docs/deprecations.md#dbus_dep0001).
+
+It shipped as **`returnBigInt`**, not `ReturnBigInt` as proposed above. Every
+other option in the API is lowercase-first camelCase; `ReturnLongjs` is the
+sole outlier and only keeps its capital R because callers already set it.
+Copying it would have doubled a historical accident rather than leaving it
+behind.
+What remains is flipping the default and dropping `long`, which is a break and
+belongs in 2.0 with the rest of the type-system change. The gap is deliberate:
+`bigint` is not a drop-in for `number` and the failure mode is a `TypeError` in
+production, so it earns a release of opt-in first.
+
+Two things the implementation turned up:
+
+- **A service needs the option too.** It reads its own arguments through the
+  same parser, so a service without it receives a large `x` as a lossy
+  `number` — and then fails the 53-bit check when it tries to send that back.
+  Loud, at least, rather than silently truncating.
+- **`JSON.stringify` throws on a BigInt**, so three of the marshaller's error
+  messages used to replace the error they were describing with
+  `TypeError: Do not know how to serialize a BigInt`. Fixed alongside; worth
+  remembering wherever else a diagnostic renders user values.
+
 ### 3.3 TypeScript declarations
 
 **Issue:** [#276](https://github.com/sidorares/dbus-native/issues/276)

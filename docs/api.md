@@ -58,6 +58,7 @@ all three take the same options.
 | `timeout`        | `number`                  | none                                            | default timeout in ms for every call on this client            |
 | `ayBuffer`       | `true \| false \| 'view'` | `true`                                          | how `ay` comes back — see [Values](#values-and-types)          |
 | `maxMessageSize` | `number`                  | 128 MiB                                         | reject a message declaring more than this                      |
+| `returnBigInt`   | `boolean`                 | `false`                                         | read `x`/`t` as native `bigint`, exactly — the 2.0 default     |
 | `ReturnLongjs`   | `boolean`                 | `false`                                         | **deprecated** (`DBUS_DEP0001`) — 64-bit as Long.js            |
 
 Address forms understood by `busAddress`: `unix:path=…`, `unix:abstract=…`,
@@ -373,22 +374,22 @@ re-thrown asynchronously, matching Node's default for a throwing listener.
 
 ### Type mapping
 
-| D-Bus          | code    | JavaScript                                                 |
-| -------------- | ------- | ---------------------------------------------------------- |
-| byte           | `y`     | `number`                                                   |
-| boolean        | `b`     | `boolean`                                                  |
-| int16 / uint16 | `n` `q` | `number`                                                   |
-| int32 / uint32 | `i` `u` | `number`                                                   |
-| int64 / uint64 | `x` `t` | `number`, lossy above 2⁵³ — or Long.js with `ReturnLongjs` |
-| double         | `d`     | `number`                                                   |
-| string         | `s`     | `string`                                                   |
-| object path    | `o`     | `string`                                                   |
-| signature      | `g`     | `string`                                                   |
-| array          | `a`     | `Array`                                                    |
-| byte array     | `ay`    | `Buffer` — see `ayBuffer`                                  |
-| struct         | `()`    | `Array`                                                    |
-| dict           | `a{}`   | `Array` of `[key, value]` pairs                            |
-| variant        | `v`     | `[parsedSignature, [value]]`                               |
+| D-Bus          | code    | JavaScript                                                                               |
+| -------------- | ------- | ---------------------------------------------------------------------------------------- |
+| byte           | `y`     | `number`                                                                                 |
+| boolean        | `b`     | `boolean`                                                                                |
+| int16 / uint16 | `n` `q` | `number`                                                                                 |
+| int32 / uint32 | `i` `u` | `number`                                                                                 |
+| int64 / uint64 | `x` `t` | `number`, lossy above 2⁵³ — `bigint` with `returnBigInt`, or Long.js with `ReturnLongjs` |
+| double         | `d`     | `number`                                                                                 |
+| string         | `s`     | `string`                                                                                 |
+| object path    | `o`     | `string`                                                                                 |
+| signature      | `g`     | `string`                                                                                 |
+| array          | `a`     | `Array`                                                                                  |
+| byte array     | `ay`    | `Buffer` — see `ayBuffer`                                                                |
+| struct         | `()`    | `Array`                                                                                  |
+| dict           | `a{}`   | `Array` of `[key, value]` pairs                                                          |
+| variant        | `v`     | `[parsedSignature, [value]]`                                                             |
 
 `h` (UNIX_FD) is not supported.
 
