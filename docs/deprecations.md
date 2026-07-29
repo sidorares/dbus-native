@@ -131,3 +131,38 @@ Related: [#39](https://github.com/sidorares/dbus-native/issues/39),
 [#178](https://github.com/sidorares/dbus-native/issues/178),
 [#207](https://github.com/sidorares/dbus-native/issues/207),
 [#208](https://github.com/sidorares/dbus-native/issues/208).
+
+---
+
+## DBUS_DEP0005
+
+**Runtime.** The `dbus2js` command is deprecated.
+
+It emits untyped ES5, does not generate properties at all, and gives generated
+signal handlers a match rule that asks the daemon for every signal of that name
+from every service on the bus. Until 0.7 it also printed parsed property
+objects into the middle of its own output, so redirecting it to a file produced
+something that was not valid JavaScript.
+
+`dbus-native types` replaces it, emitting TypeScript declarations that cover
+methods, properties and signals:
+
+```sh
+# before
+dbus2js --service org.example --path /org/example > client.js
+
+# after
+npx dbus-native types --service org.example --path /org/example --out types.d.ts
+```
+
+```ts
+import type { OrgExampleIface } from './types';
+
+const iface = await bus
+  .getService('org.example')
+  .getInterface<OrgExampleIface>('/org/example', 'org.example.Iface');
+```
+
+`dbus2js` still works and its remaining bugs have been fixed, since it is a
+published binary and removing it outright would break build scripts. It will go
+in a future major.

@@ -198,8 +198,11 @@ regenerating after upgrading is one command. Types generated with the default
 `classic` target describe today's value shapes; see
 [RELEASE_PLAN.md](./RELEASE_PLAN.md) for what changes in 2.0.
 
-> The older `dbus2js` command still exists and emits untyped ES5. It does not
-> handle properties or signals. Prefer `dbus-native types`.
+> **`dbus2js` is deprecated** (`DBUS_DEP0005`). It emits untyped ES5, generates
+> no properties, and gives signals an over-broad match rule. It still works and
+> prints the equivalent `dbus-native types` command when you run it, but it
+> will be removed in a future major. See
+> [docs/deprecations.md](./docs/deprecations.md#dbus_dep0005).
 
 ### TypeScript
 
