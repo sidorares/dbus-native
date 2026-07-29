@@ -47,18 +47,30 @@ individual codes.
 In **2.0** they become native `BigInt`, which represents the full 64-bit range
 with no dependency and no option.
 
+**You can have that now**, on a released version, with `returnBigInt: true` —
+the same values 2.0 returns by default, so a call site migrated today needs no
+change then:
+
 ```js
 // deprecated
 const bus = dbus.sessionBus({ ReturnLongjs: true });
-const size = value.toNumber();
+const size = value.toNumber(); // lossy above 2^53
 
-// 2.0
-const size = await disk.props.Size; // 2000398934016n
+// available now, and the default in 2.0
+const bus = dbus.sessionBus({ returnBigInt: true });
+const size = await disk.Size(); // 2000398934016n
 ```
 
+`returnBigInt` wins if both options are set, and writing a `bigint` is accepted
+whatever the read option — so a service and its clients can move separately.
+Note a service reads its _arguments_ through the same parser, so it needs the
+option too if it handles large 64-bit inputs.
+
 `BigInt` is not a drop-in for `number`: `size + 1` and `JSON.stringify({ size })`
-both throw. Plan for that rather than discovering it in production — there will
-be a dedicated migration guide.
+both throw. That is the whole reason this is opt-in for a release before it
+becomes the default — the failure mode is a `TypeError` in production rather
+than a subtly wrong value, so it is better found deliberately than on upgrade
+day.
 
 ---
 

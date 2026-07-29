@@ -178,7 +178,21 @@ export interface ConnectionOptions {
    * `'view'` shares memory with the message, `false` gives an array of numbers.
    */
   ayBuffer?: boolean | 'view';
-  /** @deprecated DBUS_DEP0001 -- 64-bit values become BigInt in 2.0 */
+  /**
+   * Read 64-bit values (`x`, `t`) as native `bigint`, exactly, instead of a
+   * `number` that loses precision above 2^53. This is what they become by
+   * default in 2.0 — opting in now means no change then.
+   *
+   * Wins over `ReturnLongjs` if both are set. Writing a `bigint` is accepted
+   * regardless of this option.
+   */
+  returnBigInt?: boolean;
+  /**
+   * @deprecated DBUS_DEP0001 -- 64-bit values become BigInt in 2.0; use
+   * `returnBigInt`. Note the capital R: this one option predates the rest and
+   * is the only PascalCase name in the API. It cannot be corrected without
+   * breaking the callers who set it.
+   */
   ReturnLongjs?: boolean;
   /** reject a message declaring more than this many bytes; default 128 MiB */
   maxMessageSize?: number;
