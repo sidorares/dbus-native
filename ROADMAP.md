@@ -834,15 +834,45 @@ had simply gone stale.
 
 ### 4.5 Finish the server/broker
 
-`lib/server.js` plus `lib/server-handshake.js` are a stub: the handshake replies
-with a hardcoded cookie and GUID copied from someone's 2014 session, and logs to
-stdout unconditionally. Either finish it into a usable in-process broker — which
-would give the test suite a dependency-free bus and let contributors run tests
-without installing `dbus-daemon` — or mark it clearly experimental.
+**Done**, in three parts.
 
-Note the `test/integration/` suite added in this pass already gives us real
-coverage against `dbus-daemon`, so this is now an ergonomics win rather than a
-blocker.
+`lib/server-handshake.js` was a transcript of someone's 2014 session played
+back verbatim — a hardcoded cookie and GUID, an unconditional `REJECTED`, and a
+`console.log` per connection. It is now the state machine from the
+specification, with `EXTERNAL`, `DBUS_COOKIE_SHA1` and `ANONYMOUS`, a GUID per
+server, an auth timeout, and an `authorize` hook. `EXTERNAL` cannot be verified
+the way the spec intends, because Node has no `SO_PEERCRED`; the default is that
+the peer must claim to be the user this process runs as.
+
+`lib/match-rule.js` parses and evaluates match rules. The grammar is described
+in prose rather than given formally, so the edge cases were established against
+`dbus-daemon` and `test/integration/match-rules.js` keeps the two agreeing.
+
+`lib/broker.js` is the bus: unique names, `RequestName`/`ReleaseName` with the
+flags and the queue, the rest of `org.freedesktop.DBus`, and routing — unicast
+by destination, signals by match rule. `npm run test:integration:broker` runs
+the whole integration suite against it, and all of it passes, which was the
+point: contributors no longer need `dbus-daemon` installed.
+
+Three things it deliberately is not:
+
+- **No security policy.** Any client may own any name and call anyone. The
+  system bus refuses arbitrary names for good reason; this does not.
+- **No service activation.** `StartServiceByName` always answers
+  `ServiceUnknown`.
+- **No eavesdropping.** `BecomeMonitor` is unimplemented, so nothing sees
+  unicast traffic addressed elsewhere and `dbus-monitor` is of limited use
+  against it.
+
+One piece of internal debt worth naming: **the broker re-encodes what it
+forwards.** It unmarshals a message and marshals it again, so every value has to
+survive the round trip — and by default a 64-bit integer does not, which is why
+the broker's own connections read them as BigInt. A router should keep the body
+bytes and rewrite only the header fields it must; that needs the message layer
+to hand back the raw frame alongside the parsed one, which it does not do today.
+Until then the round trip is faithful but the cost is real, and a value shape
+the reader and writer disagree about would show up as a routing bug rather than
+a parsing one.
 
 ### 4.6 Signals on the client side
 

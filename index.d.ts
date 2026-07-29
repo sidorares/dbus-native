@@ -292,6 +292,58 @@ export function createServer(
   handler?: (conn: DBusConnection) => void
 ): DBusServer;
 
+/** What the server side of the handshake learnt about a peer. */
+export interface PeerIdentity {
+  mechanism: string | null;
+  /** the uid the peer claimed; Node cannot verify it */
+  uid: number | null;
+}
+
+export interface BrokerOptions {
+  /** the server GUID; generated when absent */
+  guid?: string;
+  /** mechanisms to offer; default ['EXTERNAL', 'DBUS_COOKIE_SHA1'] */
+  authMethods?: string[];
+  /** also offer ANONYMOUS, which authenticates nobody */
+  anonymous?: boolean;
+  /** the last word on whether to accept a peer */
+  authorize?: (identity: PeerIdentity) => boolean;
+  /** keyring context for DBUS_COOKIE_SHA1 */
+  cookieContext?: string;
+  /** ms before an unauthenticated connection is dropped; 0 waits forever */
+  authTimeout?: number;
+}
+
+export interface BrokerListenOptions {
+  socket?: string;
+  port?: number;
+  host?: string;
+}
+
+/**
+ * An in-process message bus.
+ *
+ * Enough of one to route between clients, which `createServer` alone never
+ * did. **Not** a replacement for `dbus-daemon`: no security policy, no service
+ * activation, no fd passing, no eavesdropping. See docs/api.md#createbroker.
+ */
+export interface DBusBroker extends EventEmitter {
+  listen(
+    where?: BrokerListenOptions,
+    cb?: (err: Error | null, address: string) => void
+  ): DBusBroker;
+  listen(cb: (err: Error | null, address: string) => void): DBusBroker;
+  /** the address to connect to, once listening */
+  address(): string | null;
+  /** the names on the bus, as ListNames would report them */
+  names(): string[];
+  close(cb?: () => void): DBusBroker;
+  readonly guid: string;
+  readonly id: string;
+}
+
+export function createBroker(opts?: BrokerOptions): DBusBroker;
+
 // ---------------------------------------------------------------------------
 // Calls
 // ---------------------------------------------------------------------------

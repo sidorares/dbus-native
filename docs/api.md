@@ -32,16 +32,60 @@ const dbus = require('dbus-native');
 | `dbus.systemBus()`             | `MessageBus`     | connects to `$DBUS_SYSTEM_BUS_ADDRESS`, or the standard system socket |
 | `dbus.createClient(opts?)`     | `MessageBus`     | connects to whatever `opts` describes                                 |
 | `dbus.createConnection(opts?)` | `DBusConnection` | the transport alone, with no `MessageBus` on top                      |
-| `dbus.createServer(handler?)`  | `DBusServer`     | **not production infrastructure** — see below                         |
+| `dbus.createServer(handler?)`  | `DBusServer`     | accepts peer-to-peer connections — see below                          |
+| `dbus.createBroker(opts?)`     | `DBusBroker`     | a message bus, not a replacement for `dbus-daemon` — see below        |
 
 `sessionBus` and `systemBus` are `createClient` with a `busAddress` filled in;
 all three take the same options.
 
-> `createServer` exists but `lib/server-handshake.js` is a stub: it replies
-> with a hardcoded GUID and cookie and logs to stdout. Do not treat it as
-> working infrastructure. `handler` is called with a `DBusConnection` per
-> accepted socket, and the returned object has a `listen(...)` delegating to
-> `net.Server#listen`.
+### createServer
+
+`handler` is called with a `DBusConnection` per accepted socket, and the
+returned object has a `listen(...)` delegating to `net.Server#listen`. The
+server side of the SASL handshake is real as of 0.12 — it offers `EXTERNAL` and
+`DBUS_COOKIE_SHA1`, generates a GUID per server, and takes `authorize`,
+`anonymous`, `authMethods` and `authTimeout` options. This is peer-to-peer:
+nothing routes between two connections and no names are assigned, so a client
+must connect with `direct: true` and address the peer directly.
+
+### createBroker
+
+A message bus, in process:
+
+```js
+const broker = dbus.createBroker();
+broker.listen((err, address) => {
+  const bus = dbus.createClient({ busAddress: address });
+});
+```
+
+| member                       |                                                        |
+| ---------------------------- | ------------------------------------------------------ |
+| `broker.listen(where?, cb?)` | `{socket}`, `{port, host}`, or a temporary unix socket |
+| `broker.address()`           | the address to connect to, once listening              |
+| `broker.names()`             | the names on the bus, as `ListNames` would report them |
+| `broker.close(cb?)`          | drop every client and stop listening                   |
+| `broker.guid`, `broker.id`   | the server GUID and the bus id                         |
+
+Events: `listening`, `connection`, `hello`, `disconnect`, `error`,
+`clientError`.
+
+It implements `org.freedesktop.DBus` — `Hello`, `RequestName`/`ReleaseName`
+with the full flag and queue behaviour, `ListNames`,
+`ListActivatableNames`, `NameHasOwner`, `GetNameOwner`, `ListQueuedOwners`,
+`AddMatch`/`RemoveMatch`, `GetId`, `GetConnectionUnixUser`,
+`GetConnectionUnixProcessID`, `StartServiceByName`,
+`UpdateActivationEnvironment`, plus `Peer`, `Introspectable` and
+`Properties` — and it routes: unicast by destination, signals by match rule,
+`NameOwnerChanged`/`NameAcquired`/`NameLost` as names change hands.
+
+**What it is for** is a bus the test suite can start without `dbus-daemon`
+installed; `npm run test:integration:broker` runs the whole integration suite
+against it. **It is not a replacement for `dbus-daemon`**: there is no security
+policy, so any client may own any name and call anyone; no service activation,
+so `StartServiceByName` always fails; no fd passing; and no eavesdropping, so
+`dbus-monitor` cannot see traffic addressed elsewhere. Do not put it on a
+socket other processes can reach.
 
 ### Connection options
 

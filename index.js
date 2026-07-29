@@ -209,11 +209,16 @@ function createConnection(opts) {
   };
 
   const handshake = opts.server ? serverHandshake : clientHandshake;
-  handshake(stream, opts, (error, guid) => {
+  handshake(stream, opts, (error, guid, identity) => {
     if (error) {
       return self.emit('error', error);
     }
     self.guid = guid;
+    // What the server side learnt about the peer while authenticating: the
+    // mechanism, and the uid it claimed. Undefined on a client connection,
+    // where there is nothing to learn. lib/broker.js answers
+    // GetConnectionUnixUser from it.
+    if (identity) self.identity = identity;
     self.emit('connect');
     message.unmarshalMessages(
       stream,
@@ -320,3 +325,8 @@ module.exports.isValidBusName = names.isValidBusName;
 module.exports.createConnection = createConnection;
 
 module.exports.createServer = server.createServer;
+
+// An in-process message bus. Not a replacement for dbus-daemon -- no security
+// policy, no service activation -- but enough of one to route between clients,
+// which is what `createServer` on its own never did. See lib/broker.js.
+module.exports.createBroker = require('./lib/broker').createBroker;
