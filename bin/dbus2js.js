@@ -111,13 +111,27 @@ if (!argv.xml && (!argv.service || !argv.path)) {
   process.exit(1);
 }
 
-const bus = argv.bus === 'system' ? dbus.systemBus() : dbus.sessionBus();
+// Connected lazily. Reading introspection XML from a file needs no daemon at
+// all, and opening one anyway meant `--xml` raced its own teardown: the
+// connection was closed as soon as the output was written, sometimes while the
+// SASL handshake was still in flight. See issue #20.
+let busInstance = null;
+function getBus() {
+  if (!busInstance)
+    busInstance = argv.bus === 'system' ? dbus.systemBus() : dbus.sessionBus();
+  return busInstance;
+}
+
+// Only closes a connection that was actually opened.
+function closeBus() {
+  if (busInstance) busInstance.connection.end();
+}
 
 function getXML(callback) {
   if (argv.xml) {
     fs.readFile(argv.xml, 'ascii', callback);
   } else {
-    bus.invoke(
+    getBus().invoke(
       {
         destination: argv.service,
         path: argv.path,
@@ -138,7 +152,7 @@ if (argv.dump) {
   getXML((err, xml) => {
     if (err) die(err);
     console.log(xml);
-    bus.connection.end();
+    closeBus();
   });
 } else if (!argv.server) {
   getXML((err, xml) => {
@@ -223,10 +237,10 @@ if (argv.dump) {
         output.push('}');
       }
       console.log(output.join('\n'));
-      bus.connection.end();
+      closeBus();
     });
   });
 } else {
   // --server generates nothing today; do not leave the connection open.
-  bus.connection.end();
+  closeBus();
 }
