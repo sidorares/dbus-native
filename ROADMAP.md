@@ -511,19 +511,49 @@ Related: [#3](https://github.com/sidorares/dbus-native/issues/3),
 "how do I deal with `a{sv}`". A documented, ergonomic dict/variant story would
 close roughly a dozen issues at once.
 
-**Our own call sites**, from `npx dbus-native lint lib index.js` — this is the
-internal half of the 2.0 change, and it is small:
+**Our own call sites** — the internal half of the 2.0 change, found with
+`npx dbus-native lint lib index.js`. **Done**, and they turned out to be more
+than housekeeping:
 
-| site                    | reads               | what it is                             |
-| ----------------------- | ------------------- | -------------------------------------- |
-| `lib/message.js:120`    | `field[1][1][0]`    | header fields                          |
-| `lib/message.js:183`    | `field[1][1][0]`    | header fields                          |
-| `lib/stdifaces.js:148`  | `msg.body[2][1][0]` | the value argument of `Properties.Set` |
-| `lib/introspect.js:194` | `val[1][0]`         | the reply from `Properties.Get`        |
+| site                   | read                | what it is                             |
+| ---------------------- | ------------------- | -------------------------------------- |
+| `lib/message.js:120`   | `field[1][1][0]`    | header fields — **the blocker**        |
+| `lib/message.js:183`   | `field[1][1][0]`    | header fields                          |
+| `lib/stdifaces.js:175` | `msg.body[2][1][0]` | the value argument of `Properties.Set` |
+| `lib/introspect.js`    | `val[1][0]`         | the reply from `Properties.Get`        |
+
+A message header is `a(yv)`, so **header field values are variants**, and the
+`DBusBuffer` that parses them is built with the connection's own options. Flip
+the variant shape and header parsing dies on the first message — not on some
+edge case, on everything. Verified: with these sites reverted, a simulated 2.0
+parser takes the connection down immediately at `message.js:120`.
+
+All four now read through `variantValue()`, which handles either shape. The
+alternative was to parse headers with fixed options so a user-facing value
+option could not reach them; `variantValue()` was preferred because it stays
+correct after 2.0 rather than merely insulating against it, and it costs
+0.018 µs per message against ~1 µs to unmarshall one.
+
+`toPlain()` also now recurses into plain objects. It returned non-arrays
+unchanged, so on the new shape it would have left a nested variant unconverted
+— and the whole point of the 0.6 helpers is that they are the identity there.
+
+Guarded by `test/integration/future-shape.js`, which patches the parser to
+produce the 2.0 shapes and runs a real exchange over a real daemon: headers,
+method calls, `Properties.Get`/`Set`, `GetAll` as a plain object, `toPlain` as
+the identity, and a value read in the new shape written straight back out
+(which §4.2 made possible).
 
 Plus four `ReturnLongjs` branches in `index.js` and `lib/dbus-buffer.js`, which
-§3.2 removes. The linter finds no false positives on this codebase, which is
-the evidence that its rules are worth pointing at consumers.
+§3.2 removes. The two hits the linter still reports are both benign — a `Map`
+iteration it flags as `(possible)`, and the marshaller deliberately reading the
+classic shape — which is about the right false-positive rate for rules pointed
+at consumers.
+
+**What remains** is the option itself: one flag flipping both shapes together,
+opt-in for a release and default in 2.0, exactly as `returnBigInt` did in §3.2.
+Flipping only dicts is not worth shipping — `a{sv}` is the case everyone wants,
+and `{ Name: [tree, ['x']] }` is half-migrated and worse than either end state.
 
 ### 4.2 Marshall JS objects as `a{sv}`
 
