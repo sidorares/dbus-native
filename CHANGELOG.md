@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.7.0](https://github.com/sidorares/dbus-native/compare/v0.6.0...v0.7.0) (2026-07-29)
+
+
+### ⚠ BREAKING CHANGES
+
+* a failed call delivers a DBusError to callbacks rather than the message body array. Read err.message instead of err[0], and err.body for an error that really does carry several arguments. See docs/migrating-to-0.7.md.
+
+### Features
+
+* errors are Error objects (0.7) ([#323](https://github.com/sidorares/dbus-native/issues/323)) ([8e0e3af](https://github.com/sidorares/dbus-native/commit/8e0e3af03bca81344415e2201dbbc6eb2321f499))
+
+
+### Bug Fixes
+
+* export the error classes from index.js ([#322](https://github.com/sidorares/dbus-native/issues/322)) ([665f8f5](https://github.com/sidorares/dbus-native/commit/665f8f544de6bf9947312e6df2f6794a1e0b646d))
+
 ## [0.6.0](https://github.com/sidorares/dbus-native/compare/v0.5.0...v0.6.0) (2026-07-29)
 
 
