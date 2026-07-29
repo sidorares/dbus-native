@@ -238,11 +238,28 @@ path.
 
 | member              |                                                              |
 | ------------------- | ------------------------------------------------------------ |
-| `obj.name`          | the object path                                              |
+| `obj.name`          | the object path — always the one you asked for               |
 | `obj.service`       | the owning `DBusService`                                     |
 | `obj.proxy`         | every introspected interface, by name                        |
-| `obj.nodes`         | child node paths from the introspection data                 |
+| `obj.nodes`         | the names of the child objects, relative to this path        |
 | `obj.as(ifaceName)` | one interface — **throws `UnknownInterfaceError`** if absent |
+
+A path that groups other objects and implements nothing itself — a container,
+like `/org/freedesktop/UPower/devices` — comes back with an empty `proxy` and
+its children in `nodes`. Walk down from there:
+
+```js
+const container = await service.getObject('/com/example/Devices');
+for (const child of container.nodes) {
+  const device = await service.getObject(`/com/example/Devices/${child}`);
+}
+```
+
+> Before 0.12 such a path was silently replaced by its **first child**: you got
+> a proxy for `/com/example/Devices/<first>` while believing you had the
+> container, calls went to an object you never named, and the other children
+> were dropped. Asking a container for an interface now throws
+> `UnknownInterfaceError`, and the message names the children.
 
 ### DBusInterface
 
