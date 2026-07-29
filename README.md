@@ -66,6 +66,10 @@ sessionBus
 API
 ---
 
+**[docs/api.md](docs/api.md) is the complete reference** — every entry point,
+option, method, event, error class and diagnostics channel. What follows is
+the tour.
+
 ### Low level messaging: bus connection
 
 `connection = dbus.createClient(options)`
