@@ -464,22 +464,22 @@ re-thrown asynchronously, matching Node's default for a throwing listener.
 
 ### Type mapping
 
-| D-Bus          | code    | JavaScript                                                                               |
-| -------------- | ------- | ---------------------------------------------------------------------------------------- |
-| byte           | `y`     | `number`                                                                                 |
-| boolean        | `b`     | `boolean`                                                                                |
-| int16 / uint16 | `n` `q` | `number`                                                                                 |
-| int32 / uint32 | `i` `u` | `number`                                                                                 |
-| int64 / uint64 | `x` `t` | `number`, lossy above 2⁵³ — `bigint` with `returnBigInt`, or Long.js with `ReturnLongjs` |
-| double         | `d`     | `number`                                                                                 |
-| string         | `s`     | `string`                                                                                 |
-| object path    | `o`     | `string`                                                                                 |
-| signature      | `g`     | `string`                                                                                 |
-| array          | `a`     | `Array`                                                                                  |
-| byte array     | `ay`    | `Buffer` — see `ayBuffer`                                                                |
-| struct         | `()`    | `Array`                                                                                  |
-| dict           | `a{}`   | `Array` of `[key, value]` pairs                                                          |
-| variant        | `v`     | `[parsedSignature, [value]]`                                                             |
+| D-Bus          | code    | JavaScript                                                                                        |
+| -------------- | ------- | ------------------------------------------------------------------------------------------------- |
+| byte           | `y`     | `number`                                                                                          |
+| boolean        | `b`     | `boolean`                                                                                         |
+| int16 / uint16 | `n` `q` | `number`                                                                                          |
+| int32 / uint32 | `i` `u` | `number`                                                                                          |
+| int64 / uint64 | `x` `t` | `number`, lossy above 2⁵³ — `bigint` with `returnBigInt`, or Long.js with `ReturnLongjs`          |
+| double         | `d`     | `number`                                                                                          |
+| string         | `s`     | `string`                                                                                          |
+| object path    | `o`     | `string`                                                                                          |
+| signature      | `g`     | `string`                                                                                          |
+| array          | `a`     | `Array`                                                                                           |
+| byte array     | `ay`    | `Buffer` — see `ayBuffer`                                                                         |
+| struct         | `()`    | `Array`                                                                                           |
+| dict           | `a{}`   | read: `Array` of `[key, value]` pairs · write: that, **or a plain object**                        |
+| variant        | `v`     | read: `[parsedSignature, [value]]` · write: `Variant`, `[signature, value]`, or either read shape |
 
 `h` (UNIX_FD) is not supported.
 
@@ -489,6 +489,67 @@ and your code survives that change untouched.
 
 **Writing** 64-bit values accepts a `number` up to 53 bits, a decimal or
 `0x`-prefixed string for the full range, or a Long.js object.
+
+### Writing a dict as a plain object
+
+Anywhere a dict is expected, a plain object will do:
+
+```js
+await iface.SetOptions({ Name: 'widget', Count: 3, Enabled: true });
+
+// the same thing, spelled out
+await iface.SetOptions([
+  ['Name', new Variant('s', 'widget')],
+  ['Count', new Variant('i', 3)],
+  ['Enabled', new Variant('b', true)]
+]);
+```
+
+Both write identical bytes. The array-of-pairs form is unchanged, and nothing
+about it infers — only values reached through a plain object do.
+
+Inside an object, the signature of an `a{sv}` value is inferred:
+
+| JavaScript              | inferred           |
+| ----------------------- | ------------------ |
+| `string`                | `s`                |
+| `boolean`               | `b`                |
+| integer within int32    | `i`                |
+| integer outside int32   | `x`                |
+| any other `number`      | `d`                |
+| `bigint`                | `x`                |
+| `Buffer` / `TypedArray` | `ay`               |
+| `Array` (homogeneous)   | `a` + element type |
+| plain object            | `a{sv}`            |
+
+`Variant` overrides it, and is how you reach the types inference does not
+produce — `u`, `y`, `o`, `g`, structs, `av`:
+
+```js
+await iface.SetOptions({ Count: new Variant('u', 3) }); // uint32, not int32
+```
+
+Two things to know:
+
+- **Inside an object an array is an array**, never a `[signature, value]` pair.
+  `{ v: ['s', 'hello'] }` is an array of two strings; use
+  `new Variant('s', 'hello')` for an explicitly typed value.
+- **Inference refuses to guess** rather than picking something arbitrary: an
+  empty array, a mixed array, `null`, `undefined`, `NaN` and anything it does
+  not recognise all throw, naming what to do instead. A d-bus array is
+  homogeneous, so `[1, 'a']` has no signature.
+
+A class instance is not treated as a dict — only objects whose prototype is
+`Object.prototype` or `null`. Being wrong about that would write a garbled
+message instead of failing.
+
+A variant read off the wire can also be written straight back, so a value can
+be passed from one service to another without unwrapping it:
+
+```js
+const opts = await source.GetOptions();
+await sink.SetOptions(opts); // the [parsedSignature, [value]] shape is accepted
+```
 
 **`ayBuffer`** controls byte arrays: `true` (default) copies into a `Buffer`;
 `'view'` returns a `Buffer` sharing memory with the message, which avoids the

@@ -527,9 +527,49 @@ the evidence that its rules are worth pointing at consumers.
 
 ### 4.2 Marshall JS objects as `a{sv}`
 
-There is a `// TODO: serialise JS objects as a{sv}` in `lib/marshall.js` and a
+**Issues:** [#3](https://github.com/sidorares/dbus-native/issues/3),
+[#91](https://github.com/sidorares/dbus-native/issues/91),
+[#132](https://github.com/sidorares/dbus-native/issues/132)
+
+There was a `// TODO: serialise JS objects as a{sv}` in `lib/marshall.js` and a
 disabled test (`test/js-types.js`) waiting for it. Combined with 3.1 this is the
 "just let me pass a plain object" story users keep asking for.
+
+**Done.** A plain object is accepted anywhere a dict is expected, and writes
+byte-identical output to the array-of-pairs form, which is untouched. Inside an
+object, `a{sv}` values get an inferred signature; `Variant` overrides it and
+reaches the types inference cannot produce (`u`, `y`, `o`, structs, `av`).
+
+Three decisions worth recording:
+
+- **Inference only inside a plain object.** The pairs form stays explicit and
+  infers nothing. This is what makes the rule "inside an object, an array is an
+  array" safe to state: there is no position where `['s', 'hello']` could be
+  either a two-string array or a classic variant pair, so nothing has to guess.
+  Values reached through the pairs form keep meaning exactly what they did.
+- **Refuse rather than guess.** An empty array, a mixed array, `null`, `NaN`
+  and unrecognised objects throw with a message naming the fix, instead of
+  picking a plausible type. A d-bus array is homogeneous, so `[1, 'a']` has no
+  signature; saying so beats writing `ai` and truncating.
+- **Only `Object.prototype`/`null` prototypes count as dicts.** A class
+  instance is rejected, because being wrong there writes a garbled message
+  rather than failing.
+
+Two things the implementation turned up:
+
+- **A variant could not be written back after being read.** The reader produces
+  `[parsedTree, [value]]` but the writer wanted a signature _string_ in that
+  first slot, so handing a value from one service straight to another failed
+  with a confusing complaint about type `'g'`. It had nothing to do with plain
+  objects — it just showed up immediately once a test tried to echo a dict.
+  The writer now accepts the reader's shape, recursively.
+- **The disabled test could never have passed.** It asserted that a plain
+  object came _back_ out of `unmarshall`, which is the 2.0 read shape and not
+  part of this change. Rewritten to round-trip through `toPlain()`, which is
+  the 0.6 helper for exactly this and becomes the identity in 2.0.
+
+Not done: the read side. `hashAsObject` — the option the old test's name
+referred to — belongs with §4.1 and the rest of the 2.0 type change.
 
 ### 4.3 High-level client/service API
 
