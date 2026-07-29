@@ -719,9 +719,15 @@ belongs with the lifecycle work rather than here.
   so rather than a TODO.
 
 - **Introspect signals** — **done**, see §4.6.
-- **Double serial increment** — `exportInterface`'s patched `emit()` does
-  `self.serial++` a second time after sending, burning a serial number per
-  signal. Harmless but wrong; related to
+- **Double serial increment** — **done**, and it was not harmless. Chasing it
+  turned up that nothing ever wrapped `bus.serial`: it was a bare `++` from 1,
+  and the serial is a `uint32` in the header, so past 4294967295 the marshaller
+  rejected **every** outgoing message with `Number outside range` and the
+  connection was dead for good. That is ~50 days at a thousand messages a
+  second, or ~25 for a signal-heavy service, which the double increment was
+  halving. Well within the life of the long-running daemons this library is
+  for. `nextSerial()` now wraps to 1 (0 is not a valid serial), and the stray
+  second increment is gone. Related to
   [#126](https://github.com/sidorares/dbus-native/issues/126).
 - **`lib/address-x11.js`** requires `x11`, which is not a dependency, so
   requiring it throws. Either make it a documented optional extra (done: it now
