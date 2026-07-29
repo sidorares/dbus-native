@@ -434,6 +434,25 @@ const props = toPlain(getAllResult); // { Greeting: 'hello', Count: 7 }
 `toPlain()` only converts arrays this library parsed as dicts, so an `a(ss)`
 (array of two-string structs) is left as an array rather than being guessed at.
 
+Or take the 2.0 shapes directly, on a released version, with `plainValues`:
+
+```js
+const bus = dbus.sessionBus({ plainValues: true });
+
+const props = await iface.GetAll(name); // { Greeting: 'hello', Count: 7 }
+const udi = await device.Udi(); // the value, not [tree, [value]]
+```
+
+| signature | default                         | `plainValues`    |
+| --------- | ------------------------------- | ---------------- |
+| `v`       | `[signatureTree, [value]]`      | `value`          |
+| `a{sv}`   | array of pairs, values variants | `{ key: value }` |
+
+Reading only — writing already takes plain objects and `Variant` — so a value
+read this way can be written straight back out. A dict whose keys are not
+strings (`a{us}`) stays as pairs, because a JavaScript object key is always a
+string and converting one would change the key's type.
+
 To find the call sites in your own code that still read the old shapes:
 
 ```shell
