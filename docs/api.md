@@ -530,6 +530,52 @@ tell those two apart, which is why the parser tags them rather than guessing.
 
 ---
 
+## Names
+
+Object paths, interface names, error names, member names and bus names each
+have their own rules in the
+[specification](https://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-names),
+and they are easy to confuse:
+
+| kind           | shape                                              | notes                                   |
+| -------------- | -------------------------------------------------- | --------------------------------------- |
+| object path    | `/`, or `/`-separated `[A-Za-z0-9_]` elements      | elements may start with a digit; no `.` |
+| interface name | two or more `.`-separated `[A-Za-z_][A-Za-z0-9_]*` | no `-`, no leading digit, ≤ 255 bytes   |
+| error name     | as interface names                                 |                                         |
+| member name    | one `[A-Za-z_][A-Za-z0-9_]*` element               | no dots, ≤ 255 bytes                    |
+| bus name       | `:1.23`, or an interface name that may contain `-` | ≤ 255 bytes                             |
+
+These are enforced on what you **send**, because an invalid name produces a
+message no peer can route — and for a signal, which gets no reply, that fails
+silently:
+
+| where                   | checks                                          |
+| ----------------------- | ----------------------------------------------- |
+| `bus.exportInterface()` | the path, `iface.name`, and every member name   |
+| `bus.sendSignal()`      | the interface and member name                   |
+| `bus.sendError()`       | the error name                                  |
+| marshalling an `o`      | the object path, including every message's path |
+
+All of them throw an `Error` naming the rule that was broken. Incoming names
+are not checked — be strict in what you send, lenient in what you accept.
+
+The predicates are exported for names built at runtime, where checking beats
+catching:
+
+```js
+const { isValidInterfaceName, isValidObjectPath } = require('dbus-native');
+
+if (!isValidObjectPath(`/com/example/${deviceId}`)) {
+  // a device id with a '-' in it would be rejected at export
+}
+```
+
+`isValidObjectPath`, `isValidInterfaceName`, `isValidErrorName`,
+`isValidMemberName` and `isValidBusName` all take any value and return a
+boolean.
+
+---
+
 ## Errors
 
 Every failure is an `Error`. All of these extend `DBusError`, which extends

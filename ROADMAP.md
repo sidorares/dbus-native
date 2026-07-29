@@ -646,6 +646,27 @@ belongs with the lifecycle work rather than here.
   — `StartServiceByName` exists but the new API never consults it.
 - **`dbus-send` equivalent** ([#56](https://github.com/sidorares/dbus-native/issues/56))
   — a small CLI on top of the library; good first issue.
+- **Name validation** ([#309](https://github.com/sidorares/dbus-native/issues/309))
+  — **done.** `lib/names.js` implements the four rule sets, and the predicates
+  are exported. Enforced on what we send: `exportInterface` (path, interface
+  name, every member name), `sendSignal`, `sendError`, and the `o` marshaller,
+  which covers the path header of every outgoing message and closes the
+  `// TODO: verify object path for 'o'`.
+
+  Three decisions worth recording. **Throw rather than warn** — the issue left
+  this open; an invalid name yields a message no peer can route, so the code
+  was already broken and the useful place to say so is where the name was
+  written. **Signals get validated but ordinary calls do not**: a bad interface
+  or member on a method call comes back as an error from the daemon or the
+  peer, whereas a signal gets no reply and simply vanishes. Validating all four
+  header fields on every message measured 0.135 µs against a 4.13 µs marshall
+  (3.3%) and is still available if the silent-failure argument ever extends to
+  calls. **Incoming names are not checked** — the spec only requires that a
+  receiver _can_ reject one, `readString` already bounds-checks, and refusing
+  a sloppy peer's path would break interop over something we pass through
+  harmlessly. The commented-out check in `dbus-buffer.js` is now a note saying
+  so rather than a TODO.
+
 - **Introspect signals** — **done**, see §4.6.
 - **Double serial increment** — `exportInterface`'s patched `emit()` does
   `self.serial++` a second time after sending, burning a serial number per

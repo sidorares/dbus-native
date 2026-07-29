@@ -167,7 +167,11 @@ describe('marshall/unmarshall', () => {
       ['s', ['short string']],
       ['s', [str30000chars]],
       ['o', ['/object/path']],
-      ['o', ['invalid/object/path'], false],
+      // 'invalid/object/path' used to sit here marked `false`, which in this
+      // table means "does not round-trip", not "throws" -- the two branches
+      // below are identical, so it was only ever asserting a round trip. Now
+      // that 'o' is validated it belongs with the other rejections, in
+      // test/names.js.
       ['g', ['xxxtt(t)s{u}uuiibb']],
       ['g', ['signature'], false], // TODO: validate on input
       //['g', [str300chars], false],  // max 255 chars

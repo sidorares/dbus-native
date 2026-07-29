@@ -36,6 +36,20 @@ describe('public exports', () => {
     }
   });
 
+  it('exports the name validators', () => {
+    for (const name of [
+      'isValidObjectPath',
+      'isValidInterfaceName',
+      'isValidErrorName',
+      'isValidMemberName',
+      'isValidBusName'
+    ]) {
+      assert.strictEqual(typeof dbus[name], 'function', `${name} is exported`);
+    }
+    assert.strictEqual(dbus.isValidInterfaceName('org.example.Iface'), true);
+    assert.strictEqual(dbus.isValidObjectPath('/org/example'), true);
+  });
+
   it('exports the entry points', () => {
     for (const name of [
       'createClient',
