@@ -564,11 +564,19 @@ merely nonsense: `{}` is not a "Longjs object" of any signedness.
 
 One line of code, gated on a break. In order:
 
-1. **Deprecate louder (any minor).** `ReturnLongjs` is `DBUS_DEP0001` and
-   documentation-only today. It is a _runtime_ deprecation — the trigger is an
-   option the caller passes — so it can warn once per process via
-   `deprecate()`, which makes `node --throw-deprecation` locate the call site.
-   Nothing else in the plan needs this, so it can go whenever.
+1. ~~**Deprecate louder (any minor).**~~ **Already done, since 0.6** — this step
+   was written here in error. `ReturnLongjs` is a _runtime_ deprecation, not a
+   documentation-only one, and `index.js` has warned on it all along:
+
+   ```
+   (node:32313) [DBUS_DEP0001] DeprecationWarning: The 'ReturnLongjs' option is
+   deprecated. 64-bit values (x/t) become native BigInt in 2.0, ...
+   ```
+
+   Once per process, and `node --throw-deprecation` locates the call site.
+   Nothing to do here; the warning has been running for five releases, which is
+   as much notice as the option is going to get.
+
 2. **2.0: delete the option.** Remove `ReturnLongjs` from `DBusBuffer`, delete
    `readLong()`, drop `long` from `package.json`. **Runtime dependencies go to
    one** (`xml2js`). This is the whole cost now — the surrounding code stopped
