@@ -267,11 +267,22 @@ export type MethodDescriptor = [string, string, string[], string[]];
 /** A signal: [signature, ...argumentNames] */
 export type SignalDescriptor = string[];
 
+/** How a property may be used. Defaults to 'readwrite'. */
+export type PropertyAccess = 'read' | 'write' | 'readwrite';
+
+/**
+ * A property: a signature, or a signature plus its access.
+ *
+ * The bare-string form means `readwrite`, which is what it always meant.
+ */
+export type PropertyDescriptor =
+  string | { type: string; access?: PropertyAccess };
+
 export interface InterfaceDescriptor {
   name: string;
   methods?: Record<string, MethodDescriptor>;
   signals?: Record<string, SignalDescriptor>;
-  properties?: Record<string, string>;
+  properties?: Record<string, PropertyDescriptor>;
 }
 
 /**
@@ -371,6 +382,26 @@ export interface MessageBus {
     handler: [(...args: any[]) => any, string]
   ): void;
   exportInterface(obj: unknown, path: string, iface: InterfaceDescriptor): void;
+
+  /**
+   * Emit org.freedesktop.DBus.Properties.PropertiesChanged for an exported
+   * interface.
+   *
+   * `Properties.Set` does this for you. Call it when the service changes a
+   * property itself — an ordinary assignment cannot be observed.
+   *
+   * `invalidated` names properties whose value changed but is not being sent,
+   * telling subscribers to re-read rather than keep a stale value.
+   *
+   * @throws if the interface is not exported at `path`, or a named property is
+   * not declared on it
+   */
+  emitPropertiesChanged(
+    path: string,
+    interfaceName: string,
+    changed: Record<string, unknown>,
+    invalidated?: string[]
+  ): void;
 
   getService(name: string): DBusService;
 
