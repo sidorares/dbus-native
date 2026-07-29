@@ -36,7 +36,9 @@ lib/
   introspect.js       XML introspection -> proxy objects
   stdifaces.js        org.freedesktop.DBus.{Introspectable,Properties,Peer}
   constants.js        message types, header fields, endianness
-bin/                  dbus2js (codegen), dbus-dissect (traffic dumper)
+bin/                  dbus-native (types/introspect CLI), dbus2js (legacy
+                      codegen), dbus-dissect (traffic dumper)
+lib/codegen/          introspection -> TypeScript declarations
 scripts/              dev helpers for running a private session bus
 test/                 unit tests (mocha)
 test/integration/     end-to-end tests against a real dbus-daemon
