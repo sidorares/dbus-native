@@ -9,6 +9,7 @@ const { describe, it, beforeEach } = require('node:test');
 const assert = require('assert');
 const { EventEmitter } = require('events');
 const introspect = require('../lib/introspect');
+const { ConnectionClosedError } = require('../lib/errors');
 
 const IFACE = 'com.example.Iface';
 const PATH = '/com/example/Obj';
@@ -297,6 +298,57 @@ describe('proxy signals', () => {
       fire('Alpha', ['x']);
       assert.strictEqual(count, 1);
       assert.strictEqual(bus.matches.length, 1);
+    });
+
+    // Ending a connection shortly after off() is an ordinary shutdown, and
+    // RemoveMatch losing the race with the close used to reach the "nobody is
+    // listening, so rethrow" path and take the process down -- intermittently,
+    // which is how it showed up: one CI leg out of six.
+    it('stays quiet when the match call fails because the connection closed', async () => {
+      const quiet = stubBus();
+      const ifaceQuiet = await proxyFor(quiet);
+      const connection = new EventEmitter();
+      quiet.connection = connection;
+      const reported = [];
+      connection.on('handlerError', e => reported.push(e));
+
+      const thrown = [];
+      const onUncaught = e => thrown.push(e);
+      process.on('uncaughtException', onUncaught);
+
+      quiet.addMatchError = new ConnectionClosedError({});
+      ifaceQuiet.on('Alpha', () => {});
+      await new Promise(setImmediate);
+
+      quiet.addMatchError = null;
+      quiet.removeMatchError = new ConnectionClosedError({});
+      const cb = () => {};
+      await ifaceQuiet.$subscribe('Beta', cb);
+      ifaceQuiet.off('Beta', cb);
+      await new Promise(setImmediate);
+
+      process.removeListener('uncaughtException', onUncaught);
+      assert.deepStrictEqual(
+        reported,
+        [],
+        'nothing to report on a dead connection'
+      );
+      assert.deepStrictEqual(thrown, [], 'and nothing rethrown');
+    });
+
+    it('still reports a match failure that is not the connection closing', async () => {
+      const connection = new EventEmitter();
+      bus.connection = connection;
+      const errors = [];
+      connection.on('handlerError', e => errors.push(e));
+
+      iface.on('Alpha', () => {});
+      await new Promise(setImmediate);
+      assert.strictEqual(errors.length, 1);
+      assert.strictEqual(
+        errors[0].dbusName,
+        'org.freedesktop.DBus.Error.AccessDenied'
+      );
     });
 
     it('reports through the connection rather than throwing, via on()', async () => {
