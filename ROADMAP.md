@@ -475,9 +475,19 @@ grow unboundedly today.
 **Both halves are now done.** The per-call and per-client `timeout` option, with
 `AbortSignal` support, shipped in 0.6. Connection death fails every pending call
 with a `ConnectionClosedError` as of 0.7, which absorbs #213 — see
-[docs/migrating-to-0.7.md](./docs/migrating-to-0.7.md). What remains under this
-heading is #20 and #137: `connection.end()` still throws
-`ERR_STREAM_WRITE_AFTER_END` rather than flushing cleanly, and a _default_
+[docs/migrating-to-0.7.md](./docs/migrating-to-0.7.md).
+
+The `ERR_STREAM_WRITE_AFTER_END` half of [#20](https://github.com/sidorares/dbus-native/issues/20)
+is also fixed: closing a connection during the SASL handshake made the next
+handshake write land on an ended socket, which surfaced as an unhandled
+`'error'` and killed the process. It was a race, so it appeared intermittently
+— it took down one CI job in seven before being tracked down. The handshake now
+abandons quietly when the caller has closed the stream.
+
+**Not** the whole of #20: that issue reports `ECONNRESET` on the _read_ side
+after an early `end()`, which is a different path and still open.
+
+What remains under this heading is the read half of #20, and #137: a _default_
 timeout is deliberately held back to 3.0 because it makes previously-hanging
 calls start failing.
 
