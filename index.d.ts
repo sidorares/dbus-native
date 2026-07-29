@@ -80,6 +80,35 @@ export function variantSignature(value: unknown): string | undefined;
 export function toPlain<T = unknown>(value: unknown): T;
 
 // ---------------------------------------------------------------------------
+// Names
+// ---------------------------------------------------------------------------
+
+/**
+ * The D-Bus naming rules.
+ *
+ * https://dbus.freedesktop.org/doc/dbus-specification.html#message-protocol-names
+ *
+ * `exportInterface`, `sendSignal`, `sendError` and the `o` marshaller enforce
+ * these on what you send. Use them directly when a name is built at runtime and
+ * you would rather check than catch.
+ */
+
+/** `/`, or `/`-separated non-empty elements of `[A-Za-z0-9_]`. */
+export function isValidObjectPath(path: unknown): boolean;
+
+/** Two or more `.`-separated `[A-Za-z_][A-Za-z0-9_]*` elements, ≤ 255 bytes. */
+export function isValidInterfaceName(name: unknown): boolean;
+
+/** Error names follow the interface-name rules. */
+export function isValidErrorName(name: unknown): boolean;
+
+/** A single `[A-Za-z_][A-Za-z0-9_]*` element with no dots, ≤ 255 bytes. */
+export function isValidMemberName(name: unknown): boolean;
+
+/** A unique name like `:1.23`, or a well-known name (which may contain `-`). */
+export function isValidBusName(name: unknown): boolean;
+
+// ---------------------------------------------------------------------------
 // Errors
 // ---------------------------------------------------------------------------
 

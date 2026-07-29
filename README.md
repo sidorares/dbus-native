@@ -499,6 +499,35 @@ rest rather than guessing. See
 [`dbus-native/compat`](docs/migrating-to-0.7.md#the-escape-hatch) if you need the
 old shape while you migrate.
 
+### Names
+
+Object paths, interface names, error names and member names each have their own
+rules, and a name that breaks them produces a message no peer can route. Those
+you **send** are now checked — `exportInterface` (the path, the interface name
+and every member name), `sendSignal`, `sendError`, and any `o` value, which
+covers the path header of every outgoing message. Each throws an `Error` naming
+the rule that was broken:
+
+```
+Invalid interface name for the interface descriptor: "MyIface" -- must be two or
+more dot-separated elements of [A-Za-z_][A-Za-z0-9_]*, at most 255 bytes
+```
+
+This matters most for signals: a method call with a bad name comes back as an
+error from the daemon or the peer, but a signal gets no reply and simply
+vanishes.
+
+Names that arrive from a peer are not checked — strict in what you send,
+lenient in what you accept. For names built at runtime, the predicates are
+exported so you can check rather than catch:
+
+```js
+const { isValidObjectPath } = require('dbus-native');
+isValidObjectPath(`/com/example/${deviceId}`); // a '-' in deviceId would throw at export
+```
+
+See [docs/api.md](docs/api.md#names) for the full rules.
+
 ### 64-bit values: INT64 'x' and UINT64 't'
 
 By default these are unmarshalled into a `number`, which **loses precision

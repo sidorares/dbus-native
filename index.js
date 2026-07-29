@@ -14,6 +14,7 @@ const server = require('./lib/server');
 const deprecate = require('./lib/deprecate');
 const values = require('./lib/values');
 const errors = require('./lib/errors');
+const names = require('./lib/names');
 const { publishSend, publishReceive } = require('./lib/diagnostics');
 
 // A d-bus address is `family:key=value,key=value`, and DBUS_SESSION_BUS_ADDRESS
@@ -249,6 +250,16 @@ module.exports.Variant = values.Variant;
 module.exports.variantValue = values.variantValue;
 module.exports.variantSignature = values.variantSignature;
 module.exports.toPlain = values.toPlain;
+
+// The D-Bus naming rules, exported because anything building names at runtime
+// -- from a config file, a device id, a user-supplied string -- wants to check
+// before it exports rather than catch the throw afterwards.
+module.exports.isValidObjectPath = names.isValidObjectPath;
+module.exports.isValidInterfaceName = names.isValidInterfaceName;
+module.exports.isValidErrorName = names.isValidErrorName;
+module.exports.isValidMemberName = names.isValidMemberName;
+module.exports.isValidBusName = names.isValidBusName;
+
 module.exports.createConnection = createConnection;
 
 module.exports.createServer = server.createServer;
