@@ -208,6 +208,26 @@ function createConnection(opts) {
     return self;
   };
 
+  // The shapes the parser hands back, changeable after the connection is up.
+  //
+  // This exists for `dbus-native/compat`, and it is the only faithful way to
+  // build it: `plainValues` discards a variant's inner signature as it reads
+  // it, so no amount of post-processing downstream can reconstruct
+  // `[signatureTree, [value]]` -- it would have to invent the tree. Asking the
+  // parser is the difference between the real signature and a guess.
+  //
+  // A fresh DBusBuffer is built per message from this same options object, so a
+  // change takes effect on the next message in. Only the value-shape keys are
+  // writable: `maxMessageSize` and the transport options are read once during
+  // setup, and letting those be poked afterwards would do nothing visible
+  // except confuse whoever tried.
+  self.setValueShapes = shapes => {
+    for (const key of ['plainValues', 'returnBigInt', 'ayBuffer']) {
+      if (Object.hasOwn(shapes, key)) opts[key] = shapes[key];
+    }
+    return self;
+  };
+
   const handshake = opts.server ? serverHandshake : clientHandshake;
   handshake(stream, opts, (error, guid, identity) => {
     if (error) {

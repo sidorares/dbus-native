@@ -551,6 +551,23 @@ rest rather than guessing. See
 [`dbus-native/compat`](docs/migrating-to-0.7.md#the-escape-hatch) if you need the
 old shape while you migrate.
 
+### The 2.0 value shapes
+
+The next major changes what values look like: a variant becomes the value it
+holds, a string-keyed dict becomes a plain object, and `x`/`t` become `bigint`.
+
+**None of it has to wait for the release.** Both shapes are options today, per
+connection, so you can migrate a subsystem at a time against your real bus:
+
+```js
+const bus = dbus.sessionBus({ plainValues: true, returnBigInt: true });
+```
+
+Code written against `variantValue()` and `toPlain()` needs no change at all —
+they read either shape. `npx dbus-native lint src/` finds the rest.
+[docs/migrating-to-2.0.md](docs/migrating-to-2.0.md) is the guide, and leads
+with `bigint`, which is the part that breaks code far away from the call.
+
 ### Names
 
 Object paths, interface names, error names and member names each have their own
