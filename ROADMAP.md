@@ -421,7 +421,7 @@ their own copy.
 Plan: read `x`/`t` with `readBigInt64LE`/`readBigUInt64LE`; accept
 `bigint`, `number`, `string` and `Long`-shaped objects on marshall. Gate the
 return type behind an option (`ReturnBigInt`) for one minor release alongside
-the existing `ReturnLongjs`, then flip the default in 1.0 and drop `long`.
+the existing `ReturnLongjs`, then flip the default in 0.7 and drop `long`.
 
 ### 3.3 TypeScript declarations
 
@@ -447,6 +447,15 @@ per-call and per-client `timeout` option that rejects with a
 
 This is a correctness issue, not a nicety: long-lived daemons using this library
 grow unboundedly today.
+
+**Both halves are now done.** The per-call and per-client `timeout` option, with
+`AbortSignal` support, shipped in 0.6. Connection death fails every pending call
+with a `ConnectionClosedError` as of 0.7, which absorbs #213 — see
+[docs/migrating-to-0.7.md](./docs/migrating-to-0.7.md). What remains under this
+heading is #20 and #137: `connection.end()` still throws
+`ERR_STREAM_WRITE_AFTER_END` rather than flushing cleanly, and a _default_
+timeout is deliberately held back to 3.0 because it makes previously-hanging
+calls start failing.
 
 ---
 
@@ -551,6 +560,13 @@ documentation gaps and should be converted into README sections and closed.
 ---
 
 ## 6. Toward 1.0
+
+> **Superseded by [RELEASE_PLAN.md](./RELEASE_PLAN.md).** The single-big-major
+> idea below was split into a series of narrow ones, each small enough to
+> document and tool properly: 1.0 errors, 2.0 the type system, 3.0 lifecycle,
+> 4.0 ESM. 0.6 shipped the additive preparation; 0.7 makes errors real `Error`s
+> ([docs/migrating-to-0.7.md](./docs/migrating-to-0.7.md)). The paragraph below is
+> kept because it is still an accurate description of the destination.
 
 A plausible 1.0 is: promises by default, BigInt for 64-bit types, shipped
 TypeScript types, call timeouts, and a variant/dict API that does not leak the

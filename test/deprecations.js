@@ -1,3 +1,4 @@
+const { describe, it, beforeEach } = require('node:test');
 const assert = require('assert');
 const { execFileSync } = require('child_process');
 const deprecate = require('../lib/deprecate');

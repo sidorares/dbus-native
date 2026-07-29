@@ -66,6 +66,10 @@ sessionBus
 API
 ---
 
+**[docs/api.md](docs/api.md) is the complete reference** — every entry point,
+option, method, event, error class and diagnostics channel. What follows is
+the tour.
+
 ### Low level messaging: bus connection
 
 `connection = dbus.createClient(options)`
@@ -392,9 +396,9 @@ bus.invoke({
 
 ### Errors
 
-A failed call currently passes the raw message body — an array — to the
-callback. Since 0.6 that array also carries `message`, `dbusName` and `name`,
-which is the shape it becomes in 1.0:
+A failed call passes a `DBusError` to the callback and rejects the promise with
+one. It carries `message`, `dbusName`, `body` (the raw reply arguments) and
+`reply`:
 
 ```js
 bus.invoke(msg, err => {
@@ -403,6 +407,29 @@ bus.invoke(msg, err => {
   }
 });
 ```
+
+| class                   | when                                           | `code`        |
+| ----------------------- | ---------------------------------------------- | ------------- |
+| `DBusError`             | the call returned an error reply               | —             |
+| `TimeoutError`          | no reply within the timeout                    | `ETIMEDOUT`   |
+| `AbortError`            | cancelled through an `AbortSignal`             | `ABORT_ERR`   |
+| `ConnectionClosedError` | the connection went away with the call pending | `ECONNCLOSED` |
+| `UnknownInterfaceError` | the object does not implement that interface   | —             |
+
+All of them extend `DBusError`, which extends `Error`.
+
+Before 0.7 an error reply arrived as the raw message body — an array — and a
+dropped connection left pending calls hanging forever. To update existing code:
+
+```shell
+npx dbus-native codemod errors-to-error-objects --dry src/
+```
+
+It rewrites the call sites it can attribute to a D-Bus call and reports the
+rest rather than guessing. See
+[docs/migrating-to-0.7.md](docs/migrating-to-0.7.md), and
+[`dbus-native/compat`](docs/migrating-to-0.7.md#the-escape-hatch) if you need the
+old shape while you migrate.
 
 ### Note on INT64 'x' and UINT64 't'
 

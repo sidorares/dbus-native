@@ -25,6 +25,19 @@
     "examples": "examples"
   },
   "main": "index.js",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./compat": {
+      "types": "./lib/compat.d.ts",
+      "default": "./lib/compat.js"
+    },
+    "./package.json": "./package.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js"
+  },
   "maintainers": [
     {
       "name": "Andrey Sidorov",
@@ -55,7 +68,7 @@
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.8.0",
-    "mocha": "^11.7.6",
+    "jscodeshift": "^17.4.0",
     "prettier": "^3.9.6",
     "typescript": "^7.0.2"
   },
@@ -65,9 +78,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "npm run lint && npm run format:check && npm run test:types && npm run test:raw",
-    "test:raw": "mocha",
+    "test:raw": "node --test --test-reporter=spec test/*.js",
     "test:integration": "node scripts/with-dbus.js -- npm run test:integration:raw",
-    "test:integration:raw": "mocha --no-config --timeout 10000 test/integration/*.js",
+    "test:integration:raw": "node --test --test-reporter=spec test/integration/*.js",
     "dbus:session": "node scripts/dbus-session.js",
     "test:types": "tsc --noEmit"
   },

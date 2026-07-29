@@ -3,6 +3,7 @@
 // Every case here crashed the process (or silently produced wrong data)
 // before the read loop was hardened.
 
+const { describe, it } = require('node:test');
 const assert = require('assert');
 const { PassThrough, Duplex } = require('stream');
 const { execFile } = require('child_process');
@@ -36,7 +37,7 @@ function header({ bodyLength = 0, fieldsLength = 0, serial = 1 }) {
 }
 
 // Drive the parser and report what came out, without letting a throw escape
-// into mocha's uncaught handler.
+// into the test runner's uncaught handler.
 function parse(chunks, opts) {
   return new Promise(resolve => {
     const stream = new PassThrough();
@@ -223,7 +224,7 @@ describe('connection error handling', () => {
     return conn;
   }
 
-  it('emits a framing error on the connection instead of crashing', done => {
+  it('emits a framing error on the connection instead of crashing', (t, done) => {
     connect((conn, toClient) => {
       conn.on('error', err => {
         assert.strictEqual(err.code, 'EPROTO');
@@ -234,7 +235,7 @@ describe('connection error handling', () => {
     });
   });
 
-  it('delivers well-formed messages over the same path', done => {
+  it('delivers well-formed messages over the same path', (t, done) => {
     connect((conn, toClient) => {
       conn.on('error', done);
       conn.on('message', msg => {
@@ -245,7 +246,7 @@ describe('connection error handling', () => {
     });
   });
 
-  it("reports a throwing listener on 'handlerError', not 'error'", done => {
+  it("reports a throwing listener on 'handlerError', not 'error'", (t, done) => {
     connect((conn, toClient) => {
       conn.on('error', () => done(new Error("went to 'error'")));
       conn.on('message', () => {
@@ -262,8 +263,12 @@ describe('connection error handling', () => {
   // With no 'handlerError' listener we must not silently swallow an
   // application bug -- Node's default for a throwing listener is to crash.
   // Run it in a child process so the crash is observable.
-  it('still crashes by default when nothing listens for handlerError', done => {
-    const script = `
+  // Spawns a child process, so it needs longer than the default.
+  it(
+    'still crashes by default when nothing listens for handlerError',
+    { timeout: 10000 },
+    (t, done) => {
+      const script = `
       const { PassThrough, Duplex } = require('stream');
       const dbus = require(${JSON.stringify(require.resolve('../index'))});
       const message = require(${JSON.stringify(require.resolve('../lib/message'))});
@@ -281,12 +286,13 @@ describe('connection error handling', () => {
       });
       setTimeout(() => process.exit(0), 1000);
     `;
-    execFile(process.execPath, ['-e', script], (err, stdout, stderr) => {
-      assert.ok(err, 'expected a non-zero exit');
-      assert.match(stderr, /unhandled listener bug/);
-      done();
-    });
-  }).timeout(10000);
+      execFile(process.execPath, ['-e', script], (err, stdout, stderr) => {
+        assert.ok(err, 'expected a non-zero exit');
+        assert.match(stderr, /unhandled listener bug/);
+        done();
+      });
+    }
+  );
 });
 
 describe('message.unmarshall', () => {

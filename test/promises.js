@@ -1,3 +1,4 @@
+const { describe, it } = require('node:test');
 const assert = require('assert');
 const { execFileSync } = require('child_process');
 const { maybePromise } = require('../lib/promisify');
@@ -12,7 +13,7 @@ const op =
   };
 
 describe('maybePromise', () => {
-  it('uses the callback when one is given, and returns nothing new', done => {
+  it('uses the callback when one is given, and returns nothing new', (t, done) => {
     const ret = maybePromise(
       (err, value) => {
         assert.strictEqual(err, null);

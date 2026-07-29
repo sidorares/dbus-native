@@ -29,14 +29,8 @@ module.exports = [
       'no-useless-concat': 'error',
       'no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
     }
-  },
-  {
-    files: ['test/**/*.js'],
-    languageOptions: {
-      globals: {
-        ...globals.mocha,
-        xit: 'readonly'
-      }
-    }
   }
 ];
+// No test-globals block: node:test has no globals, so describe/it/before are
+// imported like anything else and a missing import is a lint error rather
+// than a runtime one.

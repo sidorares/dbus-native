@@ -9,7 +9,8 @@ every affected call site in your own codebase, turn them into thrown errors and
 run your tests:
 
 ```sh
-node --throw-deprecation node_modules/.bin/mocha
+node --throw-deprecation --test          # node:test
+node --throw-deprecation node_modules/.bin/<your-runner>
 ```
 
 Codes marked **documentation** describe a shape change rather than an API call.
@@ -108,14 +109,14 @@ tell those two apart, which is why the parser tags them instead of guessing.
 
 ## DBUS_DEP0004
 
-**Documentation.** Errors delivered as arrays.
+**Documentation. Completed in 0.7.** Errors delivered as arrays.
 
-A failed call currently passes the raw message body — an array of strings, or
-`[]` when the body is empty — where a callback expects an `Error`. In **1.0**
-it becomes a `DBusError` with `message`, `dbusName` and a stack.
+Before 0.7 a failed call passed the raw message body — an array of strings, or
+`[]` when the body is empty — where a callback expects an `Error`. Since
+**0.7** it is a `DBusError` with `message`, `dbusName` and a stack.
 
-Since 0.6 that array _also_ carries those properties, so this works today and
-continues to work in 1.0 unchanged:
+From 0.6 that array _also_ carried those properties, so code written this way
+needed no change when 0.7 landed:
 
 ```js
 bus.invoke(msg, err => {
@@ -125,9 +126,13 @@ bus.invoke(msg, err => {
 });
 ```
 
-Reading `err[0]` keeps working until 1.0. Use `err.message` instead.
+Reading `err[0]` worked until 0.7. Use `err.message`, or `err.body[0]` for an
+error that really does carry several arguments.
 
-Related: [#39](https://github.com/sidorares/dbus-native/issues/39),
+Migration: [docs/migrating-to-0.7.md](./migrating-to-0.7.md). The pre-0.7 shape is
+reconstructable with `toClassicError()` from `dbus-native/compat`.
+
+Closed: [#39](https://github.com/sidorares/dbus-native/issues/39),
 [#178](https://github.com/sidorares/dbus-native/issues/178),
 [#207](https://github.com/sidorares/dbus-native/issues/207),
 [#208](https://github.com/sidorares/dbus-native/issues/208).

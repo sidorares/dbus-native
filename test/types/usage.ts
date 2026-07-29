@@ -10,11 +10,14 @@ import {
   DBusInterface,
   DBusError,
   TimeoutError,
+  ConnectionClosedError,
+  UnknownInterfaceError,
   Variant,
   variantValue,
   toPlain,
   Message
 } from '../..';
+import { toClassicError } from '../../lib/compat';
 
 async function calls() {
   const bus: MessageBus = dbus.sessionBus({ timeout: 25000 });
@@ -111,7 +114,29 @@ async function errors() {
       const name: string | undefined = err.dbusName;
       void name;
     }
+    if (err instanceof ConnectionClosedError) {
+      const code: 'ECONNCLOSED' = err.code;
+      void code;
+    }
+    if (err instanceof UnknownInterfaceError) {
+      const iface: string = err.interfaceName;
+      void iface;
+    }
   }
+
+  // the callback form hands over a DBusError too
+  bus.invoke({ member: 'Nope' }, (err, result) => {
+    if (err) {
+      const message: string = err.message;
+      void [message, err.body, err.reply];
+      // and the pre-0.7 array is reconstructable while migrating
+      void toClassicError(err);
+      return;
+    }
+    void result;
+  });
+
+  bus.connection.on('close', (cause?: Error) => void cause);
 }
 
 function values() {

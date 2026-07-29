@@ -1,3 +1,4 @@
+const { describe, it } = require('node:test');
 const marshall = require('../lib/marshall');
 const unmarshall = require('../lib/unmarshall');
 const assert = require('assert');
