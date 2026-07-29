@@ -60,6 +60,56 @@ describe('readOneLine', () => {
     assert.strictEqual(await p, 'AUTH EXTERNAL');
   });
 
+  // Everything above either puts its lines in one write -- which the unshift
+  // path covers -- or starts the next read from a promise continuation, by
+  // which time the stream is no longer mid-emit.
+  //
+  // A SASL conversation does neither. It starts the next read *synchronously*
+  // from the callback of the last one, which runs inside the 'readable'
+  // emission. Attaching a listener there cannot schedule another emit, and
+  // read() only ever hands back one buffered chunk, so a peer that wrote its
+  // lines separately leaves the rest queued and the exchange stops dead.
+  //
+  // Chained with a helper rather than `await` on purpose: awaiting is what
+  // hides it.
+  const chain = (stream, count) =>
+    new Promise(resolve => {
+      const got = [];
+      const step = () =>
+        readOneLine(stream, buf => {
+          got.push(buf.toString());
+          if (got.length === count) return resolve(got);
+          step();
+        });
+      step();
+    });
+
+  it('reads on when each line came in its own write', async () => {
+    const s = new PassThrough();
+    const all = chain(s, 3);
+    s.write('one\n');
+    s.write('two\n');
+    s.write('three\n');
+    assert.deepStrictEqual(await all, ['one', 'two', 'three']);
+  });
+
+  it('reads on when the lines were written before anyone was reading', async () => {
+    const s = new PassThrough();
+    s.write('early\n');
+    s.write('bird\n');
+    await new Promise(setImmediate);
+    assert.deepStrictEqual(await chain(s, 2), ['early', 'bird']);
+  });
+
+  it('reads on when a line is split across writes after the first', async () => {
+    const s = new PassThrough();
+    const all = chain(s, 2);
+    s.write('AUTH\n');
+    s.write('EXTER');
+    s.write('NAL\n');
+    assert.deepStrictEqual(await all, ['AUTH', 'EXTERNAL']);
+  });
+
   it('reports a throwing callback on the stream', (t, done) => {
     const s = new PassThrough();
     s.on('error', err => {
