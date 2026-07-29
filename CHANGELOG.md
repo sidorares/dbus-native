@@ -3,6 +3,50 @@
 ## [0.11.0](https://github.com/sidorares/dbus-native/compare/v0.10.0...v0.11.0) (2026-07-29)
 
 
+### ⚠ BREAKING CHANGES
+
+Three things that worked in 0.10 behave differently. All three are cases the
+library previously accepted and should not have; none affects code that was
+already correct.
+
+* **`exportInterface()` now rejects names that break the D-Bus naming rules**
+  ([#333](https://github.com/sidorares/dbus-native/pull/333)) — the object
+  path, `iface.name`, and every method, signal and property name. It throws at
+  export rather than putting an unroutable message on the wire.
+
+  **The case most likely to affect you is a property name containing `-` or
+  `.`**, because those genuinely worked: a property name travels as a string
+  *argument* to `Properties.Get`/`Set`, not in the message header, so
+  `properties: { 'my-prop': 's' }` could be read and written quite happily.
+  It now throws. Hyphens are the GObject convention, so services bridging
+  GObject properties are the ones to check.
+
+  A method or signal name with a hyphen also throws, but those were already
+  broken for remote callers — the name goes in the header, where the rules are
+  enforced by the bus.
+
+  ```
+  Invalid member name for properties.my-prop: "my-prop" -- must be a single
+  element of [A-Za-z_][A-Za-z0-9_]* with no dots, at most 255 bytes
+  ```
+
+  Rename the member, or open an issue if you have a case where the old
+  behaviour was correct. See [docs/api.md#names](https://github.com/sidorares/dbus-native/blob/master/docs/api.md#names).
+
+* **`lib/portforward.js` has been removed**
+  ([#342](https://github.com/sidorares/dbus-native/pull/342)) — it was
+  reachable as `require('dbus-native/lib/portforward')`. Use
+  `bin/dbus-dissect.js`, which forwards the same way on the same default port
+  and prints decoded messages rather than a hexdump. This is what let the
+  `hexy` dependency go.
+
+* **A 64-bit field given something that is not a number now throws**
+  ([#343](https://github.com/sidorares/dbus-native/pull/343)) —
+  `marshall('x', [{}])`, `[[]]` and `[true]` used to write eight zero bytes
+  with no complaint, because `Long.fromBits(undefined, undefined, undefined)`
+  is zero. Passing a boolean where an integer belonged silently sent `0`.
+
+
 ### Features
 
 * accept a plain JS object anywhere a dict is expected ([#335](https://github.com/sidorares/dbus-native/issues/335)) ([869a8df](https://github.com/sidorares/dbus-native/commit/869a8dfec08ae7bc1a192791fbde43921c58fdfd))
