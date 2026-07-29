@@ -10,7 +10,7 @@ A pure-JavaScript implementation of the D-Bus protocol — wire format
 build step, CommonJS. The reference for anything protocol-shaped is the
 [D-Bus specification](https://dbus.freedesktop.org/doc/dbus-specification.html).
 
-Runtime dependencies are deliberately minimal (`hexy`, `long`, `xml2js`). **Do
+Runtime dependencies are deliberately minimal (`long`, `xml2js`). **Do
 not add a runtime dependency without a strong reason** — several past releases
 were spent removing them, and the small dependency tree is a feature users
 choose this package for. `devDependencies` are less precious.

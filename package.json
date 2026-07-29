@@ -58,7 +58,6 @@
     "dbus2js": "./bin/dbus2js.js"
   },
   "dependencies": {
-    "hexy": "^0.4.0",
     "long": "^5.3.2",
     "xml2js": "^0.6.2"
   },
