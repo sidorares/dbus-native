@@ -137,7 +137,11 @@ describe(
       assert.match(out, /Greeting\(\): DBusPromise<string>;/);
       assert.match(
         out,
-        /on\(event: 'Pinged', listener: \(who: string, times: number\) => void\): void;/
+        /on\(event: 'Pinged', listener: \(who: string, times: number\) => void\): this;/
+      );
+      assert.match(
+        out,
+        /once\(event: 'Pinged', listener: \(who: string, times: number\) => void\): this;/
       );
     });
 
@@ -165,8 +169,13 @@ async function main() {
   const pair: [string, number] = await iface.Pair();
   const blob: Buffer = await iface.Blob(Buffer.from([1]));
   const greeting: string = await iface.Greeting();
-  iface.on('Pinged', (who: string, times: number) => void [who, times]);
-  void [echoed, sum, pair, blob, greeting];
+  // the typed overloads return \`this\`, so subscriptions chain
+  iface
+    .on('Pinged', (who: string, times: number) => void [who, times])
+    .once('Pinged', (who: string, times: number) => void [who, times]);
+  const pinged: string[] = iface.$signals.Pinged;
+  await iface.$subscribe('Pinged', () => {});
+  void [echoed, sum, pair, blob, greeting, pinged];
 }
 void main;
 `

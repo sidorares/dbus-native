@@ -135,7 +135,14 @@ describe('codegen: emitted declarations', () => {
   it('emits signals as typed on() overloads', () => {
     assert.match(
       output,
-      /on\(event: 'StateChanged', listener: \(state: number, error: string\) => void\): void;/
+      /on\(event: 'StateChanged', listener: \(state: number, error: string\) => void\): this;/
+    );
+  });
+
+  it('emits a matching once() overload for each signal', () => {
+    assert.match(
+      output,
+      /once\(event: 'StateChanged', listener: \(state: number, error: string\) => void\): this;/
     );
   });
 

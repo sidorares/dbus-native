@@ -294,6 +294,8 @@ export interface DBusInterface {
   $name: string;
   $parent: DBusObject;
   $methods: Record<string, string>;
+  /** Signals declared by the interface, as discovered by introspection. */
+  $signals: Record<string, SignalDescriptor>;
   $properties: Record<string, { type: string; access?: string }>;
 
   $callMethod(name: string, args: unknown[]): DBusPromise<any>;
@@ -302,10 +304,30 @@ export interface DBusInterface {
   $writeProp(name: string, value: unknown): DBusPromise<void>;
   $writeProp(name: string, value: unknown, callback: InvokeCallback): void;
 
-  addListener(signal: string, listener: (...args: any[]) => void): void;
-  on(signal: string, listener: (...args: any[]) => void): void;
-  removeListener(signal: string, listener: (...args: any[]) => void): void;
-  off(signal: string, listener: (...args: any[]) => void): void;
+  /**
+   * Subscribe, resolving once the match rule is in place.
+   *
+   * `on()` returns `this` and so cannot report that, nor report AddMatch
+   * failing. Await this when you need the subscription live before triggering
+   * whatever emits the signal.
+   */
+  $subscribe(
+    signal: string,
+    listener: (...args: any[]) => void
+  ): DBusPromise<void>;
+  /** Unsubscribe, resolving once the match rule has been dropped. */
+  $unsubscribe(
+    signal: string,
+    listener: (...args: any[]) => void
+  ): DBusPromise<void>;
+
+  addListener(signal: string, listener: (...args: any[]) => void): this;
+  on(signal: string, listener: (...args: any[]) => void): this;
+  once(signal: string, listener: (...args: any[]) => void): this;
+  removeListener(signal: string, listener: (...args: any[]) => void): this;
+  off(signal: string, listener: (...args: any[]) => void): this;
+  removeAllListeners(signal?: string): this;
+  listenerCount(signal: string): number;
 
   [member: string]: any;
 }

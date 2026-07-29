@@ -571,6 +571,8 @@ property with `PropertyReadOnly`, `Get` refuses a write-only one with
 `AccessDenied`, and `GetAll` omits what cannot be read. The bare-signature
 form still means `readwrite`, so nothing existing changes.
 
+Receiving a `PropertiesChanged` — the client half — is §4.6.
+
 On the third item: [#102](https://github.com/sidorares/dbus-native/issues/102)
 is **closed**, and it was never about an interface with no properties — it
 reports `GetAll` failing on a property whose _value_ is an empty array (`as`
@@ -590,6 +592,48 @@ Note the `test/integration/` suite added in this pass already gives us real
 coverage against `dbus-daemon`, so this is now an ergonomics win rather than a
 blocker.
 
+### 4.6 Signals on the client side
+
+**Issues:** [#117](https://github.com/sidorares/dbus-native/issues/117),
+[#75](https://github.com/sidorares/dbus-native/issues/75),
+[#236](https://github.com/sidorares/dbus-native/issues/236)
+
+The other half of §4.4. A service emits `PropertiesChanged` as of 0.9; this is
+what it takes to receive one.
+
+**Done.** `lib/introspect.js` parses `<signal>` elements, so `iface.$signals`
+lists what an interface declares in the same `[signature, ...argumentNames]`
+shape a service is exported with. That closes the `// TODO: introspect signals`
+left in the file, and makes the runtime agree with `dbus-native types`, which
+had been emitting typed `on()` overloads for signals the runtime never recorded.
+
+Three things the implementation turned up:
+
+- **`off()` could silently fail to unsubscribe.** The listener bookkeeping was
+  two flat arrays shared by the whole interface, so it could not tell two
+  signals apart. Removing the last listener of one signal emptied them for
+  _every_ signal on that interface; the next `off()` then built a wrapper it had
+  never registered, removed nothing, and left the listener firing with no way to
+  stop it. Now keyed per signal name, with a count so a listener added twice
+  needs removing twice, as `EventEmitter` does. Reproduced against a real
+  daemon before the fix, and pinned by a test that fails on the old code.
+- **The subscription was installed one round trip too late.** The listener was
+  registered in the `AddMatch` _reply_ handler, but the daemon starts routing
+  when it processes the rule — necessarily before the reply gets back — so a
+  signal arriving in that window was dropped. Registering first and rolling back
+  on failure closes it.
+- **A failed `AddMatch` had nowhere to go.** It was a `throw` from inside a
+  reply handler, which the read loop turns into a connection `handlerError`.
+  That is still what `on()` does, since anything else would be a break, but
+  `$subscribe`/`$unsubscribe` now return promises: they reject with the
+  `DBusError`, and resolving means the rule is actually in place. `once()`,
+  `removeAllListeners()` and `listenerCount()` came along with them.
+
+Not addressed: the match rule still omits `sender`, so two services exporting
+the same object path deliver each other's signals. Fixing it properly means
+putting the sender in `bus.mangle`'s dispatch key, which is public API and
+belongs with the lifecycle work rather than here.
+
 ---
 
 ## 5. Lower priority / opportunistic
@@ -602,8 +646,7 @@ blocker.
   — `StartServiceByName` exists but the new API never consults it.
 - **`dbus-send` equivalent** ([#56](https://github.com/sidorares/dbus-native/issues/56))
   — a small CLI on top of the library; good first issue.
-- **Introspect signals** — `lib/introspect.js` has `// TODO: introspect signals`,
-  so proxies expose methods and properties but signals must be wired by hand.
+- **Introspect signals** — **done**, see §4.6.
 - **Double serial increment** — `exportInterface`'s patched `emit()` does
   `self.serial++` a second time after sending, burning a serial number per
   signal. Harmless but wrong; related to

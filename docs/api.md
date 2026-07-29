@@ -257,7 +257,32 @@ Assignment cannot be awaited, so a failed write has nowhere to report. Use
 
 ```js
 iface.on('ActionInvoked', (...args) => {});
+iface.once('ActionInvoked', handler); // fires at most once, then unsubscribes
 iface.off('ActionInvoked', handler); // removes the match rule when the last listener goes
+iface.removeAllListeners('ActionInvoked'); // or with no argument, every signal
+iface.listenerCount('ActionInvoked');
+```
+
+`on`/`once`/`off` return the interface, so they chain.
+
+Installing the match rule is a round trip to the daemon, and `on` cannot report
+when it finishes or that it failed. `$subscribe`/`$unsubscribe` do both:
+
+```js
+// resolved => the daemon is routing the signal to us
+await iface.$subscribe('ActionInvoked', handler);
+await iface.$unsubscribe('ActionInvoked', handler);
+```
+
+Prefer them when you are about to trigger whatever emits the signal, or when
+`AddMatch` failing is something you want to catch — from `on` it surfaces as a
+connection `handlerError` instead.
+
+**`$signals`** lists what the interface declared, in the same
+`[signature, ...argumentNames]` shape a service is exported with:
+
+```js
+iface.$signals; // { ActionInvoked: ['su', 'id', 'action'] }
 ```
 
 ---
@@ -334,6 +359,29 @@ bus.emitPropertiesChanged(path, iface.name, { Greeting: impl.Greeting });
 signatures from the interface descriptor, so values are marshalled as declared
 rather than guessed from their JS type. It throws if the interface is not
 exported at that path, or if a named property is not declared on it.
+
+**Receiving one** is a subscription on `org.freedesktop.DBus.Properties`, not on
+the interface that owns the property — the signal names that interface in its
+first argument:
+
+```js
+const props = await bus
+  .getService(name)
+  .getInterface(path, 'org.freedesktop.DBus.Properties');
+
+await props.$subscribe(
+  'PropertiesChanged',
+  (interfaceName, changed, invalidated) => {
+    for (const [prop, value] of changed) {
+      console.log(prop, variantValue(value));
+    }
+  }
+);
+```
+
+`changed` is an `a{sv}`, so until 2.0 it is an array of pairs whose values are
+variants — see [Values and types](#values-and-types) and use `variantValue()` so
+the code survives the change.
 
 The `invalidated` list names properties whose value changed but is not being
 sent — write-only ones, or anything expensive to compute. Listing them tells a

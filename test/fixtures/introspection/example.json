@@ -5,6 +5,9 @@
             "methods": [
                 {"name":"AddContact", "signature":"ss"}
             ],
+            "signals": [
+                {"name":"StateChanged", "descriptor":["is", "state", "error"]}
+            ],
             "properties": [
                 {"name":"Status", "type":"u", "access":"read"}
             ]
