@@ -42,6 +42,11 @@ if (argv.help) {
   process.exit(0);
 }
 
+console.error(
+  "note: 'dbus2js' generates untyped ES5. 'dbus-native types' generates " +
+    'TypeScript declarations and handles properties and signals.'
+);
+
 function die(err) {
   console.log(err);
   process.exit(-1);
@@ -136,7 +141,12 @@ if (!argv.server) {
           output.push('    };');
         }
         for (const property of iface.property || []) {
-          console.log('    property: \n', property);
+          // stderr, not stdout: this used to be printed into the middle of the
+          // generated module, so piping the output to a file produced a file
+          // that was not valid JavaScript.
+          console.error(
+            `  note: property not generated: ${property['@'].name}`
+          );
         }
         output.push('}');
       }

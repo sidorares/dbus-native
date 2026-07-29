@@ -151,6 +151,56 @@ conn.on('message', function (msg) {
 });
 ```
 
+### Generating types for a service
+
+`dbus-native types` introspects a live service and writes TypeScript
+declarations for it. The generated file is types only — no runtime code, no
+XML parsing at run time, and nothing to ship:
+
+```shell
+npx dbus-native types --system \
+  --service org.freedesktop.NetworkManager \
+  --path /org/freedesktop/NetworkManager \
+  --out src/generated/network-manager.d.ts
+```
+
+```ts
+import type { OrgFreedesktopNetworkManager } from './generated/network-manager';
+
+const nm = await bus
+  .getService('org.freedesktop.NetworkManager')
+  .getInterface<OrgFreedesktopNetworkManager>(
+    '/org/freedesktop/NetworkManager',
+    'org.freedesktop.NetworkManager'
+  );
+
+const devices = await nm.GetDevices(); // string[], checked
+```
+
+Methods, properties and signals are all emitted, with argument names taken
+from the introspection data where the service provides them.
+
+| flag                  |                                                          |
+| --------------------- | -------------------------------------------------------- |
+| `--service`, `--path` | what to introspect                                       |
+| `--system`            | use the system bus (default: session)                    |
+| `--xml <file>`        | read saved introspection XML instead of a live bus       |
+| `--out <file>`        | write to a file instead of stdout                        |
+| `--target next`       | emit the 2.0 value shapes (`bigint`, plain objects)      |
+| `--all`               | include the standard `org.freedesktop.DBus.*` interfaces |
+| `--module <name>`     | module specifier for the type import                     |
+
+`dbus-native introspect` prints the raw XML, which is handy for checking a
+service's shape or for saving a fixture to generate from later.
+
+The generated file records the service, path and target it came from, so
+regenerating after upgrading is one command. Types generated with the default
+`classic` target describe today's value shapes; see
+[RELEASE_PLAN.md](./RELEASE_PLAN.md) for what changes in 2.0.
+
+> The older `dbus2js` command still exists and emits untyped ES5. It does not
+> handle properties or signals. Prefer `dbus-native types`.
+
 ### TypeScript
 
 Types ship with the package — no `@types/` install, and nothing to keep in
