@@ -11,16 +11,42 @@ const { spawnSync } = require('child_process');
 const dbus = require('../index');
 const { parseIntrospection } = require('../lib/codegen/introspection');
 const { emitTypes } = require('../lib/codegen/emit-types');
+const cli = require('../lib/cli/call');
 
 const USAGE = `Usage: dbus-native <command> [options]
 
 Commands:
+  call         call a method, the way dbus-send does
+  get          read a property
+  set          write a property
+  list         list the names on the bus
   types        generate TypeScript declarations for a service
   introspect   print a service's raw introspection XML
   codemod      rewrite your source for a breaking change
   lint         report reads of value shapes that change in 2.0
 
-Options for both:
+Options for call/get/set/list:
+  --dest <name>      bus name to talk to (call, get, set)
+  --system           use the system bus (default: session)
+  --address <addr>   connect to this address instead
+  --json             print the reply as JSON
+  --timeout <ms>     give up after this long (default 25000)
+  --no-reply         send without waiting (call)
+  --no-auto-start    fail rather than activating the service (call)
+  --signature <sig>  give the signature explicitly, with --body
+  --body <json>      arguments as a JSON array, with --signature
+  --activatable      list what could be started, not what is running (list)
+  --all              include unique names like :1.7 (list)
+
+  Arguments to 'call' and 'set' are dbus-send's type:value form:
+    string:hello  int32:-7  uint64:18446744073709551615  boolean:true
+    byte:255  double:1.5  objpath:/com/example/Obj  signature:a{sv}
+    array:string:a,b,c    dict:string:uint32:width,800
+    variant:int32:42
+  Use --signature/--body for anything that cannot express -- structs,
+  deeper nesting, or a value containing a comma.
+
+Options for types/introspect:
   --service <name>   bus name, e.g. org.freedesktop.NetworkManager
   --path <path>      object path, e.g. /org/freedesktop/NetworkManager
   --system           use the system bus (default: session)
@@ -46,6 +72,18 @@ Options for 'lint':
   Exits non-zero when there are findings, so it can gate CI.
 
 Examples:
+  dbus-native list
+  dbus-native call --dest org.freedesktop.DBus \\
+    /org/freedesktop/DBus org.freedesktop.DBus.ListNames
+
+  dbus-native call --dest org.freedesktop.Notifications \\
+    /org/freedesktop/Notifications org.freedesktop.Notifications.Notify \\
+    string:hello uint32:0 string: string:Summary string:Body \\
+    array:string: dict:string:string: int32:5000
+
+  dbus-native get --system --dest org.freedesktop.UPower \\
+    /org/freedesktop/UPower org.freedesktop.UPower DaemonVersion
+
   dbus-native codemod errors-to-error-objects src/
   dbus-native lint --rule DBUS_DEP0002 src/
 
@@ -79,6 +117,15 @@ function parse(argv) {
         dry: { type: 'boolean', default: false },
         rule: { type: 'string' },
         'exit-zero': { type: 'boolean', default: false },
+        dest: { type: 'string' },
+        address: { type: 'string' },
+        json: { type: 'boolean', default: false },
+        timeout: { type: 'string' },
+        'no-reply': { type: 'boolean', default: false },
+        'no-auto-start': { type: 'boolean', default: false },
+        signature: { type: 'string' },
+        body: { type: 'string' },
+        activatable: { type: 'boolean', default: false },
         help: { type: 'boolean', default: false }
       },
       allowPositionals: true
@@ -260,6 +307,20 @@ async function main() {
     return runLint(positionals.slice(1), argv);
   }
 
+  // The bus-facing subcommands. Each returns text to print, or '' when there is
+  // nothing to say -- a successful `set` should be silent, like any good tool.
+  const busCommands = {
+    call: cli.call,
+    get: cli.get,
+    set: cli.set,
+    list: cli.list
+  };
+  if (busCommands[command]) {
+    const output = await busCommands[command](positionals.slice(1), argv);
+    if (output) console.log(output);
+    return;
+  }
+
   if (!['types', 'introspect'].includes(command)) {
     fail(`Unknown command '${command}'.\n\n${USAGE}`);
   }
@@ -296,5 +357,9 @@ async function main() {
 }
 
 main().catch(err => {
+  // A d-bus error's name is the part worth acting on -- UnknownMethod and
+  // AccessDenied want different responses, and the text alone does not say
+  // which you got. dbus-send prints both, and so should this.
+  if (err && err.dbusName) fail(`${err.dbusName}: ${err.message}`);
   fail(err && err.message ? err.message : String(err));
 });

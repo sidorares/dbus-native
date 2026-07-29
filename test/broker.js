@@ -348,6 +348,41 @@ describe('broker', { timeout: 20000 }, () => {
       assert.deepStrictEqual(queued, [a.name, b.name, c.name]);
     });
 
+    it('answers GetConnectionCredentials, as the daemon does', async () => {
+      // The modern replacement for GetConnectionUnix{User,ProcessID}, and what
+      // most code asks for now. Added because a CLI test that used it passed
+      // against dbus-daemon and failed here -- which is the whole point of
+      // running the integration suite against both.
+      const a = await client();
+      const b = await client();
+      await request(a, 'com.example.Credentials');
+      const credentials = dbus.toPlain(
+        await b.invokeDbus({
+          member: 'GetConnectionCredentials',
+          signature: 's',
+          body: ['com.example.Credentials']
+        })
+      );
+      assert.strictEqual(typeof credentials.ProcessID, 'number');
+      assert.ok(credentials.ProcessID > 0);
+      if (typeof process.getuid === 'function') {
+        assert.strictEqual(credentials.UnixUserID, process.getuid());
+      }
+    });
+
+    it('reports NameHasNoOwner from GetConnectionCredentials', async () => {
+      const bus = await client();
+      await assert.rejects(
+        () =>
+          bus.invokeDbus({
+            member: 'GetConnectionCredentials',
+            signature: 's',
+            body: ['com.example.Absent']
+          }),
+        { dbusName: 'org.freedesktop.DBus.Error.NameHasNoOwner' }
+      );
+    });
+
     it('answers GetId with a stable bus id', async () => {
       const a = await client();
       const b = await client();

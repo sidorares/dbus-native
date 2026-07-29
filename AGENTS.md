@@ -71,8 +71,25 @@ Nothing needs to be running as a service. `scripts/dbus-daemon.js` starts a
 tests never touch (or depend on) the user's real session bus.
 
 - `npm run test:integration` wraps the test run in one automatically.
+- `npm run test:integration:broker` runs the same suite against
+  `lib/broker.js` instead, which needs nothing installed. Running it both ways
+  is how a disagreement between the two buses gets noticed.
 - `npm run dbus:session` starts one in the foreground and prints the
   `DBUS_SESSION_BUS_ADDRESS` export line, for poking at examples by hand.
+
+**The integration suite runs one file at a time** (`--test-concurrency=1`).
+That is deliberate. Every file shares the one daemon the wrapper started, and
+running them concurrently made roughly one run in five fail — a different test
+each time, always a service answering `UnknownObject` or `UnknownMethod` for
+something it had definitely exported. Measured on master before any of this
+was touched: 3 failures in 10 concurrent runs, 0 in 10 serial ones.
+
+The mechanism is not fully explained. One captured instance had a connection
+with an empty `exportedObjects` receiving a method call addressed to a
+well-known name it did not own, which should not be possible with unicast
+routing. It costs about three seconds to serialise (1.9s → 5.2s) and it makes
+the suite trustworthy, so it is serial until someone gets to the bottom of it.
+If you are chasing it, `--test-concurrency=8` in a loop reproduces.
 
 The integration tests **skip themselves** when `DBUS_SESSION_BUS_ADDRESS` is
 unset, so a bare `node --test` run stays green without a bus. If you add

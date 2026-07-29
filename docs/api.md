@@ -866,6 +866,75 @@ dc.subscribe('tracing:dbus:call:error', ctx =>
 
 ## CLI
 
+| command      |                                                     |
+| ------------ | --------------------------------------------------- |
+| `call`       | call a method, the way `dbus-send` does             |
+| `get`, `set` | read or write a property                            |
+| `list`       | the names on the bus                                |
+| `types`      | TypeScript declarations for a service               |
+| `introspect` | a service's raw introspection XML                   |
+| `codemod`    | rewrite your source for a breaking change           |
+| `lint`       | report reads of the value shapes that change in 2.0 |
+
+### Talking to the bus
+
+```sh
+npx dbus-native list
+npx dbus-native call --dest org.freedesktop.DBus \
+  /org/freedesktop/DBus org.freedesktop.DBus.ListNames
+
+npx dbus-native get --system --dest org.freedesktop.UPower \
+  /org/freedesktop/UPower org.freedesktop.UPower DaemonVersion
+```
+
+Arguments use `dbus-send`'s `type:value` form, so a command line you already
+have can be pasted in:
+
+| form                                  | signature |
+| ------------------------------------- | --------- |
+| `string:` `objpath:` `signature:`     | `s o g`   |
+| `byte:` `boolean:`                    | `y b`     |
+| `int16:` `uint16:` `int32:` `uint32:` | `n q i u` |
+| `int64:` `uint64:` `double:`          | `x t d`   |
+| `array:string:a,b,c`                  | `as`      |
+| `dict:string:uint32:width,800`        | `a{su}`   |
+| `variant:int32:42`                    | `v`       |
+| `dict:string:variant:urgency,byte:1`  | `a{sv}`   |
+| `array:variant:int32:1,string:two`    | `av`      |
+
+`variant` works as a container element type because a `type:value` pair contains
+no comma, so each element can carry its own. That matters because `a{sv}` is the
+most common dict on the bus — `Notify`'s hints, `Properties.GetAll`,
+NetworkManager's settings — and `dbus-send` cannot express it:
+
+```sh
+npx dbus-native call --dest org.freedesktop.Notifications \
+  /org/freedesktop/Notifications org.freedesktop.Notifications.Notify \
+  string:my-app uint32:0 string: string:Summary string:Body \
+  array:string: dict:string:variant:urgency,byte:1 int32:2000
+```
+
+Each value is range-checked before anything is sent, and the message names the
+type you typed rather than the signature character: `256 is out of range for y
+(0..255)`. 64-bit values are carried as `BigInt` and printed exactly, in both
+directions — a tool for inspecting values must not round them.
+
+For what that form cannot express — a struct, nesting past one level, a value
+containing a comma — give the signature and the body directly:
+
+```sh
+npx dbus-native call --dest com.example.Service /com/example/Obj \
+  com.example.Iface.Configure \
+  --signature 'a(si)' --body '[[["first", 1], ["second", 2]]]'
+```
+
+Other flags: `--system`, `--address`, `--json` (plain shapes, for a pipeline),
+`--timeout`, `--no-reply`, `--no-auto-start`, and for `list`, `--activatable`
+and `--all`. A failed call exits non-zero with the error **name** as well as its
+text, since `UnknownMethod` and `AccessDenied` want different responses.
+
+### Generating and checking code
+
 ```sh
 npx dbus-native types --system \
   --service org.freedesktop.NetworkManager \
@@ -876,13 +945,6 @@ npx dbus-native introspect --service org.example --path /org/example
 npx dbus-native codemod errors-to-error-objects --dry src/
 npx dbus-native lint src/
 ```
-
-| command      |                                                     |
-| ------------ | --------------------------------------------------- |
-| `types`      | TypeScript declarations for a service               |
-| `introspect` | a service's raw introspection XML                   |
-| `codemod`    | rewrite your source for a breaking change           |
-| `lint`       | report reads of the value shapes that change in 2.0 |
 
 `lint` exits non-zero when there are findings, so it can gate CI. `--exit-zero`
 reports without failing; `--rule DBUS_DEP0002` selects individual codes. It
