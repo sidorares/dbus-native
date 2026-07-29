@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.11.0](https://github.com/sidorares/dbus-native/compare/v0.10.0...v0.11.0) (2026-07-29)
+
+
+### Features
+
+* accept a plain JS object anywhere a dict is expected ([#335](https://github.com/sidorares/dbus-native/issues/335)) ([869a8df](https://github.com/sidorares/dbus-native/commit/869a8dfec08ae7bc1a192791fbde43921c58fdfd))
+* read the 2.0 value shapes today with `plainValues` ([#340](https://github.com/sidorares/dbus-native/issues/340)) ([fcf00f6](https://github.com/sidorares/dbus-native/commit/fcf00f6545c91ffd19b790b9a2d7b3c4bb8f9cfc))
+* say why UNIX_FD is unsupported, and scope what it would take ([#344](https://github.com/sidorares/dbus-native/issues/344)) ([2fa894b](https://github.com/sidorares/dbus-native/commit/2fa894be9ec3e7f1498c74203ae8f4adcf0aff9a))
+* support launchd: addresses, so sessionBus() works on macOS ([#336](https://github.com/sidorares/dbus-native/issues/336)) ([24a4dbc](https://github.com/sidorares/dbus-native/commit/24a4dbc04abf1929fa5d653da60927fa983dbc26))
+* validate names against the D-Bus rules before sending them ([#333](https://github.com/sidorares/dbus-native/issues/333)) ([1ac6c5e](https://github.com/sidorares/dbus-native/commit/1ac6c5e4ec9b1be93a30629003a8e4527b798778))
+
+
+### Bug Fixes
+
+* do not crash when a match call loses the race with a closing connection ([#339](https://github.com/sidorares/dbus-native/issues/339)) ([b0ad5b3](https://github.com/sidorares/dbus-native/commit/b0ad5b315c01d05a98207cf967a1fbfac2eb4237))
+* let a service method return several out arguments ([#341](https://github.com/sidorares/dbus-native/issues/341)) ([3c5eec0](https://github.com/sidorares/dbus-native/commit/3c5eec0297951120217730c3f025f1a8a8fb3f2c))
+* wrap the message serial instead of overflowing uint32 ([#337](https://github.com/sidorares/dbus-native/issues/337)) ([084aede](https://github.com/sidorares/dbus-native/commit/084aede42a7302a60e8ce305c2b0b5b94ae028e1))
+
+
+### Documentation
+
+* correct the ReturnLongjs deprecation status in ROADMAP 3.2 ([#345](https://github.com/sidorares/dbus-native/issues/345)) ([8bd9ab2](https://github.com/sidorares/dbus-native/commit/8bd9ab2e5a655871ef5b70146b0c963a008e209b))
+
+
+### Code Refactoring
+
+* make the library's own reads survive the 2.0 value shapes ([#338](https://github.com/sidorares/dbus-native/issues/338)) ([b2a9100](https://github.com/sidorares/dbus-native/commit/b2a9100241fcf7b2f8f249b8e36caa6716f00222))
+* use bigint internally for x/t, confining Long.js to one option ([#343](https://github.com/sidorares/dbus-native/issues/343)) ([f68e575](https://github.com/sidorares/dbus-native/commit/f68e575d50a9e45d5bc310af641160a8f0c4de7a))
+
 ## [0.10.0](https://github.com/sidorares/dbus-native/compare/v0.9.0...v0.10.0) (2026-07-29)
 
 
