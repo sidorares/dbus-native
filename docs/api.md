@@ -59,6 +59,7 @@ all three take the same options.
 | `ayBuffer`       | `true \| false \| 'view'` | `true`                                          | how `ay` comes back — see [Values](#values-and-types)          |
 | `maxMessageSize` | `number`                  | 128 MiB                                         | reject a message declaring more than this                      |
 | `returnBigInt`   | `boolean`                 | `false`                                         | read `x`/`t` as native `bigint`, exactly — the 2.0 default     |
+| `plainValues`    | `boolean`                 | `false`                                         | read variants and dicts in the 2.0 shapes — see below          |
 | `ReturnLongjs`   | `boolean`                 | `false`                                         | **deprecated** (`DBUS_DEP0001`) — 64-bit as Long.js            |
 
 Address forms understood by `busAddress`: `unix:path=…`, `unix:abstract=…`,
@@ -554,6 +555,45 @@ Two things to know:
 A class instance is not treated as a dict — only objects whose prototype is
 `Object.prototype` or `null`. Being wrong about that would write a garbled
 message instead of failing.
+
+### Reading the 2.0 shapes today: `plainValues`
+
+The awkward half of the type system is on the **read** side, and it changes in
+2.0. `plainValues: true` gives you that shape now, so code can be migrated on a
+released version instead of on a flag day — the same path `returnBigInt` took:
+
+```js
+const bus = dbus.sessionBus({ plainValues: true });
+```
+
+| signature | default                         | `plainValues`               |
+| --------- | ------------------------------- | --------------------------- |
+| `v`       | `[signatureTree, [value]]`      | `value`                     |
+| `a{sv}`   | array of pairs, values variants | `{ key: value }`            |
+| `a{ss}`   | array of pairs                  | `{ key: value }`            |
+| `a{us}`   | array of pairs                  | **unchanged** — see below   |
+| `a(ss)`   | array of arrays                 | unchanged, it is not a dict |
+
+Reading only. The marshaller already takes plain objects and `Variant`, so a
+value read this way can be written straight back out — including passing one
+from one service to another.
+
+**A dict whose keys are not strings stays as pairs.** A JavaScript object key is
+always a string, so `a{us}` read as an object would turn the key `1` into `'1'`,
+and with `returnBigInt` a 64-bit key would stringify and lose precision on the
+way back. Quiet corruption is worse than an inconvenient shape.
+
+**Reading a variant this way discards its signature**, which is the point of the
+shape — `variantSignature()` returns `undefined` for it. Use `Variant` when
+writing if you need to control the type.
+
+Both sides of a conversation should agree: a service reads its own method
+arguments through the same parser, so set it there too.
+
+`variantValue()` and `toPlain()` read either shape and become the identity under
+this one, so code written against them needs no change when the default flips.
+
+---
 
 A variant read off the wire can also be written straight back, so a value can
 be passed from one service to another without unwrapping it:

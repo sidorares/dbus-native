@@ -217,6 +217,23 @@ export interface ConnectionOptions {
    */
   returnBigInt?: boolean;
   /**
+   * Read the 2.0 value shapes: a variant comes back as the value itself rather
+   * than `[signatureTree, [value]]`, and a string-keyed dict as a plain object
+   * rather than an array of pairs. This is what they become by default in 2.0 —
+   * opting in now means no change then.
+   *
+   * Affects reading only. The marshaller already accepts plain objects and
+   * `Variant`, so a value read this way can be written straight back out.
+   *
+   * A dict whose keys are not strings (`a{us}`, `a{ts}`) stays as pairs: a
+   * JavaScript object key is always a string, so converting those would change
+   * the key's type and, for 64-bit keys, lose precision.
+   *
+   * Reading a variant this way discards its signature — use `Variant` when
+   * writing if you need to control the type.
+   */
+  plainValues?: boolean;
+  /**
    * @deprecated DBUS_DEP0001 -- 64-bit values become BigInt in 2.0; use
    * `returnBigInt`. Note the capital R: this one option predates the rest and
    * is the only PascalCase name in the API. It cannot be corrected without

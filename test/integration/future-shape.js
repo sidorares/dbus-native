@@ -1,24 +1,18 @@
-// A canary for the 2.0 read shape.
+// The 2.0 read shape, on a real daemon, with `plainValues` actually on.
 //
-// In 2.0 a variant unmarshals as the value itself and a dict as a plain
+// A variant unmarshals as the value itself and a string-keyed dict as a plain
 // object. The library reads its *own* messages through the same parser, so
 // anything inside it that unwraps a variant by index breaks the moment that
 // happens -- on every message, because a message header is `a(yv)` and its
-// field values are variants.
+// field values are variants. That is what this exists to catch.
 //
-// Nothing here implements the option. It patches the parser to produce the
-// flipped shapes and then runs a real exchange over a real daemon, which is
-// the only way to be sure the internals are ready before committing to it.
-//
-// If the parser's variant or dict representation changes, update the patch
-// below alongside it -- a stale patch makes this test meaningless rather than
-// loud.
+// It used to monkey-patch the parser to simulate the shapes, because the
+// option did not exist yet. It does now, so the simulation is gone and this
+// exercises the real thing.
 
 const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
 const { EventEmitter } = require('events');
-const DBusBuffer = require('../../lib/dbus-buffer');
-const parseSignature = require('../../lib/signature');
 const { toPlain } = require('../../lib/values');
 const dbus = require('../../index');
 
@@ -37,30 +31,6 @@ const ifaceDesc = {
   properties: { Greeting: 's' }
 };
 
-// node:test runs each file in its own process, so patching a prototype here
-// cannot leak into the rest of the suite.
-const original = {
-  readVariant: DBusBuffer.prototype.readVariant,
-  readArray: DBusBuffer.prototype.readArray
-};
-
-function useFutureShape() {
-  DBusBuffer.prototype.readVariant = function () {
-    const tree = parseSignature(this.readSimpleType('g'));
-    const values = this.readStruct(tree);
-    // 2.0: the value, not [tree, [value]]
-    return values.length === 1 ? values[0] : values;
-  };
-  DBusBuffer.prototype.readArray = function (eleType, arrayBlobSize) {
-    const result = original.readArray.call(this, eleType, arrayBlobSize);
-    if (eleType.type !== '{') return result;
-    // 2.0: a plain object, not an array of pairs
-    const out = {};
-    for (const [key, value] of result) out[key] = value;
-    return out;
-  };
-}
-
 describe(
   'integration: the 2.0 read shape',
   { timeout: 10000, skip: NO_BUS },
@@ -73,10 +43,10 @@ describe(
       );
 
     before(async () => {
-      useFutureShape();
-
-      serviceBus = dbus.sessionBus();
-      clientBus = dbus.sessionBus();
+      // Both sides opt in: a service reads its own arguments through the
+      // same parser, so the shape has to work in both directions.
+      serviceBus = dbus.sessionBus({ plainValues: true });
+      clientBus = dbus.sessionBus({ plainValues: true });
       impl = Object.assign(Object.create(EventEmitter.prototype), {
         Greeting: 'hello',
         Echo: input => input
@@ -99,8 +69,6 @@ describe(
     });
 
     after(() => {
-      DBusBuffer.prototype.readVariant = original.readVariant;
-      DBusBuffer.prototype.readArray = original.readArray;
       if (serviceBus) serviceBus.connection.end();
       if (clientBus) clientBus.connection.end();
     });

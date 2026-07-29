@@ -98,6 +98,18 @@ const { Udi } = await device.props.$all;
 `variantSignature()` gets the signature if you need the type information that
 the flattened form drops.
 
+**You can also have the 2.0 shape itself now**, with `plainValues: true`:
+
+```js
+const bus = dbus.sessionBus({ plainValues: true });
+const udi = variantValue(entry); // already the plain value; this is now a no-op
+```
+
+Reading only — the marshaller has taken plain objects and `Variant` since 0.11,
+so a value read this way can be written straight back out. Set it on a service
+too if it takes variants as arguments, since it reads them through the same
+parser. See [docs/api.md](./api.md#reading-the-20-shapes-today-plainvalues).
+
 Related: [#3](https://github.com/sidorares/dbus-native/issues/3),
 [#67](https://github.com/sidorares/dbus-native/issues/67),
 [#132](https://github.com/sidorares/dbus-native/issues/132),
@@ -131,6 +143,22 @@ a no-op on values that are already plain.
 It only converts arrays this library tagged as dicts while parsing, so `a(ss)`
 (an array of two-string structs) is left alone. A shape-based heuristic cannot
 tell those two apart, which is why the parser tags them instead of guessing.
+
+**You can also have the 2.0 shape itself now**, with `plainValues: true`:
+
+```js
+const bus = dbus.sessionBus({ plainValues: true });
+const props = await iface.GetAll(name); // { Greeting: 'hello', Count: 7 }
+```
+
+One caveat, and it is deliberate: a dict whose keys are **not** strings —
+`a{us}`, `a{ts}` — stays as pairs. A JavaScript object key is always a string,
+so converting those would change the key's type, and a 64-bit key would lose
+precision on the way back. `toPlain()` will still convert them if that is what
+you want.
+
+Writing is unaffected: a plain object has been accepted anywhere a dict is
+expected since 0.11, so this is symmetric.
 
 ---
 

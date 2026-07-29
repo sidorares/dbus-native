@@ -550,10 +550,36 @@ iteration it flags as `(possible)`, and the marshaller deliberately reading the
 classic shape — which is about the right false-positive rate for rules pointed
 at consumers.
 
-**What remains** is the option itself: one flag flipping both shapes together,
-opt-in for a release and default in 2.0, exactly as `returnBigInt` did in §3.2.
-Flipping only dicts is not worth shipping — `a{sv}` is the case everyone wants,
-and `{ Name: [tree, ['x']] }` is half-migrated and worse than either end state.
+**The option shipped** as `plainValues`: one flag flipping both shapes
+together, opt-in now and the default in 2.0, exactly as `returnBigInt` did in
+§3.2. Flipping only dicts was never worth shipping — `a{sv}` is the case
+everyone wants, and `{ Name: [tree, ['x']] }` is half-migrated and worse than
+either end state, which is also why it is not called `hashAsObject`.
+
+| signature | default                         | `plainValues`               |
+| --------- | ------------------------------- | --------------------------- |
+| `v`       | `[signatureTree, [value]]`      | `value`                     |
+| `a{sv}`   | array of pairs, values variants | `{ key: value }`            |
+| `a{ss}`   | array of pairs                  | `{ key: value }`            |
+| `a{us}`   | array of pairs                  | unchanged — see below       |
+| `a(ss)`   | array of arrays                 | unchanged, it is not a dict |
+
+**Non-string keys stay as pairs.** A JavaScript object key is always a string,
+so `a{us}` read as an object turns the key `1` into `'1'`, and with
+`returnBigInt` a 64-bit key stringifies and loses precision on the way back.
+Quiet corruption is worse than an inconvenient shape, and `toPlain()` still
+converts them for anyone who wants that.
+
+Reading only. #4.2 had already made the marshaller take plain objects and
+`Variant`, so the two halves meet: a value read under this option can be
+written straight back out.
+
+`test/integration/future-shape.js` was written against a monkey-patched parser
+because the option did not exist; it now sets the real option, so the
+simulation is gone and the guarantee is exercised directly.
+
+**What remains for 2.0** is flipping the default, removing the flag, and
+`dbus-native/compat`'s `withClassicTypes()` for code that cannot move yet.
 
 ### 4.2 Marshall JS objects as `a{sv}`
 
