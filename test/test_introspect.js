@@ -69,6 +69,23 @@ function checkIntrospection(test_obj, proxy, _nodes) {
           }`
         );
     }
+    for (let s = 0; s < (testInterface.signals || []).length; ++s) {
+      const signalName = testInterface.signals[s].name;
+      const curSignal = proxy[testInterface.name].$signals[signalName];
+      if (curSignal === undefined)
+        throw new Error(
+          `Failed to introspect signal name ${signalName} of ${
+            testInterface.name
+          }`
+        );
+      const expected = testInterface.signals[s].descriptor;
+      if (curSignal.join(',') !== expected.join(','))
+        throw new Error(
+          `Failed to introspect signal args of ${signalName} of ${
+            testInterface.name
+          }: got ${JSON.stringify(curSignal)}, want ${JSON.stringify(expected)}`
+        );
+    }
     for (let p = 0; p < testInterface.properties.length; ++p) {
       const propName = testInterface.properties[p].name;
       const curProp = proxy[testInterface.name].$properties[propName];

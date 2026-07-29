@@ -294,6 +294,50 @@ Two things worth knowing:
 - Capturing the call site costs about 1.95 µs against an 85.8 µs round trip
   (~2%), and only on the promise path.
 
+### Signals
+
+A proxy interface is an event emitter, and installs the match rule for you:
+
+```js
+iface.on('ActionInvoked', (id, action) => console.log(id, action));
+iface.once('NotificationClosed', id => console.log('closed', id));
+iface.off('ActionInvoked', handler); // drops the match rule with the last listener
+```
+
+Introspection records what the interface declares, so you can see what there is
+to subscribe to — same `[signature, ...argumentNames]` shape a service is
+exported with:
+
+```js
+iface.$signals; // { ActionInvoked: ['us', 'id', 'action_key'], ... }
+```
+
+Installing a match rule is a round trip, and `on` returns the interface for
+chaining rather than something you can wait on. When you are about to trigger
+the thing that emits the signal — or want to catch `AddMatch` being refused —
+use `$subscribe`:
+
+```js
+await iface.$subscribe('ActionInvoked', handler); // resolved => the daemon is routing it
+await iface.$unsubscribe('ActionInvoked', handler);
+```
+
+**PropertiesChanged** is a signal on `org.freedesktop.DBus.Properties`, not on
+the interface owning the property, so subscribe to the standard interface:
+
+```js
+const props = await bus
+  .getService(name)
+  .getInterface(path, 'org.freedesktop.DBus.Properties');
+
+await props.$subscribe('PropertiesChanged', (ifaceName, changed) => {
+  for (const [prop, value] of changed) console.log(prop, variantValue(value));
+});
+```
+
+For the service side of this, see
+[docs/api.md](./docs/api.md#propertieschanged).
+
 ### Observability
 
 Traffic and call timing are published on
