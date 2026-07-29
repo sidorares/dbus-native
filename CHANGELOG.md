@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.6.0](https://github.com/sidorares/dbus-native/compare/v0.5.0...v0.6.0) (2026-07-29)
+
+
+### Features
+
+* dbus-native types CLI, and deprecate dbus2js ([#321](https://github.com/sidorares/dbus-native/issues/321)) ([913d1d1](https://github.com/sidorares/dbus-native/commit/913d1d183b61e09c7bc337c90bd03afd1fd6a70a))
+* forward-compatible value helpers and deprecation infrastructure ([2622dca](https://github.com/sidorares/dbus-native/commit/2622dcad7c9c5be62a61ee34e7eeee2dce5a6572))
+* forward-compatible value helpers and deprecation infrastructure ([12fdd75](https://github.com/sidorares/dbus-native/commit/12fdd751e5c49c587e1a086afb7afd8a627ddf47))
+* per-call and per-client timeouts, and AbortSignal support ([#318](https://github.com/sidorares/dbus-native/issues/318)) ([be1fefe](https://github.com/sidorares/dbus-native/commit/be1fefed27f7d75abb4b6d3a5ac1d91fa232a308))
+* publish message and call traffic on diagnostics_channel ([#319](https://github.com/sidorares/dbus-native/issues/319)) ([1edf1e9](https://github.com/sidorares/dbus-native/commit/1edf1e92c73ce2db00aa913cae8de0db5ed8effa))
+* return promises when no callback is given ([209dcde](https://github.com/sidorares/dbus-native/commit/209dcde96d12ca1037f088274af353eccab3f8bc))
+* return promises when no callback is given ([d261d53](https://github.com/sidorares/dbus-native/commit/d261d53259de5d62b23a8c904606ef90d401cca5))
+* ship TypeScript definitions ([#320](https://github.com/sidorares/dbus-native/issues/320)) ([6b22272](https://github.com/sidorares/dbus-native/commit/6b22272f571242b09a4a0460cbb5d67abf92c213))
+
+
+### Documentation
+
+* add BIG_FUTURE_PLANS.md, a modern-DX design sketch ([9812caa](https://github.com/sidorares/dbus-native/commit/9812caad4def30d62c810f5570cbae8e3e5bd1a3))
+* add RELEASE_PLAN.md and reconcile the design doc with it ([1fdffbf](https://github.com/sidorares/dbus-native/commit/1fdffbf28917b4147b05173383b6889244d0505f))
+* modern-DX design sketch and a staged release plan ([ec0049b](https://github.com/sidorares/dbus-native/commit/ec0049b0a1ef7a8ddd32f8023e27c2e117be63ee))
+
 ## [0.5.0](https://github.com/sidorares/dbus-native/compare/v0.4.0...v0.5.0) (2026-07-28)
 
 
