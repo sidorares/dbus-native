@@ -679,9 +679,20 @@ belongs with the lifecycle work rather than here.
 ## 5. Lower priority / opportunistic
 
 - **`launchd:` address family** ([#95](https://github.com/sidorares/dbus-native/issues/95))
-  — how macOS actually advertises its session bus. Now that macOS is a
-  first-class CI target this is cheap to add and makes `sessionBus()` work
-  out of the box on a Mac.
+  — **done.** `launchd:env=VAR` names an environment variable rather than a
+  path, and the socket is looked up with `launchctl getenv`, falling back to
+  our own environment when launchd has no answer. On macOS `sessionBus()` now
+  defaults to `launchd:env=DBUS_LAUNCHD_SESSION_BUS_SOCKET` when
+  `DBUS_SESSION_BUS_ADDRESS` is unset — which is the normal state there — so it
+  works with no setup beyond a running bus.
+
+  The lookup is `spawnSync`, measured at 4 ms, once per connection and before
+  any I/O. Making it async would have turned `createConnection()` — and so
+  `sessionBus()` — async for every caller on every platform, to fix one
+  transport on one of them. Reading `process.env` alone would have been free
+  but wrong: the point of the transport is that the variable lives in the
+  launchd session, not necessarily in ours.
+
 - **Activatable service lookup** ([#133](https://github.com/sidorares/dbus-native/issues/133))
   — `StartServiceByName` exists but the new API never consults it.
 - **`dbus-send` equivalent** ([#56](https://github.com/sidorares/dbus-native/issues/56))
