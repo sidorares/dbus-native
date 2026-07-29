@@ -683,16 +683,31 @@ and they are easy to confuse:
 | member name    | one `[A-Za-z_][A-Za-z0-9_]*` element               | no dots, ≤ 255 bytes                    |
 | bus name       | `:1.23`, or an interface name that may contain `-` | ≤ 255 bytes                             |
 
+Property names are the odd one out: the specification does not give them a rule
+at all. A method or signal name is a header field the bus itself parses, but a
+property name is only ever a string _argument_ to `Properties.Get`/`Set`, and
+the introspection DTD declares the attribute as `CDATA`. So a property may
+additionally contain `-`, which is the GObject convention and which GDBus,
+sd-bus and python-dbus all read and write without complaint:
+
+| kind          | shape                                 | notes                              |
+| ------------- | ------------------------------------- | ---------------------------------- |
+| property name | one `[A-Za-z_][A-Za-z0-9_-]*` element | member name, plus `-`; ≤ 255 bytes |
+
+The rest of the member charset is kept so the name needs no escaping in the
+introspection XML, and so typos — a space, a dot, a stray quote — are still
+caught.
+
 These are enforced on what you **send**, because an invalid name produces a
 message no peer can route — and for a signal, which gets no reply, that fails
 silently:
 
-| where                   | checks                                          |
-| ----------------------- | ----------------------------------------------- |
-| `bus.exportInterface()` | the path, `iface.name`, and every member name   |
-| `bus.sendSignal()`      | the interface and member name                   |
-| `bus.sendError()`       | the error name                                  |
-| marshalling an `o`      | the object path, including every message's path |
+| where                   | checks                                                                                                      |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `bus.exportInterface()` | the path, `iface.name`, every method and signal name, and every property name against the looser rule above |
+| `bus.sendSignal()`      | the interface and member name                                                                               |
+| `bus.sendError()`       | the error name                                                                                              |
+| marshalling an `o`      | the object path, including every message's path                                                             |
 
 All of them throw an `Error` naming the rule that was broken. Incoming names
 are not checked — be strict in what you send, lenient in what you accept.
@@ -709,8 +724,8 @@ if (!isValidObjectPath(`/com/example/${deviceId}`)) {
 ```
 
 `isValidObjectPath`, `isValidInterfaceName`, `isValidErrorName`,
-`isValidMemberName` and `isValidBusName` all take any value and return a
-boolean.
+`isValidMemberName`, `isValidPropertyName` and `isValidBusName` all take any
+value and return a boolean.
 
 ---
 

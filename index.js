@@ -314,6 +314,7 @@ module.exports.isValidObjectPath = names.isValidObjectPath;
 module.exports.isValidInterfaceName = names.isValidInterfaceName;
 module.exports.isValidErrorName = names.isValidErrorName;
 module.exports.isValidMemberName = names.isValidMemberName;
+module.exports.isValidPropertyName = names.isValidPropertyName;
 module.exports.isValidBusName = names.isValidBusName;
 
 module.exports.createConnection = createConnection;

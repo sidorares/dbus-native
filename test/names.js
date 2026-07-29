@@ -12,6 +12,7 @@ const {
   isValidInterfaceName,
   isValidErrorName,
   isValidMemberName,
+  isValidPropertyName,
   isValidBusName,
   assertValidName
 } = require('../lib/names');
@@ -106,6 +107,41 @@ describe('names', () => {
     for (const [name, why] of invalid)
       it(`rejects ${JSON.stringify(name).slice(0, 20)} (${why})`, () =>
         assert.strictEqual(isValidMemberName(name), false));
+  });
+
+  describe('property names', () => {
+    // Looser than member names by exactly one character. The spec does not
+    // cover property names at all, and GObject-derived services use '-'.
+    for (const name of [
+      'a',
+      'Greeting',
+      '_private',
+      'Get2',
+      'my-prop',
+      'a-b-c'
+    ])
+      it(`accepts ${name}`, () =>
+        assert.strictEqual(isValidPropertyName(name), true));
+
+    const invalid = [
+      ['', 'empty'],
+      ['a.b', 'dots are not allowed'],
+      ['1a', 'starting with a digit'],
+      ['-a', 'starting with a hyphen'],
+      ['a b', 'space'],
+      ['a"b', 'a quote would break the introspection XML'],
+      ['a<b', 'a bracket would break the introspection XML'],
+      [42, 'not a string'],
+      ['b'.repeat(256), 'over 255 bytes']
+    ];
+    for (const [name, why] of invalid)
+      it(`rejects ${JSON.stringify(name).slice(0, 20)} (${why})`, () =>
+        assert.strictEqual(isValidPropertyName(name), false));
+
+    it('is exported from the package entry point', () => {
+      assert.strictEqual(dbus.isValidPropertyName('my-prop'), true);
+      assert.strictEqual(dbus.isValidMemberName('my-prop'), false);
+    });
   });
 
   describe('bus names', () => {
@@ -249,10 +285,16 @@ describe('exportInterface validates what it is given', () => {
       /Invalid member name for signals\.1Pinged/
     ],
     [
-      'a property name with a hyphen',
+      'a property name containing a dot',
       '/com/example/Obj',
-      withDesc({ properties: { 'my-prop': 's' } }),
-      /Invalid member name for properties\.my-prop/
+      withDesc({ properties: { 'a.b': 's' } }),
+      /Invalid property name for properties\.a\.b/
+    ],
+    [
+      'a property name containing a space',
+      '/com/example/Obj',
+      withDesc({ properties: { 'my prop': 's' } }),
+      /Invalid property name for properties\.my prop/
     ]
   ];
 
@@ -263,6 +305,30 @@ describe('exportInterface validates what it is given', () => {
       bus.connection.end();
     });
   }
+
+  // 0.11.0 applied the member-name rules to property names and broke this.
+  // GDBus, sd-bus and python-dbus all read and write a hyphenated property
+  // without complaint, and '-' is the GObject convention.
+  it("accepts a property name containing '-', unlike a member name", async () => {
+    const bus = await connectBus();
+    assert.doesNotThrow(() =>
+      bus.exportInterface(
+        {},
+        '/com/example/Obj',
+        withDesc({ properties: { 'my-prop': 's', 'a-b-c': { type: 'b' } } })
+      )
+    );
+    assert.throws(
+      () =>
+        bus.exportInterface(
+          {},
+          '/com/example/Obj',
+          withDesc({ methods: { 'my-method': ['', ''] } })
+        ),
+      /Invalid member name for methods\.my-method/
+    );
+    bus.connection.end();
+  });
 
   it('does not half-export an object it then rejects', async () => {
     const bus = await connectBus();

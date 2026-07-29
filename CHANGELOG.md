@@ -30,8 +30,11 @@ already correct.
   element of [A-Za-z_][A-Za-z0-9_]* with no dots, at most 255 bytes
   ```
 
-  Rename the member, or open an issue if you have a case where the old
-  behaviour was correct. See [docs/api.md#names](https://github.com/sidorares/dbus-native/blob/master/docs/api.md#names).
+  **Superseded for properties in 0.11.1**, which was the case where the old
+  behaviour was correct: property names are not member names, and `-` in one
+  works everywhere. `properties: { 'my-prop': 's' }` exports again. Method and
+  signal names are unchanged. See
+  [docs/api.md#names](https://github.com/sidorares/dbus-native/blob/master/docs/api.md#names).
 
 * **`lib/portforward.js` has been removed**
   ([#342](https://github.com/sidorares/dbus-native/pull/342)) — it was
