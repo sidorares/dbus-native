@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/sidorares/dbus-native/compare/v0.7.0...v0.8.0) (2026-07-29)
+
+
+### Features
+
+* add `dbus-native lint` for the value shapes that change in 2.0 ([#325](https://github.com/sidorares/dbus-native/issues/325)) ([443cd37](https://github.com/sidorares/dbus-native/commit/443cd3790bc328f05aba7abec6dd392f4633c569))
+
 ## [0.7.0](https://github.com/sidorares/dbus-native/compare/v0.6.0...v0.7.0) (2026-07-29)
 
 
