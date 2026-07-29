@@ -9,7 +9,8 @@ every affected call site in your own codebase, turn them into thrown errors and
 run your tests:
 
 ```sh
-node --throw-deprecation node_modules/.bin/mocha
+node --throw-deprecation --test          # node:test
+node --throw-deprecation node_modules/.bin/<your-runner>
 ```
 
 Codes marked **documentation** describe a shape change rather than an API call.

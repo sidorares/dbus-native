@@ -1,10 +1,15 @@
 // The promise API, end to end against a real dbus-daemon. Each case also
 // asserts the callback form still behaves, since 0.6 must not break it.
 
+const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
 const { EventEmitter } = require('events');
 const dbus = require('../../index');
 const { DBusError } = require('../../lib/errors');
+
+// node:test skips a whole suite from its options, evaluated at load time.
+const NO_BUS =
+  !process.env.DBUS_SESSION_BUS_ADDRESS && 'no DBUS_SESSION_BUS_ADDRESS';
 
 const SERVICE = 'com.github.sidorares.dbusnative.Promises';
 const OBJECT_PATH = '/com/github/sidorares/dbusnative/Promises';
@@ -22,13 +27,10 @@ const ifaceDesc = {
   properties: { Greeting: 's' }
 };
 
-describe('integration: promises', function () {
-  this.timeout(10000);
-
+describe('integration: promises', { timeout: 10000, skip: NO_BUS }, () => {
   let serviceBus, clientBus, impl;
 
-  before(async function () {
-    if (!process.env.DBUS_SESSION_BUS_ADDRESS) return this.skip();
+  before(async () => {
     serviceBus = dbus.sessionBus();
     clientBus = dbus.sessionBus();
 
@@ -97,7 +99,7 @@ describe('integration: promises', function () {
       );
     });
 
-    it('still supports the callback form unchanged', done => {
+    it('still supports the callback form unchanged', (t, done) => {
       clientBus.invoke(
         call('Echo', { signature: 's', body: ['callback'] }),
         (err, result) => {
@@ -108,7 +110,7 @@ describe('integration: promises', function () {
       );
     });
 
-    it('delivers a DBusError to callbacks on error', done => {
+    it('delivers a DBusError to callbacks on error', (t, done) => {
       clientBus.invoke(call('Fail'), err => {
         assert.ok(
           err instanceof dbus.DBusError,
@@ -181,7 +183,7 @@ describe('integration: promises', function () {
       assert.strictEqual(impl.Greeting, 'written');
     });
 
-    it('still supports the callback form on methods', done => {
+    it('still supports the callback form on methods', (t, done) => {
       clientBus
         .getService(SERVICE)
         .getInterface(OBJECT_PATH, IFACE, (err, iface) => {
@@ -218,7 +220,7 @@ describe('integration: promises', function () {
       );
     });
 
-    it('getInterface errors the callback form too', done => {
+    it('getInterface errors the callback form too', (t, done) => {
       clientBus
         .getService(SERVICE)
         .getInterface(OBJECT_PATH, 'com.example.NotThere', (err, iface) => {

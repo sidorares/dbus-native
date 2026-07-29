@@ -1,3 +1,4 @@
+const { describe, it } = require('node:test');
 const message = require('../lib/message');
 const assert = require('assert');
 
@@ -10,7 +11,7 @@ function buff2msg(buff) {
 }
 
 describe('message marshall/unmarshall', () => {
-  const tests = require('./testdata.js');
+  const tests = require('./utils/testdata.js');
   let testName, testData, testNum;
   for (testName in tests) {
     for (testNum = 0; testNum < tests[testName].length; ++testNum) {

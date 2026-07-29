@@ -4,6 +4,7 @@
 // the refusals: an `err[0]` the transform cannot attribute to a d-bus call
 // must be left exactly as it was.
 
+const { describe, it } = require('node:test');
 const assert = require('assert');
 const jscodeshift = require('jscodeshift');
 const transform = require('../lib/codemods/errors-to-error-objects');

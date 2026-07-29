@@ -1,6 +1,7 @@
 // Forward-compatible value helpers: the same call must work on today's shapes
 // and on the 2.0 shapes, so each case is asserted against both.
 
+const { describe, it } = require('node:test');
 const assert = require('assert');
 const dbus = require('../index');
 const marshall = require('../lib/marshall');

@@ -1,6 +1,7 @@
 // The write path: does message() report backpressure, and are writes issued
 // in the same tick batched into one flush?
 
+const { describe, it } = require('node:test');
 const assert = require('assert');
 const { Duplex } = require('stream');
 const dbus = require('../index');

@@ -1,3 +1,4 @@
+const { describe, it } = require('node:test');
 const assert = require('assert');
 const parseSignature = require('../lib/signature');
 const unmarshall = require('../lib/unmarshall');

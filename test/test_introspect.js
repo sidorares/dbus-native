@@ -1,3 +1,4 @@
+const { describe, it } = require('node:test');
 const introspect = require('../lib/introspect');
 const fs = require('fs');
 const path = require('path');

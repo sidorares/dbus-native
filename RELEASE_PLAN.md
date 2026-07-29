@@ -119,7 +119,7 @@ Each code gets a documentation anchor, and `--throw-deprecation` turns them
 into thrown errors so a consumer's own test suite locates the call sites:
 
 ```sh
-node --throw-deprecation ./node_modules/.bin/mocha
+node --throw-deprecation --test
 ```
 
 **Correction to an earlier draft of this plan:** that only works for

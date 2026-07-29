@@ -1,3 +1,4 @@
+const { describe, it } = require('node:test');
 const marshall = require('../lib/marshall');
 const unmarshall = require('../lib/unmarshall');
 const assert = require('assert');
@@ -16,7 +17,7 @@ function test(signature, data) {
 }
 
 describe('when signature is a{sX} and hashAsObject is used', () => {
-  xit('serialises to expected value', () => {
+  it.skip('serialises to expected value', () => {
     test('a{sv}', {
       test1: { subobj: { a1: 10, a2: 'qqq', a3: 1.11 }, test2: 12 }
     });

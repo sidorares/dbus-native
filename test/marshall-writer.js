@@ -1,6 +1,7 @@
 // Properties of the cursor-based marshaller that the round-trip tests in
 // unmarshall-basic.js would not catch on their own.
 
+const { describe, it } = require('node:test');
 const assert = require('assert');
 const marshall = require('../lib/marshall');
 const unmarshall = require('../lib/unmarshall');

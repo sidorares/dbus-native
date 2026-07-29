@@ -1,6 +1,7 @@
 // Call timeouts and AbortSignal support, and the pending-call bookkeeping
 // that goes with them.
 
+const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
 const { EventEmitter } = require('events');
 const MessageBus = require('../lib/bus');
@@ -27,7 +28,24 @@ function fakeBus(opts = {}) {
 
 const call = { destination: 'a.b', path: '/p', interface: 'a.b', member: 'M' };
 
+// `bus.invoke` unrefs its timeout timer on purpose, so that a pending call
+// does not hold the process open by itself -- a real connection's socket does
+// that while it is alive. `fakeBus` has no socket, so nothing here is ref'd
+// and the event loop would drain before the timer ever fires, which the test
+// runner reports as "still pending but the event loop has already resolved".
+//
+// Stand in for the socket: hold one ref'd handle for the length of the suite.
+function keepEventLoopAlive() {
+  let handle;
+  before(() => {
+    handle = setInterval(() => {}, 1 << 30);
+  });
+  after(() => clearInterval(handle));
+}
+
 describe('call timeouts', () => {
+  keepEventLoopAlive();
+
   it('rejects with a TimeoutError when no reply arrives', async () => {
     const { bus } = fakeBus();
     await assert.rejects(
@@ -87,7 +105,7 @@ describe('call timeouts', () => {
     assert.strictEqual(await pending, 'eventually');
   });
 
-  it('reports the timeout through a callback too', done => {
+  it('reports the timeout through a callback too', (t, done) => {
     const { bus } = fakeBus();
     bus.invoke({ ...call }, { timeout: 20 }, err => {
       assert.strictEqual(err.name, 'TimeoutError');
@@ -97,6 +115,8 @@ describe('call timeouts', () => {
 });
 
 describe('AbortSignal', () => {
+  keepEventLoopAlive();
+
   it('rejects when aborted in flight', async () => {
     const { bus } = fakeBus();
     const ac = new AbortController();

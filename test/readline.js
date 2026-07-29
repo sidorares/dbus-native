@@ -1,6 +1,7 @@
 // readOneLine backs the SASL handshake, so it has to cope with lines split
 // across chunks and must leave the remainder of a chunk readable.
 
+const { describe, it } = require('node:test');
 const assert = require('assert');
 const { PassThrough } = require('stream');
 const readOneLine = require('../lib/readline');
@@ -59,7 +60,7 @@ describe('readOneLine', () => {
     assert.strictEqual(await p, 'AUTH EXTERNAL');
   });
 
-  it('reports a throwing callback on the stream', done => {
+  it('reports a throwing callback on the stream', (t, done) => {
     const s = new PassThrough();
     s.on('error', err => {
       assert.strictEqual(err.message, 'boom');

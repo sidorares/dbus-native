@@ -4,6 +4,7 @@
 // rather than by round-tripping through this library, so the test cannot pass
 // just because a writer and a reader share the same mistake.
 
+const { describe, it } = require('node:test');
 const assert = require('assert');
 const { PassThrough } = require('stream');
 const message = require('../lib/message');
@@ -144,7 +145,7 @@ describe('big-endian messages', () => {
     assert.strictEqual(msg.type, constants.messageType.methodCall);
   });
 
-  it('the streaming parser reads one', done => {
+  it('the streaming parser reads one', (t, done) => {
     const stream = new PassThrough();
     message.unmarshalMessages(
       stream,
@@ -160,7 +161,7 @@ describe('big-endian messages', () => {
     stream.write(bigEndianMethodCall());
   });
 
-  it('reads one split across chunk boundaries', done => {
+  it('reads one split across chunk boundaries', (t, done) => {
     const buf = bigEndianMethodCall();
     const stream = new PassThrough();
     message.unmarshalMessages(
@@ -177,7 +178,7 @@ describe('big-endian messages', () => {
     stream.write(buf.subarray(19));
   });
 
-  it('interleaves with little-endian messages on the same connection', done => {
+  it('interleaves with little-endian messages on the same connection', (t, done) => {
     const le = message.marshall({
       serial: 7,
       type: constants.messageType.methodCall,

@@ -40,7 +40,8 @@ bin/                  dbus-native (types/introspect CLI), dbus2js (legacy
                       codegen), dbus-dissect (traffic dumper)
 lib/codegen/          introspection -> TypeScript declarations
 scripts/              dev helpers for running a private session bus
-test/                 unit tests (mocha)
+test/                 unit tests (node:test)
+test/utils/           test helpers and data, not test files
 test/integration/     end-to-end tests against a real dbus-daemon
 examples/             runnable examples; linted, so keep them valid
 ```
@@ -74,9 +75,20 @@ tests never touch (or depend on) the user's real session bus.
   `DBUS_SESSION_BUS_ADDRESS` export line, for poking at examples by hand.
 
 The integration tests **skip themselves** when `DBUS_SESSION_BUS_ADDRESS` is
-unset, so a bare `mocha` run stays green without a bus. If you add integration
-tests, preserve that: guard with `if (!process.env.DBUS_SESSION_BUS_ADDRESS)
-return this.skip()`.
+unset, so a bare `node --test` run stays green without a bus. If you add
+integration tests, preserve that by passing the suite a `skip` option:
+
+```js
+const NO_BUS =
+  !process.env.DBUS_SESSION_BUS_ADDRESS && 'no DBUS_SESSION_BUS_ADDRESS';
+
+describe('integration: thing', { timeout: 10000, skip: NO_BUS }, () => {
+  // ...
+});
+```
+
+`skip` is evaluated when the file loads, so the whole suite — hooks included —
+is skipped before anything tries to connect.
 
 For Linux-only services (BlueZ, NetworkManager, systemd), use a container —
 those interfaces cannot be exercised on macOS at all:
@@ -98,6 +110,13 @@ docker run --rm -it -v "$PWD":/app -w /app node:24 \
 - Callback style is `(err, result)` and is **public API**. Adding promise
   support means returning a promise when no callback is given — never replacing
   the callback path. See ROADMAP 3.1.
+- Tests use the built-in **`node:test`** runner — no test framework dependency.
+  Unlike mocha it exposes **no globals**, so every file imports what it uses:
+  `const { describe, it, before } = require('node:test');`. ESLint has no
+  test-globals block, so a forgotten import is a lint error rather than a
+  runtime one. Per-test timeouts are an options object,
+  `it('name', { timeout: 10000 }, fn)`, and a callback-style test takes the
+  test context first: `it('name', (t, done) => …)`.
 - Commits should be [Conventional Commits](https://www.conventionalcommits.org/)
   (`feat:`, `fix:`, `deps:`, `docs:`, `chore:`). release-please derives the
   changelog and the version bump from them, so a mislabelled commit ships the

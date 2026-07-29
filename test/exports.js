@@ -5,15 +5,23 @@
 // .d.ts regardless. That gap shipped in 0.6: DBusError was documented, typed,
 // and undefined at runtime. This asserts the runtime side.
 
+const { describe, it } = require('node:test');
 const assert = require('assert');
 const dbus = require('../index');
 
 describe('public exports', () => {
   it('exports the error classes so instanceof works', () => {
-    for (const name of ['DBusError', 'TimeoutError', 'AbortError']) {
+    for (const name of [
+      'DBusError',
+      'TimeoutError',
+      'AbortError',
+      'ConnectionClosedError',
+      'UnknownInterfaceError'
+    ]) {
       assert.strictEqual(typeof dbus[name], 'function', `${name} is exported`);
     }
     assert.ok(new dbus.TimeoutError(1, {}) instanceof dbus.DBusError);
+    assert.ok(new dbus.ConnectionClosedError({}) instanceof dbus.DBusError);
     assert.ok(new dbus.DBusError('x') instanceof Error);
   });
 

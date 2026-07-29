@@ -4,6 +4,7 @@
 // is unit-testable here is everything raised locally -- a dead connection, the
 // empty-body fallback, and the compat shim.
 
+const { describe, it } = require('node:test');
 const assert = require('assert');
 const { Duplex } = require('stream');
 const dbus = require('../index');
@@ -185,19 +186,4 @@ describe('errors: dbus-native/compat', () => {
   });
 });
 
-describe('errors: the public export', () => {
-  it('exposes the classes so instanceof works', () => {
-    // index.d.ts declared these from 0.6 but index.js never exported them,
-    // which made the documented way of handling errors impossible.
-    for (const name of [
-      'DBusError',
-      'TimeoutError',
-      'AbortError',
-      'ConnectionClosedError',
-      'UnknownInterfaceError'
-    ]) {
-      assert.strictEqual(typeof dbus[name], 'function', `${name} is exported`);
-    }
-    assert.ok(new ConnectionClosedError(aCall) instanceof dbus.DBusError);
-  });
-});
+// The export surface itself is asserted in test/exports.js.

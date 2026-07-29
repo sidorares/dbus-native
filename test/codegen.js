@@ -1,3 +1,4 @@
+const { describe, it, before } = require('node:test');
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');

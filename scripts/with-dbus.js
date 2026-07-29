@@ -2,7 +2,7 @@
 //
 // Run a command against a private d-bus session bus.
 //
-//   node scripts/with-dbus.js -- mocha test/integration
+//   node scripts/with-dbus.js -- node --test test/integration/*.js
 //
 // Starts a throwaway dbus-daemon, exports DBUS_SESSION_BUS_ADDRESS for the
 // child, then tears the daemon down when the child exits.
