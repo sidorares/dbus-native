@@ -13,6 +13,7 @@ const MessageBus = require('./lib/bus');
 const server = require('./lib/server');
 const deprecate = require('./lib/deprecate');
 const values = require('./lib/values');
+const errors = require('./lib/errors');
 const { publishSend, publishReceive } = require('./lib/diagnostics');
 
 // A d-bus address is `family:key=value,key=value`, and DBUS_SESSION_BUS_ADDRESS
@@ -95,6 +96,11 @@ function createConnection(opts) {
   let fatal = false;
 
   stream.on('error', err => {
+    // Remembered rather than only forwarded, so that whatever fails the
+    // pending calls on teardown can name what killed the connection. The bus
+    // deliberately does not listen for 'error' itself -- doing so would stop
+    // an unhandled connection error from crashing the process.
+    self.lastError = err;
     // forward network and stream errors
     if (fatal) return;
     self.emit('error', err);
@@ -107,6 +113,10 @@ function createConnection(opts) {
       return false;
     };
   });
+
+  // Emitted once the transport is fully torn down, however that happened. The
+  // bus uses it to fail calls that can no longer get a reply.
+  stream.on('close', () => self.emit('close', self.lastError));
 
   // Forwarded so callers that stopped writing on a `false` from message()
   // know when it is safe to resume.
@@ -159,6 +169,7 @@ function createConnection(opts) {
         // Framing is unrecoverable: we no longer know where the next message
         // starts, so surface the error and drop the connection rather than
         // resynchronising on garbage.
+        self.lastError = err;
         self.emit('error', err);
         fatal = true;
         stream.destroy();
@@ -221,6 +232,13 @@ module.exports.sessionBus = function (opts) {
 };
 
 module.exports.messageType = constants.messageType;
+
+// The error classes, so `err instanceof DBusError` works. index.d.ts has
+// declared these since 0.6 but index.js never exported them, which made the
+// documented way of handling errors impossible at runtime.
+module.exports.DBusError = errors.DBusError;
+module.exports.TimeoutError = errors.TimeoutError;
+module.exports.AbortError = errors.AbortError;
 
 // Forward-compatible value helpers. Code written against these behaves the
 // same before and after the 2.0 type-system change -- see docs/deprecations.md
