@@ -53,7 +53,8 @@ Landed and verified; listed here so the changelog writes itself.
   provenance attached automatically.
 - Dependabot for npm and GitHub Actions.
 - Runtime dependencies cut from 7 (+1 optional native) to **3**
-  (`hexy`, `long`, `xml2js`):
+  (`hexy`, `long`, `xml2js`) — and to **2** in 0.11, when `hexy` went with
+  `lib/portforward.js`:
   - `abstract-socket` removed — Node ≥ 20.8 supports Linux abstract sockets
     natively via a `\0` path prefix. Fixes the whole class of native-build
     failures ([#193](https://github.com/sidorares/dbus-native/issues/193)).
@@ -788,9 +789,26 @@ belongs with the lifecycle work rather than here.
 - **`lib/address-x11.js`** requires `x11`, which is not a dependency, so
   requiring it throws. Either make it a documented optional extra (done: it now
   says so) or move it out of the published `lib/`.
-- **Drop `hexy`** — only used by two debug scripts (`bin/dbus-dissect.js`,
-  `lib/portforward.js`). A 20-line hexdump helper would take the runtime
-  dependency count to two.
+- **Drop `hexy`** — **done**, and with no replacement.
+
+  The entry above was stale: `bin/dbus-dissect.js` had stopped using it, so the
+  only caller left was `lib/portforward.js`. And once the hexdump was gone,
+  `portforward.js` was a strict subset of `dbus-dissect.js` — the same forward
+  from a TCP port to the bus socket, the same default port, the same abstract
+  socket handling, but printing raw bytes where dissect prints decoded
+  messages. For a d-bus debugging tool, decoded is what you want.
+
+  So the script went too, rather than writing a hexdump helper to keep it
+  alive. It exported nothing and nothing referenced it. **Runtime dependencies
+  are now two** (`long`, `xml2js`), and `long` goes when BigInt becomes the
+  default in 2.0.
+
+  Worth recording, since it nearly shipped: a like-for-like replacement was
+  written and checked against `hexy` first — 1008/1008 byte-identical outputs.
+  The one difference was that `hexy` prints nothing at all for `0x7f`, shifting
+  its own ASCII column left by a character on any message containing a DEL
+  byte. Reproducing that faithfully would have been silly; not needing the code
+  at all was better.
 
 ### Issue-tracker hygiene
 
