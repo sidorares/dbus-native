@@ -5,6 +5,7 @@ const assert = require('assert');
 const { EventEmitter } = require('events');
 const dbus = require('../../index');
 const { Variant, variantValue, toPlain } = dbus;
+const { toClassicError } = require('../../lib/compat');
 
 const SERVICE = 'com.github.sidorares.dbusnative.ForwardCompat';
 const OBJECT_PATH = '/com/github/sidorares/dbusnative/ForwardCompat';
@@ -110,7 +111,7 @@ describe('integration: forward-compatible helpers', function () {
     assert.strictEqual(impl.Greeting, 'written with Variant');
   });
 
-  it('errors carry message and dbusName as well as the array', async () => {
+  it('errors carry message and dbusName', async () => {
     const { err } = await invoke({
       destination: SERVICE,
       path: OBJECT_PATH,
@@ -121,8 +122,10 @@ describe('integration: forward-compatible helpers', function () {
     assert.strictEqual(err.message, 'deliberate failure');
     assert.strictEqual(err.dbusName, 'com.example.Error.Boom');
     assert.strictEqual(err.name, 'DBusError');
-    // the classic shape still works until 1.0
-    assert.strictEqual(err[0], 'deliberate failure');
+    // The point of the 0.6 accessors: code written against `message` and
+    // `dbusName` then is untouched by the 0.7 change.
+    assert.ok(err instanceof Error, 'is a real Error since 0.7');
+    assert.deepStrictEqual(err.body, ['deliberate failure']);
   });
 
   it('falls back to the error name when the body is empty', async () => {
@@ -138,13 +141,18 @@ describe('integration: forward-compatible helpers', function () {
     assert.ok(err.message.length > 0, 'message should never be empty');
   });
 
-  it('leaves the error array serialising as it did before', async () => {
+  it('toClassicError reconstructs the pre-0.7 array', async () => {
     const { err } = await invoke({
       destination: SERVICE,
       path: OBJECT_PATH,
       interface: IFACE,
       member: 'Fail'
     });
-    assert.strictEqual(JSON.stringify(err), '["deliberate failure"]');
+    const classic = toClassicError(err);
+    assert.ok(Array.isArray(classic));
+    assert.strictEqual(classic[0], 'deliberate failure');
+    assert.strictEqual(classic.dbusName, 'com.example.Error.Boom');
+    // including the way it serialised, which is what code that logs errors saw
+    assert.strictEqual(JSON.stringify(classic), '["deliberate failure"]');
   });
 });

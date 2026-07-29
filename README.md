@@ -392,9 +392,9 @@ bus.invoke({
 
 ### Errors
 
-A failed call currently passes the raw message body — an array — to the
-callback. Since 0.6 that array also carries `message`, `dbusName` and `name`,
-which is the shape it becomes in 1.0:
+A failed call passes a `DBusError` to the callback and rejects the promise with
+one. It carries `message`, `dbusName`, `body` (the raw reply arguments) and
+`reply`:
 
 ```js
 bus.invoke(msg, err => {
@@ -403,6 +403,22 @@ bus.invoke(msg, err => {
   }
 });
 ```
+
+| class                   | when                                           | `code`        |
+| ----------------------- | ---------------------------------------------- | ------------- |
+| `DBusError`             | the call returned an error reply               | —             |
+| `TimeoutError`          | no reply within the timeout                    | `ETIMEDOUT`   |
+| `AbortError`            | cancelled through an `AbortSignal`             | `ABORT_ERR`   |
+| `ConnectionClosedError` | the connection went away with the call pending | `ECONNCLOSED` |
+| `UnknownInterfaceError` | the object does not implement that interface   | —             |
+
+All of them extend `DBusError`, which extends `Error`.
+
+Before 0.7 an error reply arrived as the raw message body — an array — and a
+dropped connection left pending calls hanging forever. See
+[docs/migrating-to-0.7.md](docs/migrating-to-0.7.md), and
+[`dbus-native/compat`](docs/migrating-to-0.7.md#the-escape-hatch) if you need the
+old shape while you migrate.
 
 ### Note on INT64 'x' and UINT64 't'
 

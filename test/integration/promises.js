@@ -108,11 +108,16 @@ describe('integration: promises', function () {
       );
     });
 
-    it('still delivers the raw array to callbacks on error', done => {
+    it('delivers a DBusError to callbacks on error', done => {
       clientBus.invoke(call('Fail'), err => {
-        assert.ok(Array.isArray(err), 'callback error is still the body array');
-        assert.strictEqual(err[0], 'deliberate failure');
+        assert.ok(
+          err instanceof dbus.DBusError,
+          'callback error is a DBusError'
+        );
+        assert.strictEqual(err.message, 'deliberate failure');
         assert.strictEqual(err.dbusName, 'com.example.Error.Boom');
+        assert.deepStrictEqual(err.body, ['deliberate failure']);
+        assert.ok(err.stack, 'has a stack');
         done();
       });
     });
@@ -187,6 +192,48 @@ describe('integration: promises', function () {
             done();
           });
         });
+    });
+
+    // Until 0.7 an interface the object does not implement resolved with
+    // `undefined`, so the typo surfaced later as a property access on
+    // undefined, somewhere unrelated -- #208.
+    it('getInterface rejects for an interface the object lacks', async () => {
+      await assert.rejects(
+        () =>
+          clientBus
+            .getService(SERVICE)
+            .getInterface(OBJECT_PATH, 'com.example.NotThere'),
+        err => {
+          assert.ok(err instanceof dbus.UnknownInterfaceError);
+          assert.strictEqual(err.name, 'UnknownInterfaceError');
+          assert.strictEqual(err.interfaceName, 'com.example.NotThere');
+          assert.strictEqual(
+            err.dbusName,
+            'org.freedesktop.DBus.Error.UnknownInterface'
+          );
+          // the message lists what the object does implement
+          assert.match(err.message, new RegExp(IFACE.replace(/\./g, '\\.')));
+          return true;
+        }
+      );
+    });
+
+    it('getInterface errors the callback form too', done => {
+      clientBus
+        .getService(SERVICE)
+        .getInterface(OBJECT_PATH, 'com.example.NotThere', (err, iface) => {
+          assert.ok(err instanceof dbus.UnknownInterfaceError);
+          assert.strictEqual(iface, undefined);
+          done();
+        });
+    });
+
+    it('as() throws rather than returning undefined', async () => {
+      const obj = await clientBus.getService(SERVICE).getObject(OBJECT_PATH);
+      assert.throws(() => obj.as('com.example.NotThere'), {
+        name: 'UnknownInterfaceError'
+      });
+      assert.ok(obj.as(IFACE), 'an interface it does implement still works');
     });
   });
 

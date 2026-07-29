@@ -143,6 +143,14 @@ Warnings fire once per code per process, so normal runs stay quiet.
 
 ## 1.0 — errors are Errors
 
+> **Shipped as 0.7.0.** Under semver a `0.x` minor is already the breaking
+> bump, so the content below did not need a 1.0 to land, and `1.0.0` is a
+> statement about stability better made deliberately — after the ecosystem
+> coordination below — than as a side effect of the first break in the series.
+> Everything in this section is done except the codemod; see
+> [docs/migrating-to-0.7.md](./docs/migrating-to-0.7.md). Read "1.0" here and
+> in the table above as "the errors release".
+
 **Closes** [#39](https://github.com/sidorares/dbus-native/issues/39),
 [#178](https://github.com/sidorares/dbus-native/issues/178),
 [#207](https://github.com/sidorares/dbus-native/issues/207),

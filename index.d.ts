@@ -105,6 +105,24 @@ export class AbortError extends DBusError {
   code: 'ABORT_ERR';
 }
 
+/**
+ * A call still in flight when the connection went away. Before 0.7 these
+ * callbacks were dropped and the caller waited forever.
+ */
+export class ConnectionClosedError extends DBusError {
+  code: 'ECONNCLOSED';
+}
+
+/**
+ * A named interface the object does not implement. Before 0.7 `getInterface()`
+ * called back `(null, undefined)` instead.
+ */
+export class UnknownInterfaceError extends DBusError {
+  interfaceName: string;
+  path: string;
+  service?: string;
+}
+
 // ---------------------------------------------------------------------------
 // Messages
 // ---------------------------------------------------------------------------
@@ -183,6 +201,11 @@ export interface DBusConnection extends EventEmitter {
   on(event: 'message', listener: (msg: Message) => void): this;
   on(event: 'drain', listener: () => void): this;
   on(event: 'end', listener: () => void): this;
+  /**
+   * The transport is fully torn down, however that happened. Pending calls
+   * have been failed with ConnectionClosedError by the time this fires.
+   */
+  on(event: 'close', listener: (cause?: Error) => void): this;
   /** transport or protocol failure; the connection is destroyed after a protocol error */
   on(event: 'error', listener: (err: Error) => void): this;
   /** an exception thrown by one of your own message/signal listeners */
@@ -212,10 +235,10 @@ export interface CallOptions {
 }
 
 /**
- * Called with the reply. `err` is the raw body array until 1.0, carrying
- * non-enumerable `message` and `dbusName` -- see docs/deprecations.md.
+ * Called with the reply. Since 0.7 `err` is a `DBusError`; before it was the
+ * raw body array. See docs/migrating-to-0.7.md.
  */
-export type InvokeCallback = (err: any, ...values: any[]) => void;
+export type InvokeCallback = (err: DBusError | null, ...values: any[]) => void;
 
 // ---------------------------------------------------------------------------
 // Interfaces and services
@@ -267,6 +290,7 @@ export interface DBusObject {
   service: DBusService;
   proxy: Record<string, DBusInterface>;
   nodes?: string[];
+  /** @throws {UnknownInterfaceError} if the object does not implement it */
   as(interfaceName: string): DBusInterface;
 }
 

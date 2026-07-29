@@ -239,6 +239,8 @@ module.exports.messageType = constants.messageType;
 module.exports.DBusError = errors.DBusError;
 module.exports.TimeoutError = errors.TimeoutError;
 module.exports.AbortError = errors.AbortError;
+module.exports.ConnectionClosedError = errors.ConnectionClosedError;
+module.exports.UnknownInterfaceError = errors.UnknownInterfaceError;
 
 // Forward-compatible value helpers. Code written against these behaves the
 // same before and after the 2.0 type-system change -- see docs/deprecations.md

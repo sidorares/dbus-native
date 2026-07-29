@@ -25,6 +25,19 @@
     "examples": "examples"
   },
   "main": "index.js",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./compat": {
+      "types": "./lib/compat.d.ts",
+      "default": "./lib/compat.js"
+    },
+    "./package.json": "./package.json",
+    "./lib/*.js": "./lib/*.js",
+    "./lib/*": "./lib/*.js"
+  },
   "maintainers": [
     {
       "name": "Andrey Sidorov",
