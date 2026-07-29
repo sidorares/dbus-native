@@ -105,6 +105,15 @@ export function isValidErrorName(name: unknown): boolean;
 /** A single `[A-Za-z_][A-Za-z0-9_]*` element with no dots, ≤ 255 bytes. */
 export function isValidMemberName(name: unknown): boolean;
 
+/**
+ * A member name that may also contain `-`.
+ *
+ * Property names are not one of the spec's name kinds -- a property name is a
+ * string argument to `Properties.Get`/`Set`, never a header field -- and `-` is
+ * the GObject convention, so the rule is deliberately looser than a member's.
+ */
+export function isValidPropertyName(name: unknown): boolean;
+
 /** A unique name like `:1.23`, or a well-known name (which may contain `-`). */
 export function isValidBusName(name: unknown): boolean;
 

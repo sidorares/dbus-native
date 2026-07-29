@@ -22,7 +22,11 @@ const ifaceDesc = {
     // the classic form: a bare signature, still meaning readwrite
     Greeting: 's',
     Locked: { type: 'b', access: 'read' },
-    Secret: { type: 's', access: 'write' }
+    Secret: { type: 's', access: 'write' },
+    // Property names are not member names -- '-' is the GObject convention and
+    // every other implementation reads one happily. 0.11.0 refused to export
+    // this at all.
+    'my-prop': 's'
   }
 };
 
@@ -50,7 +54,8 @@ describe('integration: properties', { timeout: 10000, skip: NO_BUS }, () => {
     impl = Object.assign(Object.create(EventEmitter.prototype), {
       Greeting: 'hello',
       Locked: true,
-      Secret: 'shh'
+      Secret: 'shh',
+      'my-prop': 'hyphen works'
     });
     EventEmitter.call(impl);
 
@@ -101,6 +106,44 @@ describe('integration: properties', { timeout: 10000, skip: NO_BUS }, () => {
     });
   });
 
+  // A property name is a string *argument* to Get/Set, never a header field,
+  // so the daemon never parses it and neither should we. Exercised end to end
+  // because that is the only way to show the whole path works: the export, the
+  // XML, the lookup by name, and the change signal.
+  describe("a property name containing '-'", () => {
+    it('appears in the introspection XML', async () => {
+      const xml = await clientBus.invoke({
+        destination: SERVICE,
+        path: OBJECT_PATH,
+        interface: 'org.freedesktop.DBus.Introspectable',
+        member: 'Introspect'
+      });
+      assert.match(
+        xml,
+        /<property name="my-prop" type="s" access="readwrite"\/>/
+      );
+    });
+
+    it('reads and writes', async () => {
+      const before = await call('Get', 'ss', [IFACE, 'my-prop']);
+      assert.strictEqual(before[1][0], 'hyphen works');
+      await call('Set', 'ssv', [IFACE, 'my-prop', ['s', 'and writes']]);
+      assert.strictEqual(impl['my-prop'], 'and writes');
+      const after = await call('Get', 'ss', [IFACE, 'my-prop']);
+      assert.strictEqual(after[1][0], 'and writes');
+    });
+
+    it('is carried by PropertiesChanged', async () => {
+      const change = nextChange();
+      await call('Set', 'ssv', [IFACE, 'my-prop', ['s', 'signalled']]);
+      assert.deepStrictEqual(await change, {
+        interfaceName: IFACE,
+        changed: { 'my-prop': 'signalled' },
+        invalidated: []
+      });
+    });
+  });
+
   describe('access control', () => {
     it('rejects writing a read-only property', async () => {
       await assert.rejects(
@@ -125,7 +168,7 @@ describe('integration: properties', { timeout: 10000, skip: NO_BUS }, () => {
     it('omits write-only properties from GetAll', async () => {
       const all = await call('GetAll', 's', [IFACE]);
       const names = all.map(([k]) => k);
-      assert.deepStrictEqual(names, ['Greeting', 'Locked']);
+      assert.deepStrictEqual(names, ['Greeting', 'Locked', 'my-prop']);
     });
 
     it('still reads and writes a readwrite property', async () => {

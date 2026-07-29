@@ -557,8 +557,9 @@ Object paths, interface names, error names and member names each have their own
 rules, and a name that breaks them produces a message no peer can route. Those
 you **send** are now checked — `exportInterface` (the path, the interface name
 and every member name), `sendSignal`, `sendError`, and any `o` value, which
-covers the path header of every outgoing message. Each throws an `Error` naming
-the rule that was broken:
+covers the path header of every outgoing message. Property names get a looser
+rule of their own, since the specification gives them none: a member name that
+may also contain `-`. Each throws an `Error` naming the rule that was broken:
 
 ```
 Invalid interface name for the interface descriptor: "MyIface" -- must be two or
