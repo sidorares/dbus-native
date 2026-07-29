@@ -6,7 +6,8 @@
 const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
 const { EventEmitter } = require('events');
-const dbus = require('../../index');
+const { toPlain } = require('../../lib/values');
+const { sessionBus } = require('../utils/shape');
 
 const NO_BUS =
   !process.env.DBUS_SESSION_BUS_ADDRESS && 'no DBUS_SESSION_BUS_ADDRESS';
@@ -50,8 +51,8 @@ describe('integration: proxy signals', { timeout: 10000, skip: NO_BUS }, () => {
     });
 
   before(async () => {
-    serviceBus = dbus.sessionBus();
-    clientBus = dbus.sessionBus();
+    serviceBus = sessionBus();
+    clientBus = sessionBus();
     impl = Object.assign(Object.create(EventEmitter.prototype), {
       Greeting: 'hello'
     });
@@ -209,9 +210,8 @@ describe('integration: proxy signals', { timeout: 10000, skip: NO_BUS }, () => {
       const [ifaceName, changed, invalidated] = await received;
       assert.strictEqual(ifaceName, IFACE);
       assert.deepStrictEqual(invalidated, []);
-      // Still the classic variant shape: [name, [signatureTree, [value]]].
-      assert.strictEqual(changed[0][0], 'Greeting');
-      assert.strictEqual(changed[0][1][1][0], 'hello again');
+      // Pairs-of-variants classically, a plain object under `plainValues`.
+      assert.deepStrictEqual(toPlain(changed), { Greeting: 'hello again' });
     });
 
     it('is emitted by Properties.Set as well', async () => {
@@ -221,8 +221,9 @@ describe('integration: proxy signals', { timeout: 10000, skip: NO_BUS }, () => {
       await props.Set(IFACE, 'Greeting', ['s', 'set by the client']);
 
       const [, changed] = await received;
-      assert.strictEqual(changed[0][0], 'Greeting');
-      assert.strictEqual(changed[0][1][1][0], 'set by the client');
+      assert.deepStrictEqual(toPlain(changed), {
+        Greeting: 'set by the client'
+      });
     });
   });
 });

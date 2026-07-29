@@ -32,12 +32,15 @@ lib/
   signature.js        signature string -> tree
   writer.js           growable output buffer with a write cursor
   handshake.js        client SASL auth (EXTERNAL, DBUS_COOKIE_SHA1, ANONYMOUS)
-  server-handshake.js server-side auth -- a STUB, see ROADMAP 4.5
+  server-handshake.js server-side SASL auth, the same three mechanisms
+  broker.js           an in-process message bus: org.freedesktop.DBus, routing
+  match-rule.js       match rule parsing and evaluation
   introspect.js       XML introspection -> proxy objects
   stdifaces.js        org.freedesktop.DBus.{Introspectable,Properties,Peer}
   constants.js        message types, header fields, endianness
-bin/                  dbus-native (types/introspect CLI), dbus2js (legacy
-                      codegen), dbus-dissect (traffic dumper)
+bin/                  dbus-native (call/get/set/list/types/introspect/codemod/
+                      lint), dbus2js (legacy codegen), dbus-dissect (dumper)
+lib/cli/              the dbus-send shaped subcommands
 lib/codegen/          introspection -> TypeScript declarations
 scripts/              dev helpers for running a private session bus
 test/                 unit tests (node:test)
@@ -76,6 +79,40 @@ tests never touch (or depend on) the user's real session bus.
   is how a disagreement between the two buses gets noticed.
 - `npm run dbus:session` starts one in the foreground and prints the
   `DBUS_SESSION_BUS_ADDRESS` export line, for poking at examples by hand.
+
+### The 2.0 shape gate
+
+```sh
+npm run test:integration:2.0          # against dbus-daemon
+npm run test:integration:2.0:broker   # against lib/broker.js
+```
+
+Same suite, run with the value shapes 2.0 makes the default: a variant reads as
+its value, a string-keyed `a{sv}` as a plain object, and `x`/`t` as `bigint`.
+`DBUS_TEST_SHAPE=2.0` turns them on through `test/utils/shape.js`, which every
+integration file gets its connections from.
+
+**This is the gate for the major.** Flipping those defaults is the largest
+break in RELEASE_PLAN, and until this passed there was no way to find out what
+it costs except by shipping it. Both runs are green today, which is the useful
+fact: the library already works in the flipped shape, so what remains is
+migration support rather than repair.
+
+Two rules keep it meaningful:
+
+- **A test asserts behaviour, not a shape.** Read values with `variantValue()`
+  and `toPlain()` from `lib/values.js` — the accessors we tell users to migrate
+  to, which are the identity in the new shape. Any test that reads `[1][0]` or
+  maps over dict pairs passes in exactly one of the two runs.
+- **A test that _is_ about a shape says so in its options.** `sessionBus()`
+  layers caller options over the defaults, so `{ returnBigInt: false }` keeps
+  meaning that after the flip. `PLAIN_VALUES` and `RETURN_BIGINT` are exported
+  for the handful of assertions that genuinely cannot be written both ways.
+
+`test/integration/shape.js` asserts that the requested shape is the shape a
+real connection delivers, because `DBUS_TEST_SHAPE` travels through two
+`npm run` hops and a wrapper process to get there. A broken chain would turn
+the whole gate green while testing nothing, which is worse than red.
 
 **The integration suite runs one file at a time** (`--test-concurrency=1`).
 That is deliberate. Every file shares the one daemon the wrapper started, and
@@ -159,11 +196,8 @@ These have each bitten someone before:
   ugly, widely depended on, and changing it is a breaking change (ROADMAP 4.1).
 - **`ay` is special-cased to a Buffer** (`options.ayBuffer`, default true), so
   byte arrays do not round-trip as plain arrays.
-- **64-bit types go through `long.js` and lose precision above 2^53** unless
-  `ReturnLongjs` is set. Replacing this with BigInt is planned (ROADMAP 3.2).
-- **`lib/server-handshake.js` is not a real implementation.** It replies with a
-  hardcoded GUID and cookie and logs to stdout. Do not treat `createServer` as
-  working infrastructure.
+- **64-bit types lose precision above 2^53** unless `returnBigInt` is set.
+  BigInt becomes the default in 2.0 (RELEASE_PLAN).
 - **`lib/address-x11.js` requires `x11`, which is not a dependency.** Requiring
   that file throws unless the user installed it separately. It is intentionally
   opt-in.

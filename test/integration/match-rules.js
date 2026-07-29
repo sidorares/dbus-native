@@ -12,7 +12,7 @@
 
 const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
-const dbus = require('../../index');
+const { sessionBus } = require('../utils/shape');
 const { parse } = require('../../lib/match-rule');
 
 const NO_BUS =
@@ -61,7 +61,7 @@ describe(
     let bus;
 
     before(async () => {
-      bus = dbus.sessionBus();
+      bus = sessionBus();
       await bus.getId();
     });
 
@@ -146,7 +146,7 @@ describe(
         if (msg.member === 'NameOwnerChanged') delivered.push(msg);
       });
 
-      const other = dbus.sessionBus();
+      const other = sessionBus();
       await other.getId();
       await new Promise((resolve, reject) =>
         other.requestName('com.example.MatchRuleProbe', 0, err =>

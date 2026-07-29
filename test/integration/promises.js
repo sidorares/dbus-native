@@ -5,6 +5,7 @@ const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
 const { EventEmitter } = require('events');
 const dbus = require('../../index');
+const { sessionBus } = require('../utils/shape');
 const { DBusError } = require('../../lib/errors');
 
 // node:test skips a whole suite from its options, evaluated at load time.
@@ -31,8 +32,8 @@ describe('integration: promises', { timeout: 10000, skip: NO_BUS }, () => {
   let serviceBus, clientBus, impl;
 
   before(async () => {
-    serviceBus = dbus.sessionBus();
-    clientBus = dbus.sessionBus();
+    serviceBus = sessionBus();
+    clientBus = sessionBus();
 
     impl = Object.assign(Object.create(EventEmitter.prototype), {
       Greeting: 'hello',

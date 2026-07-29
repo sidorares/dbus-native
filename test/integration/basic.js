@@ -2,10 +2,14 @@
 //
 // Run with `npm run test:integration`, which starts a private session bus and
 // exports DBUS_SESSION_BUS_ADDRESS for us.
+//
+// These use the callback form deliberately: `(err, result)` is public API, so
+// something has to keep exercising it.
 
 const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
-const dbus = require('../../index');
+const { variantValue, toPlain } = require('../../lib/values');
+const { sessionBus } = require('../utils/shape');
 
 // node:test skips a whole suite from its options, evaluated at load time.
 const NO_BUS =
@@ -50,6 +54,25 @@ function makeImpl() {
   return impl;
 }
 
+/**
+ * Turn an invoke callback into a passing or failing test.
+ *
+ * node:test cannot see a throw from inside a callback it did not call, so a
+ * failed assertion in there becomes an uncaughtException and takes down the
+ * whole file. One bad assertion used to report as eight failures plus a ten
+ * second timeout, which buries the one that matters.
+ */
+const check = (done, assertions) =>
+  function reply(err, ...values) {
+    if (err) return done(err);
+    try {
+      assertions.apply(this, values);
+      done();
+    } catch (failure) {
+      done(failure);
+    }
+  };
+
 describe(
   'integration: real session bus',
   { timeout: 10000, skip: NO_BUS },
@@ -67,8 +90,8 @@ describe(
       });
 
     before(async () => {
-      serviceBus = dbus.sessionBus();
-      clientBus = dbus.sessionBus();
+      serviceBus = sessionBus();
+      clientBus = sessionBus();
       impl = makeImpl();
 
       await Promise.all([whenReady(serviceBus), whenReady(clientBus)]);
@@ -95,11 +118,14 @@ describe(
     });
 
     it('lists the well-known bus name we requested', (t, done) => {
-      clientBus.listNames((err, names) => {
-        if (err) return done(err);
-        assert.ok(names.includes(SERVICE), `${SERVICE} missing from ListNames`);
-        done();
-      });
+      clientBus.listNames(
+        check(done, names =>
+          assert.ok(
+            names.includes(SERVICE),
+            `${SERVICE} missing from ListNames`
+          )
+        )
+      );
     });
 
     it('round-trips a method call with a string argument', (t, done) => {
@@ -112,11 +138,7 @@ describe(
           signature: 's',
           body: ['round trip']
         },
-        (err, result) => {
-          if (err) return done(err);
-          assert.strictEqual(result, 'round trip');
-          done();
-        }
+        check(done, result => assert.strictEqual(result, 'round trip'))
       );
     });
 
@@ -130,11 +152,7 @@ describe(
           signature: 'ii',
           body: [40, 2]
         },
-        (err, result) => {
-          if (err) return done(err);
-          assert.strictEqual(result, 42);
-          done();
-        }
+        check(done, result => assert.strictEqual(result, 42))
       );
     });
 
@@ -146,10 +164,7 @@ describe(
           interface: IFACE,
           member: 'Fail'
         },
-        err => {
-          assert.ok(err, 'expected an error');
-          done();
-        }
+        err => done(err ? undefined : new Error('expected an error'))
       );
     });
 
@@ -163,12 +178,9 @@ describe(
           signature: 'ss',
           body: [IFACE, 'Greeting']
         },
-        (err, result) => {
-          if (err) return done(err);
-          // a variant unmarshalls as [signatureTree, [value]]
-          assert.strictEqual(result[1][0], 'hello');
-          done();
-        }
+        // A variant unmarshals as [signatureTree, [value]] classically and as
+        // the value itself under `plainValues`; variantValue() reads both.
+        check(done, result => assert.strictEqual(variantValue(result), 'hello'))
       );
     });
 
@@ -182,11 +194,7 @@ describe(
           signature: 'ssv',
           body: [IFACE, 'Greeting', ['s', 'updated']]
         },
-        err => {
-          if (err) return done(err);
-          assert.strictEqual(impl.Greeting, 'updated');
-          done();
-        }
+        check(done, () => assert.strictEqual(impl.Greeting, 'updated'))
       );
     });
 
@@ -201,7 +209,7 @@ describe(
           body: [IFACE, 'NoSuchProperty']
         },
         err => {
-          assert.ok(err, 'expected an error for an unknown property');
+          if (!err) return done(new Error('expected an error'));
           done();
         }
       );
@@ -217,13 +225,12 @@ describe(
           signature: 's',
           body: [IFACE]
         },
-        (err, result) => {
-          if (err) return done(err);
-          const names = result.map(entry => entry[0]);
+        check(done, result => {
+          // Pairs classically, a plain object under `plainValues`.
+          const names = Object.keys(toPlain(result));
           assert.ok(names.includes('Greeting'));
           assert.ok(names.includes('Count'));
-          done();
-        }
+        })
       );
     });
 
@@ -235,11 +242,9 @@ describe(
           interface: 'org.freedesktop.DBus.Peer',
           member: 'GetMachineId'
         },
-        (err, id) => {
-          if (err) return done(err);
-          assert.ok(/^[0-9a-f]{32}$/.test(id), `unexpected machine id: ${id}`);
-          done();
-        }
+        check(done, id =>
+          assert.ok(/^[0-9a-f]{32}$/.test(id), `unexpected machine id: ${id}`)
+        )
       );
     });
 
@@ -251,13 +256,11 @@ describe(
           interface: 'org.freedesktop.DBus.Introspectable',
           member: 'Introspect'
         },
-        (err, xml) => {
-          if (err) return done(err);
+        check(done, xml => {
           assert.ok(xml.includes(`<interface name="${IFACE}">`));
           assert.ok(xml.includes('<method name="Echo">'));
           assert.ok(xml.includes('<signal name="Pinged">'));
-          done();
-        }
+        })
       );
     });
 
@@ -266,9 +269,15 @@ describe(
       clientBus.addMatch(match, err => {
         if (err) return done(err);
         const key = clientBus.mangle(OBJECT_PATH, IFACE, 'Pinged');
+        // A signal handler takes the body, not (err, result), so it gets the
+        // same try/catch by hand rather than through check().
         clientBus.signals.once(key, body => {
-          assert.deepStrictEqual(body, ['ping payload']);
-          done();
+          try {
+            assert.deepStrictEqual(body, ['ping payload']);
+            done();
+          } catch (failure) {
+            done(failure);
+          }
         });
         impl.emit('Pinged', 'ping payload');
       });

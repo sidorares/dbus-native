@@ -7,7 +7,7 @@
 const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
 const { EventEmitter } = require('events');
-const dbus = require('../../index');
+const { sessionBus } = require('../utils/shape');
 
 const NO_BUS =
   !process.env.DBUS_SESSION_BUS_ADDRESS && 'no DBUS_SESSION_BUS_ADDRESS';
@@ -36,8 +36,8 @@ describe('integration: object paths', { timeout: 10000, skip: NO_BUS }, () => {
   let serviceBus, clientBus, service;
 
   before(async () => {
-    serviceBus = dbus.sessionBus();
-    clientBus = dbus.sessionBus();
+    serviceBus = sessionBus();
+    clientBus = sessionBus();
     await Promise.all([serviceBus.getId(), clientBus.getId()]);
     await new Promise((resolve, reject) =>
       serviceBus.requestName(SERVICE, 0, err => (err ? reject(err) : resolve()))

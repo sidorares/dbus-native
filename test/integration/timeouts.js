@@ -4,7 +4,7 @@
 const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
 const { EventEmitter } = require('events');
-const dbus = require('../../index');
+const { sessionBus } = require('../utils/shape');
 
 // node:test skips a whole suite from its options, evaluated at load time.
 const NO_BUS =
@@ -31,8 +31,8 @@ describe(
     let serviceBus, clientBus;
 
     before(async () => {
-      serviceBus = dbus.sessionBus();
-      clientBus = dbus.sessionBus();
+      serviceBus = sessionBus();
+      clientBus = sessionBus();
 
       const impl = Object.assign(Object.create(EventEmitter.prototype), {
         Quick: () => 'here',
@@ -109,7 +109,7 @@ describe(
     });
 
     it('honours a client-wide default timeout', async () => {
-      const impatient = dbus.sessionBus({ timeout: 120 });
+      const impatient = sessionBus({ timeout: 120 });
       try {
         await impatient.getId();
         await assert.rejects(() => impatient.invoke(call('NeverReplies')), {

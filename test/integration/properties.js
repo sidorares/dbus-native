@@ -4,7 +4,8 @@
 const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
 const { EventEmitter } = require('events');
-const dbus = require('../../index');
+const { variantValue, toPlain } = require('../../lib/values');
+const { sessionBus } = require('../utils/shape');
 
 const NO_BUS =
   !process.env.DBUS_SESSION_BUS_ADDRESS && 'no DBUS_SESSION_BUS_ADDRESS';
@@ -49,8 +50,8 @@ describe('integration: properties', { timeout: 10000, skip: NO_BUS }, () => {
     });
 
   before(async () => {
-    serviceBus = dbus.sessionBus();
-    clientBus = dbus.sessionBus();
+    serviceBus = sessionBus();
+    clientBus = sessionBus();
     impl = Object.assign(Object.create(EventEmitter.prototype), {
       Greeting: 'hello',
       Locked: true,
@@ -83,7 +84,9 @@ describe('integration: properties', { timeout: 10000, skip: NO_BUS }, () => {
       clientBus.signals.once(key, body =>
         resolve({
           interfaceName: body[0],
-          changed: Object.fromEntries(body[1].map(([k, v]) => [k, v[1][0]])),
+          // `a{sv}` of pairs-of-variants classically, a plain object under
+          // `plainValues`. toPlain() flattens both to the same thing.
+          changed: toPlain(body[1]),
           invalidated: body[2]
         })
       );
@@ -126,11 +129,11 @@ describe('integration: properties', { timeout: 10000, skip: NO_BUS }, () => {
 
     it('reads and writes', async () => {
       const before = await call('Get', 'ss', [IFACE, 'my-prop']);
-      assert.strictEqual(before[1][0], 'hyphen works');
+      assert.strictEqual(variantValue(before), 'hyphen works');
       await call('Set', 'ssv', [IFACE, 'my-prop', ['s', 'and writes']]);
       assert.strictEqual(impl['my-prop'], 'and writes');
       const after = await call('Get', 'ss', [IFACE, 'my-prop']);
-      assert.strictEqual(after[1][0], 'and writes');
+      assert.strictEqual(variantValue(after), 'and writes');
     });
 
     it('is carried by PropertiesChanged', async () => {
@@ -167,20 +170,23 @@ describe('integration: properties', { timeout: 10000, skip: NO_BUS }, () => {
 
     it('omits write-only properties from GetAll', async () => {
       const all = await call('GetAll', 's', [IFACE]);
-      const names = all.map(([k]) => k);
-      assert.deepStrictEqual(names, ['Greeting', 'Locked', 'my-prop']);
+      assert.deepStrictEqual(Object.keys(toPlain(all)), [
+        'Greeting',
+        'Locked',
+        'my-prop'
+      ]);
     });
 
     it('still reads and writes a readwrite property', async () => {
       await call('Set', 'ssv', [IFACE, 'Greeting', ['s', 'written']]);
       assert.strictEqual(impl.Greeting, 'written');
       const value = await call('Get', 'ss', [IFACE, 'Greeting']);
-      assert.strictEqual(value[1][0], 'written');
+      assert.strictEqual(variantValue(value), 'written');
     });
 
     it('still reads a read-only property', async () => {
       const value = await call('Get', 'ss', [IFACE, 'Locked']);
-      assert.strictEqual(value[1][0], true);
+      assert.strictEqual(variantValue(value), true);
     });
 
     it('still rejects an undeclared property', async () => {

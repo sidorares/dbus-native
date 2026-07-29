@@ -18,7 +18,7 @@ const path = require('path');
 const { execFile } = require('child_process');
 const { promisify } = require('util');
 const { EventEmitter } = require('events');
-const dbus = require('../../index');
+const { sessionBus } = require('../utils/shape');
 
 // node:test skips a whole suite from its options, evaluated at load time.
 const NO_BUS =
@@ -68,7 +68,7 @@ describe(
     let tmp;
 
     before(async () => {
-      serviceBus = dbus.sessionBus();
+      serviceBus = sessionBus();
       const impl = Object.assign(Object.create(EventEmitter.prototype), {
         Greeting: 'hello',
         Count: 1,

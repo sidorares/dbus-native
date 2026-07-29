@@ -14,7 +14,7 @@ const { execFile } = require('child_process');
 const { promisify } = require('util');
 const path = require('path');
 const { EventEmitter } = require('events');
-const dbus = require('../../index');
+const { sessionBus } = require('../utils/shape');
 
 const run = promisify(execFile);
 const BIN = path.join(__dirname, '..', '..', 'bin', 'dbus-native.js');
@@ -36,7 +36,7 @@ describe('integration: the CLI', { timeout: 30000, skip: NO_BUS }, () => {
     // Without it the service reads `t` as a Number, which is lossy above 2^53,
     // and then cannot marshal it again -- the CLI sends the value exactly, and
     // it is the echo that would lose it.
-    bus = dbus.sessionBus({ returnBigInt: true });
+    bus = sessionBus({ returnBigInt: true });
     await bus.getId();
     await new Promise((resolve, reject) =>
       bus.requestName(SERVICE, 0, err => (err ? reject(err) : resolve()))
