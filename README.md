@@ -629,6 +629,11 @@ the examples at it. `npm run test:integration` starts and stops one of these
 automatically, so it never touches your real session bus. The integration tests
 skip themselves when no bus address is set.
 
+If you run a system-wide bus on macOS instead (`brew services start dbus`),
+`sessionBus()` finds it without any environment variable: macOS advertises the
+session bus through launchd rather than `DBUS_SESSION_BUS_ADDRESS`, and that is
+now the fallback. `launchd:env=…` addresses work anywhere a `busAddress` does.
+
 To exercise Linux-only services (BlueZ, NetworkManager, systemd), use a
 container:
 

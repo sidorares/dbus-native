@@ -62,7 +62,19 @@ all three take the same options.
 | `ReturnLongjs`   | `boolean`                 | `false`                                         | **deprecated** (`DBUS_DEP0001`) — 64-bit as Long.js            |
 
 Address forms understood by `busAddress`: `unix:path=…`, `unix:abstract=…`,
-`unix:socket=…`, `tcp:host=…,port=…`, and `unixexec:path=…,arg1=…`.
+`unix:socket=…`, `tcp:host=…,port=…`, `unixexec:path=…,arg1=…`, and
+`launchd:env=…`.
+
+**`launchd:env=VAR`** is how macOS advertises its session bus. The address names
+an environment variable rather than a path; the socket is looked up with
+`launchctl getenv VAR`, falling back to this process's own environment when
+launchd has no answer for it. The lookup runs once, synchronously, during
+connection setup and costs about 4 ms.
+
+On macOS, `sessionBus()` falls back to
+`launchd:env=DBUS_LAUNCHD_SESSION_BUS_SOCKET` when `DBUS_SESSION_BUS_ADDRESS`
+is unset, which is the normal state there — so it works without any setup
+beyond a running bus.
 
 ---
 
