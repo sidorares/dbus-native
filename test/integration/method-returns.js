@@ -12,7 +12,7 @@
 const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
 const { EventEmitter } = require('events');
-const dbus = require('../../index');
+const { sessionBus } = require('../utils/shape');
 
 const NO_BUS =
   !process.env.DBUS_SESSION_BUS_ADDRESS && 'no DBUS_SESSION_BUS_ADDRESS';
@@ -51,8 +51,8 @@ describe(
       );
 
     before(async () => {
-      serviceBus = dbus.sessionBus();
-      clientBus = dbus.sessionBus();
+      serviceBus = sessionBus();
+      clientBus = sessionBus();
 
       const impl = Object.assign(Object.create(EventEmitter.prototype), {
         Void: () => undefined,

@@ -13,7 +13,7 @@ const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const dbus = require('../../index');
+const { sessionBus } = require('../utils/shape');
 
 const NO_BUS =
   !process.env.DBUS_SESSION_BUS_ADDRESS && 'no DBUS_SESSION_BUS_ADDRESS';
@@ -56,7 +56,7 @@ exit 0
     });
 
     it('completes the handshake and serves calls', async () => {
-      const bus = dbus.sessionBus({
+      const bus = sessionBus({
         busAddress: 'launchd:env=DBUS_LAUNCHD_TEST_BUS'
       });
       try {
@@ -74,7 +74,7 @@ exit 0
     });
 
     it('gets a unique name, so Hello went through', async () => {
-      const bus = dbus.sessionBus({
+      const bus = sessionBus({
         busAddress: 'launchd:env=DBUS_LAUNCHD_TEST_BUS'
       });
       try {

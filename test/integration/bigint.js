@@ -7,7 +7,7 @@
 const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
 const { EventEmitter } = require('events');
-const dbus = require('../../index');
+const { sessionBus } = require('../utils/shape');
 
 const NO_BUS =
   !process.env.DBUS_SESSION_BUS_ADDRESS && 'no DBUS_SESSION_BUS_ADDRESS';
@@ -56,11 +56,14 @@ describe('integration: BigInt', { timeout: 10000, skip: NO_BUS }, () => {
     // the option too. Without it an `x` argument arrives as a lossy number,
     // and echoing that back fails the 53-bit check on marshall -- loudly,
     // which is better than the silent truncation it would otherwise be.
-    serviceBus = dbus.sessionBus({ returnBigInt: true });
+    serviceBus = sessionBus({ returnBigInt: true });
     // The option is per connection, so the same daemon and the same service
     // can be read either way -- which is what makes migration incremental.
-    bigClient = dbus.sessionBus({ returnBigInt: true });
-    plainClient = dbus.sessionBus();
+    bigClient = sessionBus({ returnBigInt: true });
+    // Explicitly off rather than merely unset: this connection exists to show
+    // the lossy path, and it has to keep showing it once `returnBigInt`
+    // becomes the default.
+    plainClient = sessionBus({ returnBigInt: false });
 
     const impl = Object.assign(Object.create(EventEmitter.prototype), {
       EchoX: v => v,

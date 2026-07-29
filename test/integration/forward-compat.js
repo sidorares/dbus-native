@@ -5,6 +5,7 @@ const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
 const { EventEmitter } = require('events');
 const dbus = require('../../index');
+const { sessionBus, PLAIN_VALUES } = require('../utils/shape');
 const { Variant, variantValue, toPlain } = dbus;
 const { toClassicError } = require('../../lib/compat');
 
@@ -35,8 +36,8 @@ describe(
       );
 
     before(async () => {
-      serviceBus = dbus.sessionBus();
-      clientBus = dbus.sessionBus();
+      serviceBus = sessionBus();
+      clientBus = sessionBus();
 
       impl = Object.assign(Object.create(EventEmitter.prototype), {
         Greeting: 'hello',
@@ -85,8 +86,15 @@ describe(
         body: [IFACE, 'Greeting']
       });
       assert.ifError(err);
-      // the shape people complain about, and the shape that survives 2.0
-      assert.strictEqual(result[1][0], 'hello');
+      // The shape people complain about -- and, under `plainValues`, the shape
+      // that replaces it. Asserted explicitly on both sides because the whole
+      // point of the next line is that it does not have to care.
+      if (PLAIN_VALUES) {
+        assert.strictEqual(result, 'hello');
+      } else {
+        assert.strictEqual(result[1][0], 'hello');
+      }
+      // the shape that survives 2.0
       assert.strictEqual(variantValue(result), 'hello');
     });
 

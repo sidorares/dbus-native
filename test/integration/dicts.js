@@ -7,8 +7,8 @@
 const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
 const { EventEmitter } = require('events');
-const dbus = require('../../index');
-const { Variant, toPlain } = require('../../lib/values');
+const { Variant, toPlain, variantSignature } = require('../../lib/values');
+const { sessionBus, PLAIN_VALUES } = require('../utils/shape');
 
 const NO_BUS =
   !process.env.DBUS_SESSION_BUS_ADDRESS && 'no DBUS_SESSION_BUS_ADDRESS';
@@ -42,8 +42,8 @@ describe(
       );
 
     before(async () => {
-      serviceBus = dbus.sessionBus();
-      clientBus = dbus.sessionBus();
+      serviceBus = sessionBus();
+      clientBus = sessionBus();
 
       const impl = Object.assign(Object.create(EventEmitter.prototype), {
         Describe(options) {
@@ -110,7 +110,7 @@ describe(
       assert.deepStrictEqual(JSON.parse(description), { tags: ['a', 'b'] });
     });
 
-    it('the service sees the types the client asked for', async () => {
+    it('the service sees the values the client asked for', async () => {
       await iface.Describe({
         n: 1,
         d: 1.5,
@@ -118,10 +118,34 @@ describe(
         b: true,
         u: new Variant('u', 9)
       });
-      // The service reads variants in the classic shape, so the parsed
-      // signature tree is right there on each value.
+      assert.deepStrictEqual(toPlain(received), {
+        n: 1,
+        d: 1.5,
+        s: 'x',
+        b: true,
+        u: 9
+      });
+    });
+
+    // A variant's signature is only recoverable from a shape that carries it.
+    // Under `plainValues` the parser has already discarded it and
+    // variantSignature() returns undefined -- there is no way for a service to
+    // ask what types an a{sv} argument arrived with. That is a real gap in the
+    // 2.0 plan, which promises `Variant` "when explicitly requested" without
+    // yet providing a way to request it. See ROADMAP 4.1.
+    it('the service sees the types too, in the shape that carries them', () => {
+      if (PLAIN_VALUES) {
+        assert.strictEqual(
+          variantSignature(Object.values(received)[0]),
+          undefined,
+          'plainValues discards signatures; nothing to assert here'
+        );
+        return;
+      }
       const signatures = {};
-      for (const [key, value] of received) signatures[key] = value[0][0].type;
+      for (const [key, value] of received) {
+        signatures[key] = variantSignature(value);
+      }
       assert.deepStrictEqual(signatures, {
         n: 'i',
         d: 'd',
