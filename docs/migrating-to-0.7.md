@@ -117,17 +117,35 @@ rejection you never handled.
 
 ## The codemod
 
-> **Not shipped yet.** `dbus-native codemod errors-to-error-objects` is planned
-> to land before 0.7 is released — see
-> [RELEASE_PLAN.md](../RELEASE_PLAN.md#machinery-to-build-first). Until it
-> does, the rewrites above are the whole of it, and
-> `grep -rn 'err\[0\]' src/` finds the call sites.
+For the mechanical part:
 
-It will rewrite `err[0]` to `err.message` and unwrap `new Error(err[0])`, but
-only inside callbacks it can identify as D-Bus callbacks from the shape of the
-call site, reporting anything ambiguous rather than guessing. A codemod that
-guesses wrong in an error path is worse than one that does nothing, so expect
-to review a short list by hand.
+```sh
+npx dbus-native codemod errors-to-error-objects src/
+```
+
+Add `--dry` to see the diff without writing anything. It applies every rewrite
+above — `err[0]` → `err.message`, `err[n]` → `err.body[n]`,
+`new Error(err[0])` → `err`, and array destructuring → `err.body`.
+
+**It only rewrites callbacks it can prove are D-Bus callbacks** — a function
+argument to `invoke`, `getInterface`, `addMatch`, `getId` and the rest of the
+bus surface. Everything else it leaves alone and reports:
+
+```
+src/net.js:22  DBUS_DEP0004  err[0] on an error this codemod could not
+                             attribute to a d-bus call -- review by hand
+```
+
+The big category there is proxy method calls — `iface.Echo('x', cb)` — where
+the member name is the _remote_ method and could be anything. There is no
+call-site shape to match on, so those are yours to check. A codemod that
+guesses wrong in an error path is worse than one that does nothing.
+
+It also respects shadowing: a nested `function (err) {…}` inside a D-Bus
+callback has its own `err`, and that one is left alone.
+
+jscodeshift is not a dependency of this package. If your project does not
+already have it, the command runs it through `npx`.
 
 ---
 

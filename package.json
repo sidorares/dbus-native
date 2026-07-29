@@ -68,6 +68,7 @@
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.8.0",
+    "jscodeshift": "^17.4.0",
     "mocha": "^11.7.6",
     "prettier": "^3.9.6",
     "typescript": "^7.0.2"

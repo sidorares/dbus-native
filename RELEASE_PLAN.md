@@ -147,9 +147,15 @@ Warnings fire once per code per process, so normal runs stay quiet.
 > bump, so the content below did not need a 1.0 to land, and `1.0.0` is a
 > statement about stability better made deliberately — after the ecosystem
 > coordination below — than as a side effect of the first break in the series.
-> Everything in this section is done except the codemod; see
+> Everything in this section is done, codemod included; see
 > [docs/migrating-to-0.7.md](./docs/migrating-to-0.7.md). Read "1.0" here and
 > in the table above as "the errors release".
+>
+> One correction to the sketch below: jscodeshift is a **dev**Dependency, not a
+> runtime one. Shipping an AST toolchain in every install of a d-bus library to
+> support a one-off migration is the wrong trade; the transform itself ships,
+> and the CLI runs it through `npx` when the consuming project has no
+> jscodeshift of its own.
 
 **Closes** [#39](https://github.com/sidorares/dbus-native/issues/39),
 [#178](https://github.com/sidorares/dbus-native/issues/178),

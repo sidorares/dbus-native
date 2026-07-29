@@ -415,7 +415,14 @@ bus.invoke(msg, err => {
 All of them extend `DBusError`, which extends `Error`.
 
 Before 0.7 an error reply arrived as the raw message body — an array — and a
-dropped connection left pending calls hanging forever. See
+dropped connection left pending calls hanging forever. To update existing code:
+
+```shell
+npx dbus-native codemod errors-to-error-objects --dry src/
+```
+
+It rewrites the call sites it can attribute to a D-Bus call and reports the
+rest rather than guessing. See
 [docs/migrating-to-0.7.md](docs/migrating-to-0.7.md), and
 [`dbus-native/compat`](docs/migrating-to-0.7.md#the-escape-hatch) if you need the
 old shape while you migrate.
