@@ -462,6 +462,39 @@ bus.invoke({
 });
 ```
 
+### Writing dicts: just pass an object
+
+Anywhere a dict is expected, a plain object will do — the most-asked question
+about this library, and no longer a chore:
+
+```js
+await iface.SetOptions({ Name: 'widget', Count: 3, Enabled: true });
+```
+
+That writes exactly the same bytes as spelling every value out as a variant,
+which still works and is unchanged. Inside an object, values are inferred:
+strings to `s`, booleans to `b`, integers to `i` (or `x` when they do not fit),
+other numbers to `d`, `Buffer` to `ay`, arrays to `a` + their element type, and
+nested objects to `a{sv}`.
+
+`Variant` overrides the guess, and reaches the types inference cannot produce:
+
+```js
+await iface.SetOptions({ Count: new Variant('u', 3) }); // uint32, not int32
+```
+
+Two things to know. **Inside an object an array is an array**, never a
+`[signature, value]` pair — use `Variant` for an explicitly typed value. And
+inference **refuses to guess** rather than picking something arbitrary: an
+empty array, a mixed array like `[1, 'a']`, `null` and `NaN` all throw and say
+what to do instead.
+
+A variant read off the wire can also be written straight back, so a value can be
+passed from one service to another without unwrapping it.
+
+See [docs/api.md](docs/api.md#writing-a-dict-as-a-plain-object) for the full
+table.
+
 ### Errors
 
 A failed call passes a `DBusError` to the callback and rejects the promise with
