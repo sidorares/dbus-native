@@ -72,6 +72,9 @@ becomes the default — the failure mode is a `TypeError` in production rather
 than a subtly wrong value, so it is better found deliberately than on upgrade
 day.
 
+Migration: [docs/migrating-to-2.0.md](./migrating-to-2.0.md), which leads with
+this one.
+
 ---
 
 ## DBUS_DEP0002
@@ -109,6 +112,8 @@ Reading only — the marshaller has taken plain objects and `Variant` since 0.11
 so a value read this way can be written straight back out. Set it on a service
 too if it takes variants as arguments, since it reads them through the same
 parser. See [docs/api.md](./api.md#reading-the-20-shapes-today-plainvalues).
+
+Migration: [docs/migrating-to-2.0.md](./migrating-to-2.0.md).
 
 Related: [#3](https://github.com/sidorares/dbus-native/issues/3),
 [#67](https://github.com/sidorares/dbus-native/issues/67),
@@ -159,6 +164,8 @@ you want.
 
 Writing is unaffected: a plain object has been accepted anywhere a dict is
 expected since 0.11, so this is symmetric.
+
+Migration: [docs/migrating-to-2.0.md](./migrating-to-2.0.md).
 
 ---
 

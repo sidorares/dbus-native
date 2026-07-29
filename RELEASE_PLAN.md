@@ -276,11 +276,25 @@ deserves its own guide page.
 
    ```js
    import { withClassicTypes } from 'dbus-native/compat';
-   const bus = withClassicTypes(await sessionBus()); // 1.x shapes, on 2.0
+   const bus = withClassicTypes(sessionBus()); // 1.x shapes, on 2.0
    ```
 
-   A wrapper, not a mode. It cannot leak into unrelated code, and deleting it
-   is one line.
+   Shipped ahead of 2.0, where it is a no-op, so the import can go in before
+   the flag day rather than during it.
+
+   **Scoped to a connection, not to a reference.** The first draft of this
+   section said "a wrapper, not a mode", which turned out not to be buildable:
+   it asks the parser for the old shapes rather than converting values after
+   the fact, because `plainValues` discards a variant's inner signature as it
+   reads it. Nothing downstream can reconstruct `[signatureTree, [value]]`
+   without inventing the tree, and a fabricated signature is worse than none.
+   So it configures the bus it is given and returns it — unrelated code with
+   its own bus is unaffected, but two references to _this_ bus both see 1.x.
+
+   Note it restores the old **lossiness** along with the old shapes: `x`/`t`
+   come back as a rounded `number` again. That is the point for code that
+   expects a Number, and a trap for anyone reaching for it to silence a BigInt
+   error without reading further.
 
 ---
 

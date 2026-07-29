@@ -265,6 +265,16 @@ export interface DBusConnection extends EventEmitter {
    */
   message(msg: Message): boolean;
   end(): this;
+  /**
+   * Change the value shapes this connection's parser produces. Takes effect on
+   * the next message in; a reply already parsed keeps the shape it was read
+   * with. `dbus-native/compat`'s `withClassicTypes` is what this is for.
+   */
+  setValueShapes(shapes: {
+    plainValues?: boolean;
+    returnBigInt?: boolean;
+    ayBuffer?: boolean;
+  }): this;
 
   on(event: 'connect', listener: () => void): this;
   on(event: 'message', listener: (msg: Message) => void): this;
