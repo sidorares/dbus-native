@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.9.0](https://github.com/sidorares/dbus-native/compare/v0.8.0...v0.9.0) (2026-07-29)
+
+
+### Features
+
+* emit PropertiesChanged, and honour declared property access ([#330](https://github.com/sidorares/dbus-native/issues/330)) ([3a54caa](https://github.com/sidorares/dbus-native/commit/3a54caa170c09662e9fea6071008aee2bea0fa02))
+* opt-in BigInt for the 64-bit types ([#327](https://github.com/sidorares/dbus-native/issues/327)) ([48484a3](https://github.com/sidorares/dbus-native/commit/48484a3529510ff1340545003e394a446a4331bc))
+
+
+### Bug Fixes
+
+* do not write to a connection closed during the handshake ([#329](https://github.com/sidorares/dbus-native/issues/329)) ([2ab62fd](https://github.com/sidorares/dbus-native/commit/2ab62fd3d7587422cd5644c70a9202afdac3ed5a))
+
 ## [0.8.0](https://github.com/sidorares/dbus-native/compare/v0.7.0...v0.8.0) (2026-07-29)
 
 
