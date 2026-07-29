@@ -382,6 +382,22 @@ const props = toPlain(getAllResult); // { Greeting: 'hello', Count: 7 }
 `toPlain()` only converts arrays this library parsed as dicts, so an `a(ss)`
 (array of two-string structs) is left as an array rather than being guessed at.
 
+To find the call sites in your own code that still read the old shapes:
+
+```shell
+npx dbus-native lint src/
+```
+
+```
+src/net.js:42  DBUS_DEP0002  variant index chain `[1][1][0]`
+    -> variantValue(), or a plain property read after 2.0
+```
+
+It reports rather than rewrites — an index chain says nothing about what the
+value is, so there is no codemod for this that would not sometimes be wrong.
+Exits non-zero when there are findings so it can gate CI; `--exit-zero` and
+`--rule` adjust that.
+
 For writing, `Variant` is accepted anywhere a `[signature, value]` pair is:
 
 ```js

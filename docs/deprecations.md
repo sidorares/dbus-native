@@ -17,9 +17,24 @@ Codes marked **documentation** describe a shape change rather than an API call.
 They are deliberately _not_ runtime warnings — the warning would have to fire
 inside the parser when the value is read, so the stack trace would point at
 this library rather than at the line in your code that unpacks the value. It
-would tell you that you are affected without telling you where. A lint rule
-that flags the access patterns is planned for that; until then the migration is
-to route reads through the helpers below.
+would tell you that you are affected without telling you where.
+
+Finding those call sites is the linter's job:
+
+```sh
+npx dbus-native lint src/
+```
+
+```
+src/net.js:42  DBUS_DEP0002  variant index chain `[1][1][0]`
+    -> variantValue(), or a plain property read after 2.0
+```
+
+It reports and never rewrites, because reading a variant is an index chain and
+nothing in the source says what the value is — see
+[DBUS_DEP0002](#dbus_dep0002). It exits non-zero when there are findings, so it
+can gate CI; `--exit-zero` reports without failing, and `--rule` selects
+individual codes.
 
 ---
 

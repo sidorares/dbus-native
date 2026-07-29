@@ -259,12 +259,18 @@ deserves its own guide page.
    ```sh
    npx dbus-native lint src/
    src/net.js:42  DBUS_DEP0002  variant index chain `[1][1][0]`
-                                 -> variantValue(), or `.Udi` after 2.0
+       -> variantValue(), or a plain property read after 2.0
    ```
 
    Being honest about this is important: **there is no complete codemod for
    2.0.** Anyone promising one has not thought about it. The tooling narrows
    the problem to a reviewed list of call sites.
+
+   Shipped ahead of 2.0, so the list can be worked through on a released
+   version. The dict rules are marked `(possible)` in the report rather than
+   asserted: `for (const [k, v] of xs)` is also ordinary JavaScript, and a
+   linter that cries wolf gets switched off. `Object.entries()` and the other
+   standard pair producers are excluded outright.
 
 3. **`dbus-native/compat`** for code that cannot be migrated yet:
 
@@ -349,7 +355,9 @@ Ordered by how much they unblock:
    contains the fix.
 4. **`npx dbus-native lint`** for the patterns codemods cannot safely rewrite.
    ast-grep rules are enough; this does not need to be a real ESLint plugin
-   initially.
+   initially. **Done** — built on jscodeshift rather than ast-grep, reusing the
+   plumbing the codemod already needed, so there is one dependency story for
+   both rather than two.
 5. **A migration guide per major** — `docs/migrating-to-1.md` and so on — with
    a before/after table for every changed behaviour, not prose.
 
