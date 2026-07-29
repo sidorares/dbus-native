@@ -276,7 +276,11 @@ const ifaceDesc = {
     Pinged: ['s', 'payload']
   },
   properties: {
-    Greeting: 's'
+    // a signature alone means readwrite
+    Greeting: 's',
+    // or declare the access explicitly
+    Locked: { type: 'b', access: 'read' },
+    Secret: { type: 's', access: 'write' }
   }
 };
 
@@ -300,6 +304,44 @@ with no body.
 `exportInterface` monkey-patches `impl.emit` so a local emit also sends the
 signal. `org.freedesktop.DBus.Introspectable`, `.Properties` and `.Peer` are
 answered for you.
+
+### Property access
+
+`access` defaults to `readwrite`, which is what a bare signature has always
+meant. It is advertised in the introspection XML and enforced:
+
+|                     | `read`             | `write`        | `readwrite` |
+| ------------------- | ------------------ | -------------- | ----------- |
+| `Properties.Get`    | ✓                  | `AccessDenied` | ✓           |
+| `Properties.Set`    | `PropertyReadOnly` | ✓              | ✓           |
+| `Properties.GetAll` | included           | omitted        | included    |
+
+### PropertiesChanged
+
+`Properties.Set` emits `org.freedesktop.DBus.Properties.PropertiesChanged` for
+you. A write-only property is reported as _invalidated_ rather than broadcast,
+since there is no value subscribers are allowed to see.
+
+When the service changes a property itself, say so — an ordinary assignment to
+the implementation object cannot be observed:
+
+```js
+impl.Greeting = 'hello again';
+bus.emitPropertiesChanged(path, iface.name, { Greeting: impl.Greeting });
+```
+
+`emitPropertiesChanged(path, interfaceName, changed, invalidated?)` takes
+signatures from the interface descriptor, so values are marshalled as declared
+rather than guessed from their JS type. It throws if the interface is not
+exported at that path, or if a named property is not declared on it.
+
+The `invalidated` list names properties whose value changed but is not being
+sent — write-only ones, or anything expensive to compute. Listing them tells a
+subscriber to re-read rather than keep a stale value:
+
+```js
+bus.emitPropertiesChanged(path, iface.name, {}, ['Expensive']);
+```
 
 Lower-level pieces, if you are not using `exportInterface`:
 

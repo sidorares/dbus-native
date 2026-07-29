@@ -163,8 +163,19 @@ function service() {
     name: 'com.example.Thing',
     methods: { Echo: ['s', 's', ['input'], ['output']] },
     signals: { Pinged: ['s', 'payload'] },
-    properties: { Greeting: 's' }
+    properties: {
+      // both declaration forms
+      Greeting: 's',
+      Locked: { type: 'b', access: 'read' }
+    }
   });
+
+  bus.emitPropertiesChanged('/com/example/Thing', 'com.example.Thing', {
+    Greeting: 'hi'
+  });
+  bus.emitPropertiesChanged('/com/example/Thing', 'com.example.Thing', {}, [
+    'Locked'
+  ]);
 
   bus.sendSignal('/com/example/Thing', 'com.example.Thing', 'Pinged', 's', [
     'hi'

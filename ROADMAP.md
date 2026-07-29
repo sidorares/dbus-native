@@ -557,6 +557,27 @@ and it is the most credible path to reconciling the two projects.
 - `GetAll` on an interface with no properties still misbehaves
   ([#102](https://github.com/sidorares/dbus-native/issues/102)).
 
+**Done, except that the third item was wrong.**
+
+`PropertiesChanged` is now emitted whenever `Properties.Set` writes, and
+`bus.emitPropertiesChanged()` lets a service announce changes it makes itself
+— an ordinary assignment to the implementation object cannot be observed
+without redefining its accessors, which is not a reasonable thing for
+exporting an object to do to it.
+
+Properties may now be declared as `{ type, access }` as well as a bare
+signature, the XML advertises what was declared, `Set` refuses a read-only
+property with `PropertyReadOnly`, `Get` refuses a write-only one with
+`AccessDenied`, and `GetAll` omits what cannot be read. The bare-signature
+form still means `readwrite`, so nothing existing changes.
+
+On the third item: [#102](https://github.com/sidorares/dbus-native/issues/102)
+is **closed**, and it was never about an interface with no properties — it
+reports `GetAll` failing on a property whose _value_ is an empty array (`as`
+= `[]`). Both cases were checked against the current marshaller and both work.
+Whatever broke in 2015 was fixed somewhere along the way; the roadmap entry
+had simply gone stale.
+
 ### 4.5 Finish the server/broker
 
 `lib/server.js` plus `lib/server-handshake.js` are a stub: the handshake replies
