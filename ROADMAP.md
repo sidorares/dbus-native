@@ -352,15 +352,99 @@ to something unrelated would collide with it.
 
 **Severity: feature gap — blocks whole categories of users.**
 
-`signature.js` parses `h`, but both directions throw: `Unknown data type
-format: h` and `Unsupported type: h`. There is no SCM_RIGHTS handling anywhere.
-systemd, the XDG desktop portals and PipeWire all pass file descriptors, so
-those APIs are simply unreachable from this library.
+`signature.js` parses `h`, but both directions throw. There is no SCM_RIGHTS
+handling anywhere. systemd, the XDG desktop portals and PipeWire all pass file
+descriptors, so those APIs are simply unreachable from this library.
 
-This is the largest item in this section and needs design first: Node has no
-public SCM_RIGHTS API, so it likely means a small native addon or a
-`child_process`-mediated hack — which would undo the "no native dependencies"
-property this package is valued for. Worth scoping before committing.
+**Scoped 2026-07-29. Conclusion: not buildable today, and it does not need a
+major when it is.** Every option below was measured, not read about.
+
+#### It is additive, so it needs no major
+
+We never send `NEGOTIATE_UNIX_FD`, so nothing changes for anyone until we do,
+and the daemon already agrees when asked:
+
+```
+daemon: OK a6343c06f036b0dfc55635016a69a2eb
+daemon: AGREE_UNIX_FD
+```
+
+The protocol side is small: the SASL command above, header field 9
+(`UNIX_FDS`, a `u` — note `constants.headerTypeName` stops at 8 today), and `h`
+as an index into the received fd array. None of it is a breaking change. This
+can land in any minor, whenever a transport exists.
+
+#### The transport does not exist
+
+| option                                                                | result                                                                                                                                                                                                |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Node built-in                                                         | No public ancillary-data API. [nodejs/node#53391](https://github.com/nodejs/node/issues/53391) is **closed as not planned**. libuv supports it; Node never wired it to `net`                          |
+| `process.binding('pipe_wrap')`                                        | **Aborts the process** for the fds d-bus carries — see below                                                                                                                                          |
+| [`node-unix-socket`](https://github.com/xushengfeng/node-unix-socket) | N-API prebuilds for 7 platforms, installs in 719 ms with no compiler, loads fine on Node 26 — but SOCK_SEQPACKET/SOCK_DGRAM only. Against d-bus's SOCK_STREAM socket: `Error: Protocol not supported` |
+| [`usocket`](https://www.npmjs.com/package/usocket)                    | Right socket type, fd passing verified working — but `nan` + `node-gyp`, so it compiles on install and pulls 26 packages (`node-gyp`, `tar`, `undici`) into the runtime tree. No prebuilds            |
+| [`csocket`](https://www.npmjs.com/package/csocket)                    | Last published 2022; prebuilds target Node 4/6/8                                                                                                                                                      |
+
+The near-miss is worth recording. libuv's IPC-mode pipe _does_ read ancillary
+data — it is how `child_process` passes handles — and it can be pointed at an
+existing socket with no addon at all:
+
+```js
+const { Pipe, constants } = process.binding('pipe_wrap');
+const pipe = new Pipe(constants.IPC);
+pipe.open(existingSocket._handle.fd);
+pipe.onread = () => {
+  const handle = pipe.pendingHandle; /* ... */
+};
+pipe.readStart();
+```
+
+But libuv classifies the incoming handle, and d-bus does not pass handles — it
+passes **arbitrary file descriptors**: regular files, memfds, pipes, DRM
+buffers. Tested both ways, on macOS/Node 26 and Linux/Node 24:
+
+```
+socket fd -> got a pendingHandle, read through it: "hello through the passed socket"
+file fd   -> Assertion failed: (type) == (UV_UNKNOWN_HANDLE)   [Aborted]
+```
+
+That is a `CHECK` in Node's own C++ (`stream_wrap.cc:277`), so it is an
+uncatchable abort rather than an error we could fall back from. The technique
+works for the case it was published for — handing TCP sockets between
+processes — and fails on precisely the case d-bus needs. `process.binding` is
+also internal and deprecated.
+
+#### What to do before 3.0/4.0
+
+Do not build it; there is nothing safe to depend on. But **shape the transport
+seam**, because that is the part that would otherwise force a major later.
+
+Everything today assumes `createStream()` returns a byte `Duplex` and that a
+message is a `Buffer`. Carrying descriptors means a message is
+`{ bytes, fds }` in both directions, which touches:
+
+- `connection.message()` and the write path, including the cork/uncork
+  batching from §2.7 — fds must stay attached to _their_ message across a
+  batched `_writev`.
+- `unmarshalMessages()`, which would need to associate received fds with the
+  message whose `UNIX_FDS` header claims them, not merely with the chunk they
+  arrived in.
+- `opts.stream`, which lets a caller supply their own transport. That is the
+  seam to define: an optional capability on the stream object
+  (`stream.writeWithFds?`, `stream.on('fds')`) rather than a new option, so a
+  caller — or a future optional dependency — can provide it without the core
+  depending on anything.
+- `bus.invoke` and the service surface, where a handler receives or returns an
+  fd alongside the body.
+
+Defining that seam now, even with no implementation behind it, is what keeps
+UNIX_FD a minor when it becomes possible. Implementing it now is not worth the
+cost: the only viable dependency needs a compiler on every install, which
+undoes the property §1 spent three releases building and that #342 and #343
+just strengthened further.
+
+Until then, `h` fails with a message that says why, names the Node issue, and
+lists the APIs it costs you — so nobody has to rediscover this. See
+`test/unix-fd.js`.
 
 ### 2.9 Small non-canonical cleanups — DONE
 
