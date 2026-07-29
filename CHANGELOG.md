@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/sidorares/dbus-native/compare/v0.9.0...v0.10.0) (2026-07-29)
+
+
+### Features
+
+* introspect signals, and fix proxy signal subscriptions ([#331](https://github.com/sidorares/dbus-native/issues/331)) ([eb23d94](https://github.com/sidorares/dbus-native/commit/eb23d945982fc8bb2af25f0a3fe569e4c6a3a88f))
+
 ## [0.9.0](https://github.com/sidorares/dbus-native/compare/v0.8.0...v0.9.0) (2026-07-29)
 
 
