@@ -307,6 +307,11 @@ export type InvokeCallback = (err: DBusError | null, ...values: any[]) => void;
 /**
  * A method as declared in an interface descriptor:
  * [inputSignature, outputSignature, inputNames, outputNames]
+ *
+ * The handler returns one value per complete type in `outputSignature`: the
+ * value itself for one, an array for several, and `null` for no reply body at
+ * all. Note `'(si)'` is *one* value — a struct, returned as `[name, count]` —
+ * whereas `'si'` is two.
  */
 export type MethodDescriptor = [string, string, string[], string[]];
 

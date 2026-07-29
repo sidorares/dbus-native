@@ -339,6 +339,31 @@ error becomes an error reply, using `err.dbusName` if set and
 `org.freedesktop.DBus.Error.Failed` otherwise. Returning `null` sends a reply
 with no body.
 
+### What a method returns
+
+One value per complete type in the output signature:
+
+| output signature | complete types | the handler returns                 |
+| ---------------- | -------------- | ----------------------------------- |
+| `''`             | 0              | anything; no reply body is sent     |
+| `'s'`            | 1              | the value — `'hello'`               |
+| `'(si)'`         | 1 (a struct)   | one array — `['name', 3]`           |
+| `'si'`           | 2              | an array of the two — `['name', 3]` |
+| `'ssss'`         | 4              | an array of the four                |
+
+`'(si)'` and `'si'` take the same JavaScript value and mean different things on
+the wire: one struct, versus two separate arguments. Which you want depends on
+the interface you are implementing — `org.freedesktop.Notifications`'s
+`GetServerInformation`, for instance, declares four separate out arguments.
+
+Returning the wrong shape produces an error reply naming the method and the
+signature it declared, rather than taking the service down:
+
+```
+org.freedesktop.DBus.Error.Failed: com.example.Iface.GetInfo returned a value
+that does not match its declared output signature "ssss": …
+```
+
 `exportInterface` monkey-patches `impl.emit` so a local emit also sends the
 signal. `org.freedesktop.DBus.Introspectable`, `.Properties` and `.Peer` are
 answered for you.

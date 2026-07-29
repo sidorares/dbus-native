@@ -775,6 +775,25 @@ belongs with the lifecycle work rather than here.
   so rather than a TODO.
 
 - **Introspect signals** — **done**, see §4.6.
+- **Several out arguments from a service method**
+  ([#114](https://github.com/sidorares/dbus-native/issues/114)) — **done.** The
+  interface descriptor has always accepted an output signature with several
+  complete types, and `interfaceToXML` advertised them, but the reply body was
+  always `[result]` — one value. So the shape was expressible, promised to
+  callers, and impossible to satisfy. Worse, the marshalling failure threw out
+  of a promise continuation, so it took the service process down and the caller
+  waited for a reply that could never arrive.
+
+  Found while auditing the issue tracker, not from a report: the workaround
+  (declare a struct, `(si)`) is close enough to the right answer that nobody
+  seems to have pushed past it. `org.freedesktop.Notifications`'s
+  `GetServerInformation` is the case in the original issue, and declares four.
+
+  Several out arguments now mean "return an array of them"; one still means the
+  value, a struct is still one value, and `null` still means no reply body. A
+  handler that returns the wrong shape gets an error reply naming the method and
+  its declared signature, instead of an unhandled rejection.
+
 - **Double serial increment** — **done**, and it was not harmless. Chasing it
   turned up that nothing ever wrapped `bus.serial`: it was a bare `++` from 1,
   and the serial is a `uint32` in the header, so past 4294967295 the marshaller
