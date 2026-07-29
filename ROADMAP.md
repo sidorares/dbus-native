@@ -477,6 +477,20 @@ Related: [#3](https://github.com/sidorares/dbus-native/issues/3),
 "how do I deal with `a{sv}`". A documented, ergonomic dict/variant story would
 close roughly a dozen issues at once.
 
+**Our own call sites**, from `npx dbus-native lint lib index.js` — this is the
+internal half of the 2.0 change, and it is small:
+
+| site                    | reads               | what it is                             |
+| ----------------------- | ------------------- | -------------------------------------- |
+| `lib/message.js:120`    | `field[1][1][0]`    | header fields                          |
+| `lib/message.js:183`    | `field[1][1][0]`    | header fields                          |
+| `lib/stdifaces.js:148`  | `msg.body[2][1][0]` | the value argument of `Properties.Set` |
+| `lib/introspect.js:194` | `val[1][0]`         | the reply from `Properties.Get`        |
+
+Plus four `ReturnLongjs` branches in `index.js` and `lib/dbus-buffer.js`, which
+§3.2 removes. The linter finds no false positives on this codebase, which is
+the evidence that its rules are worth pointing at consumers.
+
 ### 4.2 Marshall JS objects as `a{sv}`
 
 There is a `// TODO: serialise JS objects as a{sv}` in `lib/marshall.js` and a

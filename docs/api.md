@@ -523,13 +523,21 @@ npx dbus-native types --system \
 
 npx dbus-native introspect --service org.example --path /org/example
 npx dbus-native codemod errors-to-error-objects --dry src/
+npx dbus-native lint src/
 ```
 
-| command      |                                           |
-| ------------ | ----------------------------------------- |
-| `types`      | TypeScript declarations for a service     |
-| `introspect` | a service's raw introspection XML         |
-| `codemod`    | rewrite your source for a breaking change |
+| command      |                                                     |
+| ------------ | --------------------------------------------------- |
+| `types`      | TypeScript declarations for a service               |
+| `introspect` | a service's raw introspection XML                   |
+| `codemod`    | rewrite your source for a breaking change           |
+| `lint`       | report reads of the value shapes that change in 2.0 |
+
+`lint` exits non-zero when there are findings, so it can gate CI. `--exit-zero`
+reports without failing; `--rule DBUS_DEP0002` selects individual codes. It
+never rewrites — reading a variant is an index chain and nothing in the source
+says what the value is, so it narrows the problem to a reviewed list rather
+than guessing. Findings marked `(possible)` are heuristic.
 
 `dbus2js` still exists and is **deprecated** (`DBUS_DEP0005`).
 
