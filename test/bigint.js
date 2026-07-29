@@ -186,3 +186,135 @@ describe('BigInt: diagnostics survive a bigint body', () => {
     );
   });
 });
+
+// The 64-bit paths use `bigint` internally as of 0.11. Long.js is still
+// accepted on input and is still what `ReturnLongjs` returns, but nothing
+// inside the marshaller or the default read path depends on it.
+describe('64-bit values without Long.js internally', () => {
+  const Long = require('long');
+
+  describe('Long.js is still accepted on write', () => {
+    const cases = [
+      [
+        'signed max',
+        'x',
+        Long.fromString('9223372036854775807', false),
+        INT64_MAX
+      ],
+      [
+        'signed min',
+        'x',
+        Long.fromString('-9223372036854775808', false),
+        INT64_MIN
+      ],
+      [
+        'unsigned max',
+        't',
+        Long.fromString('18446744073709551615', true),
+        UINT64_MAX
+      ],
+      ['unsigned zero', 't', Long.fromString('0', true), 0n]
+    ];
+
+    for (const [what, sig, long, equivalent] of cases) {
+      it(`writes the same bytes for a Long and a bigint: ${what}`, () => {
+        assert.deepStrictEqual(
+          marshall(sig, [long]),
+          marshall(sig, [equivalent])
+        );
+      });
+    }
+
+    it('accepts a plain object carrying the Long shape', () => {
+      // { low, high, unsigned } is recognised structurally, so accepting it
+      // costs no dependency.
+      assert.deepStrictEqual(
+        marshall('x', [{ low: -1, high: 2147483647, unsigned: false }]),
+        marshall('x', [INT64_MAX])
+      );
+    });
+
+    it('still insists the signedness matches the field', () => {
+      assert.throws(
+        () => marshall('x', [Long.fromString('1', true)]),
+        /Longjs object is unsigned, but marshalling into signed 64 bit field/
+      );
+      assert.throws(
+        () => marshall('t', [Long.fromString('1', false)]),
+        /Longjs object is signed, but marshalling into unsigned 64 bit field/
+      );
+    });
+  });
+
+  describe('ReturnLongjs still hands back real Long objects', () => {
+    it('returns a Long, not a bigint', () => {
+      const [value] = read(marshall('x', [INT64_MAX]), 'x', {
+        ReturnLongjs: true
+      });
+      assert.ok(Long.isLong(value), 'a genuine Long instance');
+      assert.strictEqual(value.toString(), '9223372036854775807');
+    });
+
+    it('returnBigInt still wins when both are set', () => {
+      const [value] = read(marshall('x', [INT64_MAX]), 'x', {
+        ReturnLongjs: true,
+        returnBigInt: true
+      });
+      assert.strictEqual(value, INT64_MAX);
+    });
+  });
+
+  describe('garbage is refused rather than written as zero', () => {
+    // Long.fromBits(undefined, undefined, undefined) produced ZERO, so these
+    // used to marshal to eight zero bytes with no complaint at all.
+    for (const value of [{}, [], true]) {
+      it(`rejects ${JSON.stringify(value) ?? String(value)}`, () => {
+        assert.throws(
+          () => marshall('x', [value]),
+          /Error converting object to 64bit integer/
+        );
+      });
+    }
+
+    it('names what it was given', () => {
+      assert.throws(() => marshall('x', [true]), /integer 'boolean'/);
+      assert.throws(() => marshall('x', [[]]), /integer 'array'/);
+    });
+  });
+
+  describe('string forms', () => {
+    const same = (sig, a, b) =>
+      assert.deepStrictEqual(marshall(sig, [a]), marshall(sig, [b]));
+
+    it('decimal', () => same('x', '9007199254740993', 9007199254740993n));
+    it('negative decimal', () => same('x', '-42', -42n));
+    it('hex', () => same('x', '0x1FFFFFFFFFFFFF', 0x1fffffffffffffn));
+    it('lowercase hex', () => same('x', '0x1fffffffffffff', 0x1fffffffffffffn));
+    it('negative hex', () =>
+      same('x', '-0x1FFFFFFFFFFFFF', -0x1fffffffffffffn));
+    it('leading zeros', () => same('x', '000042', 42n));
+    it('surrounding space', () => same('x', '  42  ', 42n));
+
+    it('reports a string that does not fit the field', () => {
+      assert.throws(
+        () => marshall('x', ['18446744073709551615']),
+        /did not convert correctly to signed 64 bit/
+      );
+      assert.throws(
+        () => marshall('t', ['-42']),
+        /did not convert correctly to unsigned 64 bit/
+      );
+    });
+
+    it('reports an unparseable string', () => {
+      assert.throws(
+        () => marshall('x', ['not a number']),
+        /did not convert correctly/
+      );
+      assert.throws(
+        () => marshall('x', ['']),
+        /Error converting string to 64bit integer 'empty string'/
+      );
+    });
+  });
+});

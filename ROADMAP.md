@@ -437,6 +437,69 @@ belongs in 2.0 with the rest of the type-system change. The gap is deliberate:
 `bigint` is not a drop-in for `number` and the failure mode is a `TypeError` in
 production, so it earns a release of opt-in first.
 
+#### Removing the internal use — done in 0.11
+
+Those two were being conflated. Dropping the **dependency** needs
+`ReturnLongjs` gone, which is a break. Dropping the **internal use** needed
+nothing, and was costing us:
+
+- Every 64-bit write built a `Long` and handed the writer its two 32-bit words,
+  so a `bigint` went out through a decimal string — `Long.fromString(val.toString())`
+  at **0.217 µs, 53% of the whole marshall call**, four times what writing the
+  eight bytes costs. We shipped `returnBigInt` as the forward-compatible option
+  and then charged the people who took it.
+- The default read path built a `Long` purely to call `.toNumber()`, which is
+  the same lossy conversion with a dependency in the middle.
+
+`bigint` is now the internal representation both ways: `writer.int64()` uses
+`writeBigInt64LE`, and the default read is `Number(readBigInt())`. Long.js is
+still _accepted_ on input — recognised structurally by its
+`{low, high, unsigned}` shape, so it costs no import — and `ReturnLongjs` still
+returns genuine `Long` instances. **`require('long')` now appears in exactly one
+file**, `lib/dbus-buffer.js`, for that option alone.
+
+Writing a `bigint` went **0.408 µs → 0.155 µs**, now faster than the `number`
+path it used to be slower than.
+
+Checked against a 150-case behavioural baseline captured before the change —
+every input form for `x` and `t`, in containers, and every read option —
+**144/150 identical**. The six that changed are all garbage input, and all
+improvements:
+
+| input                                   | before                         | after                                                |
+| --------------------------------------- | ------------------------------ | ---------------------------------------------------- |
+| `marshall('x', [{}])`, `[[]]`, `[true]` | **eight zero bytes, silently** | throws                                               |
+| `marshall('t', [{}])`, `[[]]`, `[true]` | `Longjs object is signed…`     | `Error converting object to 64bit integer 'boolean'` |
+
+`Long.fromBits(undefined, undefined, undefined)` is `ZERO`, so passing a boolean
+where a 64-bit integer belonged marshalled as 0 with no complaint — the same
+silently-wrong class as the `Properties.Set` bug in §1. The `t` messages were
+merely nonsense: `{}` is not a "Longjs object" of any signedness.
+
+#### Removing the dependency — the plan
+
+One line of code, gated on a break. In order:
+
+1. **Deprecate louder (any minor).** `ReturnLongjs` is `DBUS_DEP0001` and
+   documentation-only today. It is a _runtime_ deprecation — the trigger is an
+   option the caller passes — so it can warn once per process via
+   `deprecate()`, which makes `node --throw-deprecation` locate the call site.
+   Nothing else in the plan needs this, so it can go whenever.
+2. **2.0: delete the option.** Remove `ReturnLongjs` from `DBusBuffer`, delete
+   `readLong()`, drop `long` from `package.json`. **Runtime dependencies go to
+   one** (`xml2js`). This is the whole cost now — the surrounding code stopped
+   caring in 0.11.
+3. **2.0: flip `returnBigInt` to the default**, alongside the `plainValues`
+   flip. Both are the same kind of change to the same values, and doing them in
+   one release means one migration rather than two.
+
+Sequencing note: this sits _after_ the `plainValues` default flip in §4.1 and
+should ship with it, not before. Both change what a read returns, and a
+consumer that has to think about `bigint` arithmetic and dict shapes at the
+same time is doing one upgrade rather than two — and the codemod/lint story
+covers them together. Nothing here blocks §2.8 (UNIX_FD) or §4.3, which touch
+different code entirely.
+
 Two things the implementation turned up:
 
 - **A service needs the option too.** It reads its own arguments through the
