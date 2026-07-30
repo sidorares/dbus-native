@@ -11,7 +11,6 @@ const clientHandshake = require('./lib/handshake');
 const serverHandshake = require('./lib/server-handshake');
 const MessageBus = require('./lib/bus');
 const server = require('./lib/server');
-const deprecate = require('./lib/deprecate');
 const values = require('./lib/values');
 const errors = require('./lib/errors');
 const names = require('./lib/names');
@@ -175,10 +174,17 @@ function createConnection(opts) {
   const self = new EventEmitter();
   if (!opts) opts = {};
 
+  // Removed rather than ignored. Someone still passing this expects a Long
+  // back, and would otherwise get a bigint and discover it at `value.toNumber
+  // is not a function` -- somewhere else entirely, at whatever point the value
+  // is first used. `ReturnLongjs: false` is not an error: it asked not to be
+  // given Longs, and it is not being given any.
   if (opts.ReturnLongjs) {
-    deprecate(
-      'DBUS_DEP0001',
-      "The 'ReturnLongjs' option is deprecated. 64-bit values (x/t) become native BigInt in 2.0, which represents the full range without a dependency."
+    throw new TypeError(
+      "The 'ReturnLongjs' option was removed: 64-bit values (x/t) are native " +
+        'BigInt, which represents the full range exactly and without a ' +
+        "dependency. Pass 'returnBigInt: false' for the lossy number 1.x " +
+        'returned by default. See docs/deprecations.md#dbus_dep0001'
     );
   }
 

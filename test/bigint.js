@@ -7,6 +7,8 @@
 
 const { describe, it } = require('node:test');
 const assert = require('assert');
+const { PassThrough } = require('stream');
+const dbus = require('../index');
 const marshall = require('../lib/marshall');
 const unmarshall = require('../lib/unmarshall');
 const DBusBuffer = require('../lib/dbus-buffer');
@@ -95,22 +97,30 @@ describe('BigInt: opting back out', () => {
     assert.strictEqual(v, 42);
   });
 
-  it('still returns a Long with ReturnLongjs alone', () => {
-    // Asking for the deprecated shape opts out of BigInt on its own. Reading
-    // this as "both are set, so BigInt wins" would leave the option doing
-    // nothing at all the moment BigInt became the default.
-    const v = roundTrip('x', 42n, { ReturnLongjs: true });
-    assert.strictEqual(typeof v, 'object');
-    assert.strictEqual(v.toString(), '42');
+  it('refuses ReturnLongjs rather than quietly handing back a bigint', () => {
+    // Someone still passing this expects a Long. Ignoring it would surface as
+    // `value.toNumber is not a function`, somewhere else entirely, at whatever
+    // point the value is first used.
+    assert.throws(
+      () =>
+        dbus.createConnection({
+          stream: new PassThrough(),
+          ReturnLongjs: true
+        }),
+      {
+        name: 'TypeError',
+        message: /'ReturnLongjs' option was removed.*returnBigInt: false/s
+      }
+    );
   });
 
-  it('prefers BigInt when both options are set', () => {
-    // Someone who sets both is migrating, and should get the destination
-    // rather than the deprecation.
-    assert.strictEqual(
-      roundTrip('x', 42n, { returnBigInt: true, ReturnLongjs: true }),
-      42n
-    );
+  it('accepts ReturnLongjs: false, which asked for what it now gets', () => {
+    const conn = dbus.createConnection({
+      stream: new PassThrough(),
+      ReturnLongjs: false
+    });
+    assert.ok(conn);
+    conn.end();
   });
 });
 
@@ -200,10 +210,12 @@ describe('BigInt: diagnostics survive a bigint body', () => {
   });
 });
 
-// The 64-bit paths use `bigint` internally as of 0.11. Long.js is still
-// accepted on input and is still what `ReturnLongjs` returns, but nothing
-// inside the marshaller or the read path depends on it.
-describe('64-bit values without Long.js internally', () => {
+// The 64-bit paths have used `bigint` internally since 0.11, and Long.js
+// stopped being a dependency in 2.0. A Long is still *accepted* on input --
+// the check is structural, on {low, high, unsigned}, so it costs nothing --
+// which is what these cover. `long` is a devDependency now, only so the tests
+// can build the objects they are asserting about.
+describe('64-bit values without Long.js', () => {
   const Long = require('long');
 
   describe('Long.js is still accepted on write', () => {
@@ -259,22 +271,14 @@ describe('64-bit values without Long.js internally', () => {
     });
   });
 
-  describe('ReturnLongjs still hands back real Long objects', () => {
-    it('returns a Long, not a bigint', () => {
-      const [value] = read(marshall('x', [INT64_MAX]), 'x', {
-        ReturnLongjs: true
-      });
-      assert.ok(Long.isLong(value), 'a genuine Long instance');
-      assert.strictEqual(value.toString(), '9223372036854775807');
-    });
-
-    it('returnBigInt still wins when both are set', () => {
-      const [value] = read(marshall('x', [INT64_MAX]), 'x', {
-        ReturnLongjs: true,
-        returnBigInt: true
-      });
-      assert.strictEqual(value, INT64_MAX);
-    });
+  it('is not required to read one back', () => {
+    // The read path has no Long in it at all now: what a Long wrote comes
+    // back as the bigint it always represented.
+    const [value] = read(
+      marshall('x', [Long.fromString('9223372036854775807', false)]),
+      'x'
+    );
+    assert.strictEqual(value, INT64_MAX);
   });
 
   describe('garbage is refused rather than written as zero', () => {

@@ -282,7 +282,7 @@ Four things to know:
 
 ## Reference
 
-- [docs/deprecations.md](deprecations.md) — DBUS_DEP0001 (`ReturnLongjs`),
+- [docs/deprecations.md](deprecations.md) — DBUS_DEP0001 (`ReturnLongjs`, removed),
   DBUS_DEP0002 (variants), DBUS_DEP0003 (dicts), with the runtime warnings and
   what silences each one
 - [docs/api.md](api.md) — `variantValue`, `variantSignature`, `toPlain`,

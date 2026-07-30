@@ -270,12 +270,12 @@ export interface ConnectionOptions {
    */
   variants?: 'tree' | 'plain' | 'wrap';
   /**
-   * @deprecated DBUS_DEP0001 -- 64-bit values are BigInt as of 2.0. Setting
-   * this opts back out of that, and is the only reason it still does anything.
-   * Note the capital R: this one option predates the rest and is the only
-   * PascalCase name in the API.
+   * @deprecated DBUS_DEP0001 -- removed. 64-bit values are `bigint`; pass
+   * `returnBigInt: false` for the lossy `number` 1.x returned. Passing `true`
+   * throws rather than silently handing back a different type. Declared only
+   * so the type checker points at the replacement.
    */
-  ReturnLongjs?: boolean;
+  ReturnLongjs?: never;
   /** reject a message declaring more than this many bytes; default 128 MiB */
   maxMessageSize?: number;
   /** default timeout in ms for every call on this client; default: no timeout */

@@ -515,7 +515,7 @@ Then go further: add a `bus.invokeAsync(msg)` (or a `promisify: true` client
 option) so the low-level API is usable with `await` too, and export the whole
 proxy surface as promise-returning. Callback style stays supported.
 
-### 3.2 Replace Long.js with BigInt
+### 3.2 Replace Long.js with BigInt ✅
 
 **Issue:** [#248](https://github.com/sidorares/dbus-native/issues/248),
 **PR:** [#252](https://github.com/sidorares/dbus-native/pull/252)
@@ -581,9 +581,9 @@ where a 64-bit integer belonged marshalled as 0 with no complaint — the same
 silently-wrong class as the `Properties.Set` bug in §1. The `t` messages were
 merely nonsense: `{}` is not a "Longjs object" of any signedness.
 
-#### Removing the dependency — the plan
+#### Removing the dependency — done in 2.0
 
-One line of code, gated on a break. In order:
+One line of code, gated on a break. What happened, against the plan:
 
 1. ~~**Deprecate louder (any minor).**~~ **Already done, since 0.6** — this step
    was written here in error. `ReturnLongjs` is a _runtime_ deprecation, not a
@@ -598,20 +598,26 @@ One line of code, gated on a break. In order:
    Nothing to do here; the warning has been running for five releases, which is
    as much notice as the option is going to get.
 
-2. **2.0: delete the option.** Remove `ReturnLongjs` from `DBusBuffer`, delete
-   `readLong()`, drop `long` from `package.json`. **Runtime dependencies go to
-   one** (`xml2js`). This is the whole cost now — the surrounding code stopped
-   caring in 0.11.
-3. **2.0: flip `returnBigInt` to the default**, alongside the `plainValues`
-   flip. Both are the same kind of change to the same values, and doing them in
-   one release means one migration rather than two.
+2. ✅ **Deleted the option.** `ReturnLongjs` and `readLong()` are gone from
+   `DBusBuffer` and `long` is gone from `package.json`. **Runtime dependencies
+   are down to one** (`xml2js`). It was the whole cost, as predicted — the
+   surrounding code stopped caring in 0.11.
 
-Sequencing note: this sits _after_ the `plainValues` default flip in §4.1 and
-should ship with it, not before. Both change what a read returns, and a
-consumer that has to think about `bigint` arithmetic and dict shapes at the
-same time is doing one upgrade rather than two — and the codemod/lint story
-covers them together. Nothing here blocks §2.8 (UNIX_FD) or §4.3, which touch
-different code entirely.
+   One thing the plan did not say: passing it now **throws** rather than being
+   ignored. Code that sets it expects a Long, and ignoring it would surface as
+   `value.toNumber is not a function` at whatever point the value is first
+   used — possibly nowhere near the connection. `ReturnLongjs: false` is
+   accepted, since it asked not to be given Longs and is not being given any.
+
+   `long` moved to devDependencies: the marshaller still accepts a Long
+   structurally, and the tests need the real thing to build one.
+
+3. ✅ **Flipped `returnBigInt` to the default**, alongside the `plainValues`
+   flip, in one release. Both are the same kind of change to the same values,
+   so a consumer that has to think about `bigint` arithmetic and dict shapes
+   does one upgrade rather than two — and the codemod/lint story covers them
+   together. The flip went in first and the removal followed, so the two
+   diffs stayed separately reviewable.
 
 Two things the implementation turned up:
 
@@ -1011,9 +1017,14 @@ belongs with the lifecycle work rather than here.
   for. `nextSerial()` now wraps to 1 (0 is not a valid serial), and the stray
   second increment is gone. Related to
   [#126](https://github.com/sidorares/dbus-native/issues/126).
-- **`lib/address-x11.js`** requires `x11`, which is not a dependency, so
-  requiring it throws. Either make it a documented optional extra (done: it now
-  says so) or move it out of the published `lib/`.
+- ~~**`lib/address-x11.js`** requires `x11`, which is not a dependency, so
+  requiring it throws.~~ **Removed in 2.0.** Documenting it as an optional
+  extra was the smaller half-measure and it stayed wrong: the file shipped in
+  `lib/`, so it was reachable through the `exports` map, and the only thing it
+  could do for anyone who found it was throw `Cannot find module 'x11'`. It
+  read the bus address off an X11 selection, which is a fallback for finding a
+  session bus started without `DBUS_SESSION_BUS_ADDRESS` — `busAddress` covers
+  that for anyone who can determine the address by any means at all.
 - **Drop `hexy`** — **done**, and with no replacement.
 
   The entry above was stale: `bin/dbus-dissect.js` had stopped using it, so the

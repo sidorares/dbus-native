@@ -1,6 +1,5 @@
 const { describe, it, beforeEach } = require('node:test');
 const assert = require('assert');
-const { execFileSync } = require('child_process');
 const deprecate = require('../lib/deprecate');
 
 describe('deprecate()', () => {
@@ -40,56 +39,10 @@ describe('deprecate()', () => {
   });
 });
 
-describe('DBUS_DEP0001 (ReturnLongjs)', () => {
-  // Run in a child so --throw-deprecation is in effect from the start, which
-  // is the workflow the docs tell users to adopt.
-  it('is thrown under --throw-deprecation, pointing at the caller', () => {
-    const script = `
-      const dbus = require(${JSON.stringify(require.resolve('../index'))});
-      const { PassThrough } = require('stream');
-      dbus.createConnection({ stream: new PassThrough(), ReturnLongjs: true });
-    `;
-    let stderr = '';
-    try {
-      execFileSync(process.execPath, ['--throw-deprecation', '-e', script], {
-        encoding: 'utf8',
-        stdio: 'pipe'
-      });
-      assert.fail('expected the deprecation to throw');
-    } catch (err) {
-      stderr = err.stderr || '';
-    }
-    assert.match(stderr, /DBUS_DEP0001/);
-    assert.match(stderr, /ReturnLongjs/);
-    assert.match(stderr, /BigInt/);
-  });
-
-  it('does not warn when the option is not used', async () => {
-    deprecate.reset();
-    const { Duplex } = require('stream');
-    // Not a PassThrough: that echoes the client's own AUTH line back at it,
-    // which sends the handshake down the DBUS_COOKIE_SHA1 path and fails on a
-    // missing ~/.dbus-keyrings (issue #158). A stream that never answers is
-    // the right fixture here -- we only care that construction does not warn.
-    const silent = new Duplex({
-      read() {},
-      write(chunk, enc, cb) {
-        cb();
-      }
-    });
-    const seen = [];
-    const listener = w => seen.push(w);
-    process.on('warning', listener);
-    try {
-      const conn = require('../index').createConnection({ stream: silent });
-      conn.on('error', () => {});
-      await new Promise(setImmediate);
-    } finally {
-      process.removeListener('warning', listener);
-    }
-    assert.deepStrictEqual(
-      seen.filter(w => w.code === 'DBUS_DEP0001'),
-      []
-    );
-  });
-});
+// DBUS_DEP0001 was the one deprecation that reached the end of its life. It
+// warned from 0.6 and the option it named was removed in 2.0, so the test that
+// checked the warning is now a test that checks the error -- see
+// test/bigint.js, where it sits with the rest of the 64-bit behaviour.
+//
+// The linter still carries the rule (test/lint.js): a code that has been
+// removed is exactly the one worth finding call sites for.
