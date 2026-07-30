@@ -208,7 +208,7 @@ nor delivers a late reply.
 
 **Every call has a deadline: 25 seconds by default**, the same figure libdbus,
 GDBus and sd-bus use, so a call that hits it would have hit theirs at the same
-point. Before 2.0 there was none, and a peer that never answered left the
+point. Before 0.14.0 there was none, and a peer that never answered left the
 promise unsettled for the life of the process.
 
 ```js
@@ -1149,7 +1149,7 @@ message instead of failing.
 ### Reading values: `plainValues`
 
 A variant reads as the value itself and a string-keyed dict as a plain object.
-`plainValues: false` reads the 1.x shapes instead.
+`plainValues: false` reads the classic shapes instead.
 
 | signature | `plainValues` (default)     | `plainValues: false`            |
 | --------- | --------------------------- | ------------------------------- |
@@ -1177,7 +1177,7 @@ method arguments through the same parser. If you change this, change it on both.
 
 `variantValue()` and `toPlain()` read either shape and are the identity under
 this one, so code written against them works whichever is in force. For code
-that cannot be migrated yet, `dbus-native/compat` restores the 1.x shapes
+that cannot be migrated yet, `dbus-native/compat` restores the classic shapes
 wholesale:
 
 ```js
@@ -1274,7 +1274,7 @@ const {
 
 ```js
 const udi = variantValue(entry); // 'tree': entry[1][0];  'plain': entry
-const props = toPlain(dict); // 1.x: array of pairs;  now: identity
+const props = toPlain(dict); // classic: array of pairs;  now: identity
 
 bus.invoke({
   /* … */ signature: 'ssv',
@@ -1425,15 +1425,15 @@ dc.subscribe('tracing:dbus:call:error', ctx =>
 
 ## CLI
 
-| command      |                                                      |
-| ------------ | ---------------------------------------------------- |
-| `call`       | call a method, the way `dbus-send` does              |
-| `get`, `set` | read or write a property                             |
-| `list`       | the names on the bus                                 |
-| `types`      | TypeScript declarations for a service                |
-| `introspect` | a service's raw introspection XML                    |
-| `codemod`    | rewrite your source for a breaking change            |
-| `lint`       | report reads of the value shapes that changed in 2.0 |
+| command      |                                                         |
+| ------------ | ------------------------------------------------------- |
+| `call`       | call a method, the way `dbus-send` does                 |
+| `get`, `set` | read or write a property                                |
+| `list`       | the names on the bus                                    |
+| `types`      | TypeScript declarations for a service                   |
+| `introspect` | a service's raw introspection XML                       |
+| `codemod`    | rewrite your source for a breaking change               |
+| `lint`       | report reads of the value shapes that changed in 0.14.0 |
 
 ### Talking to the bus
 
@@ -1511,7 +1511,7 @@ never rewrites — reading a variant is an index chain and nothing in the source
 says what the value is, so it narrows the problem to a reviewed list rather
 than guessing. Findings marked `(possible)` are heuristic.
 
-`dbus2js` was removed in 2.0 (`DBUS_DEP0005`).
+`dbus2js` was removed in 0.14.0 (`DBUS_DEP0005`).
 
 See [the README](../README.md#generating-types-for-a-service) for the full flag
 list, and [docs/deprecations.md](./deprecations.md) for every deprecation code.

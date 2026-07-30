@@ -252,7 +252,7 @@ describe('codegen: the --target flag', () => {
     assert.strictEqual(generate('--target', 'next'), generate());
   });
 
-  it("emits the 1.x shapes for 'classic'", () => {
+  it("emits the classic shapes for 'classic'", () => {
     const out = generate('--target', 'classic');
     assert.match(out, /target: {2}classic/);
     assert.match(out, /\[Array<\[string, ClassicVariant\]>, number\]/);

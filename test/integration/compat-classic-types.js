@@ -1,10 +1,13 @@
 // `withClassicTypes` from dbus-native/compat, exercised against a real daemon.
 //
-// The interesting run is `npm run test:integration:2.0`, where the connection
-// would otherwise read the 2.0 shapes: that is the only configuration in which
-// this helper does anything at all. In the default run it is a no-op and these
-// tests are still worth having, because they say what the shapes are either
-// way.
+// The interesting run is the default one, where the connection would otherwise
+// read the plain shapes 0.14.0 made standard -- that is where this helper has
+// anything to undo. Under `npm run test:integration:classic` the connection is
+// already reading classic shapes, so it is a no-op, and these tests are still
+// worth having there because they say what the shapes are either way.
+//
+// That is the opposite way round from how it read before 0.14.0, when classic
+// was the default and the plain shapes were the opt-in.
 
 const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
@@ -95,7 +98,7 @@ describe(
     it('hands back a variant as [signatureTree, [value]]', async () => {
       const value = await get(clientBus, 'Greeting');
       assert.ok(Array.isArray(value), 'expected the classic wrapper');
-      // The index chain 1.x code is full of, working verbatim.
+      // The index chain classic code is full of, working verbatim.
       assert.strictEqual(value[1][0], 'hello');
       // And the real signature, not one inferred from the value -- which is why
       // this asks the parser rather than converting after the fact.
@@ -113,7 +116,7 @@ describe(
       assert.strictEqual(greeting[1][1][0], 'hello');
     });
 
-    it("hands back 't' as a lossy number, as 1.x did", async () => {
+    it("hands back 't' as a lossy number, as it did before 0.14.0", async () => {
       const value = await clientBus.invoke({
         destination: SERVICE,
         path: OBJECT_PATH,

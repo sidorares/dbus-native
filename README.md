@@ -90,7 +90,7 @@ options:
     4 MB alive. Only use it if you consume the value and drop it promptly.
   - `false` returns a plain array of numbers.
 - returnBigInt - boolean (default:true): 64 bit dbus fields (x/t) are read out as
-  native `bigint`, which covers the whole range exactly. Set `false` for the 1.x
+  native `bigint`, which covers the whole range exactly. Set `false` for the classic
   behaviour, a `number` that loses precision above 2^53.
 
 connection has only one method, `message(msg)`
@@ -185,15 +185,15 @@ const devices = await nm.GetDevices(); // string[], checked
 Methods, properties and signals are all emitted, with argument names taken
 from the introspection data where the service provides them.
 
-| flag                  |                                                          |
-| --------------------- | -------------------------------------------------------- |
-| `--service`, `--path` | what to introspect                                       |
-| `--system`            | use the system bus (default: session)                    |
-| `--xml <file>`        | read saved introspection XML instead of a live bus       |
-| `--out <file>`        | write to a file instead of stdout                        |
-| `--target classic`    | emit the 1.x value shapes (`number`, arrays of pairs)    |
-| `--all`               | include the standard `org.freedesktop.DBus.*` interfaces |
-| `--module <name>`     | module specifier for the type import                     |
+| flag                  |                                                           |
+| --------------------- | --------------------------------------------------------- |
+| `--service`, `--path` | what to introspect                                        |
+| `--system`            | use the system bus (default: session)                     |
+| `--xml <file>`        | read saved introspection XML instead of a live bus        |
+| `--out <file>`        | write to a file instead of stdout                         |
+| `--target classic`    | emit the classic value shapes (`number`, arrays of pairs) |
+| `--all`               | include the standard `org.freedesktop.DBus.*` interfaces  |
+| `--module <name>`     | module specifier for the type import                      |
 
 `dbus-native introspect` prints the raw XML, which is handy for checking a
 service's shape or for saving a fixture to generate from later.
@@ -203,7 +203,7 @@ regenerating after upgrading is one command. The default `plain` target
 describes the default value shapes; use `classic` for a connection reading with
 `plainValues: false, returnBigInt: false`.
 
-> **`dbus2js` was removed in 2.0** (`DBUS_DEP0005`), having warned since 0.6.
+> **`dbus2js` was removed in 0.14.0** (`DBUS_DEP0005`), having warned since 0.6.
 > It emitted untyped ES5, generated no properties, and gave signals an
 > over-broad match rule. `dbus-native types` is the replacement — see
 > [docs/deprecations.md](./docs/deprecations.md#dbus_dep0005) for the
@@ -427,7 +427,7 @@ way can be written straight back out. A dict whose keys are not strings
 (`a{us}`) stays as pairs, because a JavaScript object key is always a string
 and converting one would change the key's type.
 
-Both shapes changed in 2.0. Two helpers read either, so code written against
+Both shapes changed in 0.14.0. Two helpers read either, so code written against
 them behaves the same before and after:
 
 ```js
@@ -442,7 +442,7 @@ const props = toPlain(getAllResult); // { Greeting: 'hello', Count: 7 }
 
 `toPlain()` only converts arrays this library parsed as dicts, so an `a(ss)`
 (array of two-string structs) is left as an array rather than being guessed at.
-`dbus-native/compat` restores the 1.x shapes wholesale if you are not ready:
+`dbus-native/compat` restores the classic shapes wholesale if you are not ready:
 
 ```js
 const { withClassicTypes } = require('dbus-native/compat');
@@ -457,7 +457,7 @@ npx dbus-native lint src/
 
 ```
 src/net.js:42  DBUS_DEP0002  variant index chain `[1][1][0]`
-    -> variantValue(), or a plain property read after 2.0
+    -> variantValue(), or a plain property read after 0.14.0
 ```
 
 It reports rather than rewrites — an index chain says nothing about what the
@@ -547,9 +547,9 @@ rest rather than guessing. See
 [`dbus-native/compat`](docs/migrating-to-0.7.md#the-escape-hatch) if you need the
 old shape while you migrate.
 
-### The 2.0 value shapes
+### The 0.14.0 value shapes
 
-2.0 changed what values look like: a variant is the value it holds, a
+0.14.0 changed what values look like: a variant is the value it holds, a
 string-keyed dict is a plain object, and `x`/`t` are `bigint`.
 
 Code written against `variantValue()` and `toPlain()` needed no change at all —
@@ -605,7 +605,7 @@ exactly:
 const size = await disk.Size(); // 2000398934016n
 ```
 
-Before 2.0 they were a `number`, which **loses precision above 2⁵³** —
+Before 0.14.0 they were a `number`, which **loses precision above 2⁵³** —
 `9223372036854775807` came back as `9223372036854776000`. `returnBigInt: false`
 restores that, per connection, so services and clients can be moved one at a
 time — though note a service reads its _arguments_ through the same parser, so
@@ -628,7 +628,7 @@ These can be **written** to a 64-bit field, whatever the read option:
 - `string`, decimal or `0x`-prefixed hex, over the full range
 - Long.js objects, or anything with compatible `low`/`high`/`unsigned`
 
-`ReturnLongjs` was removed in 2.0 and now throws, rather than quietly handing
+`ReturnLongjs` was removed in 0.14.0 and now throws, rather than quietly handing
 back a type it was not asked for; `returnBigInt: false` is the way to a
 `number`. [Long.js](https://github.com/dcodeIO/long.js) is no longer a
 dependency at all, which also removes the ARMv6 crash that made downstream

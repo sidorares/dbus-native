@@ -7,7 +7,7 @@
 //               object, and 64-bit is a bigint (the default when unset)
 //   wrap        the same, but a variant is a Variant -- the shape a caller
 //               opts into when it needs the type back (BIG_FUTURE_PLANS 2.1)
-//   classic     what 1.x handed back: a variant is [tree, [value]], a dict is
+//   classic     what classic handed back: a variant is [tree, [value]], a dict is
 //               pairs, and 64-bit is a lossy number. This is what
 //               `dbus-native/compat` configures, so it has to keep working.
 //

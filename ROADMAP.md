@@ -8,39 +8,61 @@ is a plan of record, not a promise of dates.
 
 ---
 
-## 0. The elephant in the room: positioning
+## 0. The elephant in the room: positioning — **resolved**
 
-Three packages now serve the same users:
+**[#263](https://github.com/sidorares/dbus-native/issues/263) is answered: work
+has restarted here, and the package is not being deprecated.** The rest of this
+section is the reasoning, kept because it is what the answer rests on.
 
-| package                                            | latest | published | downloads/week |
-| -------------------------------------------------- | ------ | --------- | -------------- |
-| `dbus-native` (this repo)                          | 0.4.0  | 2022-06   | ~7.4k          |
-| `dbus-next` (acrisci fork/rewrite)                 | 0.10.2 | 2022-04   | ~19k           |
-| `@homebridge/dbus-native` (soft fork of this repo) | 0.7.8  | 2026-07   | ~41k           |
+Three packages serve the same users:
 
-Two things stand out:
+| package                                            | latest | published  | downloads/week |
+| -------------------------------------------------- | ------ | ---------- | -------------- |
+| `@homebridge/dbus-native` (soft fork of this repo) | 0.7.8  | 2026-07-25 | 37.1k          |
+| `dbus-next` (acrisci fork/rewrite)                 | 0.10.2 | 2022-04-28 | 18.0k          |
+| `dbus-native` (this repo)                          | 0.15.0 | 2026-07-30 | 9.3k           |
+
+Downloads are the week ending 2026-07-28 — before any of this pass shipped, so
+they measure the position that had to be argued out of, not the one it created.
+
+Two things stood out:
 
 - **The Homebridge fork is the de-facto maintained `dbus-native`.** It is a
   light fork of this codebase (dropped `abstract-socket`, swapped `optimist` for
-  `minimist`, forked `long.js` for an ARMv6 crash) and it now has more downloads
+  `minimist`, forked `long.js` for an ARMv6 crash) and it has more downloads
   than this package and `dbus-next` combined. Its changes are a strict subset of
-  what this pass just did — this repo now has three runtime dependencies to
+  what this pass did — this repo is down to **one** runtime dependency against
   their six.
 - **[#263](https://github.com/sidorares/dbus-native/issues/263) ("Deprecate
   dbus-native") was agreed in principle in 2019 and never executed.** `dbus-next`
   was to take over the npm name; that never happened, and `dbus-next` has itself
   been dormant since 2022.
 
-**Recommendation:** do not deprecate. This repo is the most-forked, most-depended-on
-of the three and is now the most modern. Instead:
+**Decision: do not deprecate.** This repo is the most-forked, most-depended-on
+of the three and is now the most modern. What followed from it:
 
-1. Reach out to the Homebridge maintainers about folding their fork back in.
-   Their three deltas are already addressed here except the `long.js` ARMv6
-   workaround — which §3.2 (BigInt) removes the need for entirely.
-2. Close [#263](https://github.com/sidorares/dbus-native/issues/263) with a note
-   explaining the current state, rather than leaving it open and ambiguous.
-3. Ship a 0.5.0 from this modernisation pass so the ecosystem sees a signal of
-   life.
+1. ~~Reach out to the Homebridge maintainers about folding their fork back in.~~
+   **Outstanding**, and the case is stronger than it was. All three of their
+   deltas are addressed here now — abstract sockets come from Node, arguments
+   from `node:util.parseArgs`, and the `long.js` ARMv6 workaround has nothing
+   left to work around since the dependency was dropped in
+   [#374](https://github.com/sidorares/dbus-native/pull/374). Auditing their
+   fork also turned up three real bugs here
+   ([#380](https://github.com/sidorares/dbus-native/pull/380),
+   [#382](https://github.com/sidorares/dbus-native/pull/382),
+   [#383](https://github.com/sidorares/dbus-native/pull/383)), one of them a
+   remotely-triggerable crash — so the exchange runs both ways.
+2. ~~Close #263 with a note explaining the current state.~~ **Answered**
+   2026-07-30 with the progress since 2019 and the decision to restart work
+   here. Left open for comment rather than closed.
+3. ~~Ship a 0.5.0 so the ecosystem sees a signal of life.~~ **Done, and then
+   some** — 0.5.0 through 0.15.0 between 2026-07-28 and 2026-07-30, ending with
+   the value-shape flip this document's §3.2 and §4.1 were written for.
+
+`BIG_FUTURE_PLANS.md` §7 argued that #263 should be answered _before_ building
+anything, since every proposal in it is an argument that the answer is no. The
+building happened first. That did not change the answer, but it does mean the
+releases are the evidence for it rather than a promise of it.
 
 ---
 

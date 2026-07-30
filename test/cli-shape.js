@@ -3,7 +3,7 @@
 // `describe()` prints a variant as `variant u 501`, and it needs the signature
 // to do that. `variants: 'wrap'` is how it asks. Before that option existed the
 // only way to ask was `plainValues: false`, which got the signature by reading
-// the parser's internal tree -- so the CLI was pinned away from the 2.0 shapes
+// the parser's internal tree -- so the CLI was pinned away from the 0.14.0 shapes
 // to keep a feature it should not have had to trade for them.
 //
 // These tests are here to fail if the pin is ever dropped.

@@ -1,12 +1,19 @@
-# Migrating to 2.0
+# Migrating to 0.14.0
 
-**2.0 changes the shapes values arrive in.** A variant becomes the value it
+**0.14.0 changed the shapes values arrive in.** A variant becomes the value it
 holds, a string-keyed dict becomes a plain object, and 64-bit integers become
 `bigint`. That is most of the release, and most of this guide.
 
-Three smaller breaks ship alongside it: a **default call timeout**, the removal
-of `ReturnLongjs` and `dbus2js`, and a **Node floor of 22.12**. They are at the
-end, under [The rest of the release](#the-rest-of-the-release).
+[RELEASE_PLAN.md](../RELEASE_PLAN.md) calls this release "2.0", and this file is
+still `migrating-to-2.0.md` because the 0.14.0 changelog and release notes link
+to it by that name. It shipped as 0.14.0 for the reason
+[the 0.7 guide gives](migrating-to-0.7.md): under semver a `0.x` minor is
+already the breaking bump, and 1.0.0 is a statement about stability worth making
+deliberately rather than as a side effect. Nothing about the content changed.
+
+Three smaller breaks shipped alongside it: a **default call timeout**, the
+removal of `ReturnLongjs` and `dbus2js`, and a **Node floor of 22.12**. They are
+at the end, under [The rest of the release](#the-rest-of-the-release).
 
 It is the release people have been asking for since
 [#3](https://github.com/sidorares/dbus-native/issues/3) in 2013, and it is the
@@ -25,7 +32,7 @@ first; if you have, and something broke, go to
 
 ## What changes
 
-| D-Bus type       | 1.x                                | 2.0                 |
+| D-Bus type       | classic                            | 0.14.0              |
 | ---------------- | ---------------------------------- | ------------------- |
 | `v`              | `[parsedSignatureTree, [value]]`   | the value           |
 | `a{sv}`, `a{ss}` | array of `[key, value]` pairs      | a plain object      |
@@ -74,8 +81,9 @@ const size = await iface.Size(); // keep it a bigint
 const pct = Number(await iface.Level()) / 100;
 ```
 
-`Number()` at the boundary is not a defeat. It is the same precision you had in
-1.x, made visible in one place instead of applied silently to everything.
+`Number()` at the boundary is not a defeat. It is the same precision you had
+before 0.14.0, made visible in one place instead of applied silently to
+everything.
 
 For JSON, convert at the edge:
 
@@ -100,7 +108,7 @@ dbus-native types --system --service org.freedesktop.UPower \
   --path /org/freedesktop/UPower --out upower.d.ts
 ```
 
-The default `plain` target emits the 2.0 shapes, so `tsc` reports every place a
+The default `plain` target emits the 0.14.0 shapes, so `tsc` reports every place a
 `bigint` meets a `number` before you have run anything. (Generate with
 `--target classic` first if you want to see the two side by side.)
 
@@ -109,20 +117,20 @@ The default `plain` target emits the 2.0 shapes, so `tsc` reports every place a
 ## Variants
 
 ```js
-// 1.x -- the shape behind more issues than anything else in this project
+// classic -- the shape behind more issues than anything else in this project
 const value = result[1][0];
 
-// 2.0
+// 0.14.0
 const value = result;
 ```
 
 Nested in a dict, which is where it usually appears:
 
 ```js
-// 1.x
+// classic
 const udi = dict.find(([key]) => key === 'Udi')[1][1][0];
 
-// 2.0
+// 0.14.0
 const { Udi } = dict;
 ```
 
@@ -134,7 +142,7 @@ const { variantValue } = require('dbus-native');
 const value = variantValue(result); // identical before and after
 ```
 
-`variantValue()` reads the 1.x wrapper and is the identity on a plain value, so
+`variantValue()` reads the classic wrapper and is the identity on a plain value, so
 a file converted to it is done — it needs no second pass at the flag day. This
 is what the accessors are for; see [DBUS_DEP0002](deprecations.md#dbus_dep0002).
 
@@ -144,7 +152,7 @@ is what the accessors are for; see [DBUS_DEP0002](deprecations.md#dbus_dep0002).
 does not:
 
 ```js
-variantSignature(result); // 's' in 1.x, undefined in 2.0
+variantSignature(result); // 's' before 0.14.0, undefined from it
 ```
 
 Almost nobody reads it. If you do — a tool that prints what came back, or a
@@ -162,7 +170,7 @@ variantValue(v); // 0.5, same as every other shape
 A `Variant` is what the tree should have been: it prints as `Variant('d', 0.5)`
 rather than a wall of parse-tree objects, and the marshaller accepts it, so a
 value read this way can be sent straight back out. **Do not migrate to
-`variants: 'tree'` to keep the signature** — it works, but it is the shape 2.0
+`variants: 'tree'` to keep the signature** — it works, but it is the shape 0.14.0
 exists to remove, and `withClassicTypes` is the supported way to stay on it.
 
 Writing variants is unaffected either way: `new Variant('u', 9)` and the
@@ -173,13 +181,13 @@ Writing variants is unaffected either way: `new Variant('u', 9)` and the
 ## Dicts
 
 ```js
-// 1.x
+// classic
 for (const [key, value] of dict) {
   console.log(key, variantValue(value));
 }
 const name = dict.find(([key]) => key === 'Name')[1][1][0];
 
-// 2.0
+// 0.14.0
 for (const [key, value] of Object.entries(dict)) {
   console.log(key, value);
 }
@@ -188,7 +196,7 @@ const { Name } = dict;
 
 **Write it once, for both**, with `toPlain()`, which converts a whole reply
 recursively — pairs to objects, variants unwrapped — and is the identity on a
-2.0 value:
+0.14.0 value:
 
 ```js
 const { toPlain } = require('dbus-native');
@@ -219,7 +227,7 @@ since 0.11, per connection:
 const bus = dbus.sessionBus({ plainValues: true, returnBigInt: true });
 ```
 
-That is the same code path 2.0 turns on by default — not a simulation of it.
+That is the same code path 0.14.0 turns on by default — not a simulation of it.
 So the migration that actually works is:
 
 1. **Convert reads to `variantValue()` and `toPlain()`** on your current
@@ -234,7 +242,7 @@ So the migration that actually works is:
    ```bash
    npx dbus-native lint src/
    src/net.js:42  DBUS_DEP0002  variant index chain `[1][1][0]`
-       -> variantValue(), or a plain property read after 2.0
+       -> variantValue(), or a plain property read after 0.14.0
    ```
 
    It exits non-zero when there are findings, so it can gate CI while you work
@@ -258,7 +266,7 @@ const { withClassicTypes } = require('dbus-native/compat');
 const bus = withClassicTypes(dbus.sessionBus());
 ```
 
-1.x shapes on a 2.0 connection: variants wrapped, dicts as pairs, `x`/`t` as
+classic shapes on a 0.14.0 connection: variants wrapped, dicts as pairs, `x`/`t` as
 `number`. For code with `result[1][1][0]` in three hundred places and a reason
 to upgrade that is not this.
 
@@ -270,7 +278,7 @@ Four things to know:
 
 - **It is scoped to the connection, not to the reference.** It configures the
   bus you hand it and returns that same bus. There is one parser per socket, so
-  an independent 2.0 view of the same connection is not something that can
+  an independent 0.14.0 view of the same connection is not something that can
   exist. Unrelated code with its own bus is unaffected.
 - **Call it before your first call goes out.** A reply that has already been
   parsed is already the new shape, and nothing can reach back and change it.
@@ -291,7 +299,7 @@ Three smaller breaks, none of which need the tooling above.
 ### Calls now have a deadline
 
 A call waits **25 seconds** for its reply and then rejects with a
-`TimeoutError`. Before 2.0 there was no default: a peer that never answered
+`TimeoutError`. Before 0.14.0 there was no default: a peer that never answered
 left the promise unsettled for the life of the process.
 
 ```js

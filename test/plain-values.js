@@ -1,4 +1,4 @@
-// The `plainValues` option: the 2.0 read shapes, and the default since 2.0.
+// The `plainValues` option: the 0.14.0 read shapes, and the default since 0.14.0.
 //
 // A variant reads as the value itself, and a string-keyed dict as a plain
 // object. Writing is unaffected -- the marshaller has taken plain objects and
