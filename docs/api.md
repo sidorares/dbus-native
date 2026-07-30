@@ -108,8 +108,16 @@ socket other processes can reach.
 | `reconnect`      | `boolean \| object`       | `false`                                         | reconnect when the transport goes away — see below             |
 
 Address forms understood by `busAddress`: `unix:path=…`, `unix:abstract=…`,
-`unix:socket=…`, `tcp:host=…,port=…`, `unixexec:path=…,arg1=…`, and
+`unix:socket=…`, `tcp:host=…,port=…`, `unixexec:path=…,argv1=…`, and
 `launchd:env=…`.
+
+**`unixexec:`** runs the bus as a child process and speaks to it over its stdio.
+`path` is the binary, `argv1`, `argv2`, … are its arguments, and the optional
+`argv0` sets the program name the binary sees rather than being an argument
+itself. A missing `argvX` ends the list, so `argv3` without `argv2` is not read.
+Up to 0.14.0 these were read as `arg1`, `arg2`, … — a spelling no address
+generator produces, so a conformant address ran the binary with no arguments at
+all.
 
 **`launchd:env=VAR`** is how macOS advertises its session bus. The address names
 an environment variable rather than a path; the socket is looked up with

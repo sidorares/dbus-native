@@ -2,9 +2,8 @@
 
 const { EventEmitter } = require('events');
 const net = require('net');
-const { spawn, spawnSync } = require('child_process');
-const { Duplex } = require('stream');
 
+const { connectToAddress } = require('./lib/address');
 const constants = require('./lib/constants');
 const message = require('./lib/message');
 const clientHandshake = require('./lib/handshake');
@@ -15,92 +14,6 @@ const values = require('./lib/values');
 const errors = require('./lib/errors');
 const names = require('./lib/names');
 const { publishSend, publishReceive } = require('./lib/diagnostics');
-
-// A d-bus address is `family:key=value,key=value`, and DBUS_SESSION_BUS_ADDRESS
-// may hold several of them separated by `;`. See
-// https://dbus.freedesktop.org/doc/dbus-specification.html#addresses
-function parseAddressParams(address) {
-  const [family, paramString = ''] = address.split(':');
-  const params = {};
-  for (const pair of paramString.split(',')) {
-    if (!pair) continue;
-    const [key, value] = pair.split('=');
-    params[key] = value;
-  }
-  return { family: family.toLowerCase(), params };
-}
-
-/**
- * The socket path behind a `launchd:env=VAR` address.
- *
- * macOS keeps the session bus socket in the *launchd* environment, which is
- * not necessarily ours -- a process that was not started from a shell holding
- * the variable still needs to find it. So the spec names a variable to look up
- * with `launchctl getenv` rather than a path.
- * https://dbus.freedesktop.org/doc/dbus-specification.html#transports-launchd
- */
-function launchdSocketPath(varName) {
-  // spawnSync blocks, which is acceptable exactly once during connection setup
-  // and before any I/O has happened. The alternative is making createStream()
-  // async, which would make createConnection() -- and so sessionBus() -- async
-  // for every caller on every platform, to fix one transport on one of them.
-  //
-  // No shell is involved (args are passed as an array), so the variable name
-  // out of the address string cannot turn into a command.
-  const result = spawnSync('launchctl', ['getenv', varName], {
-    encoding: 'utf8'
-  });
-  const fromLaunchd =
-    !result.error && result.status === 0 ? result.stdout.trim() : '';
-
-  // `launchctl getenv` exits 0 with no output for a variable that is not set,
-  // and off macOS it is not there at all. Either way our own environment is
-  // worth a look before giving up -- it is where the variable usually is when
-  // the process came from a shell.
-  return fromLaunchd || process.env[varName] || '';
-}
-
-function connectToAddress(address) {
-  const { family, params } = parseAddressParams(address);
-
-  switch (family) {
-    case 'tcp':
-      return net.createConnection(params.port, params.host || 'localhost');
-    case 'unix':
-      if (params.socket) return net.createConnection(params.socket);
-      if (params.abstract) {
-        // Node supports Linux abstract sockets natively since v20.8.0 by
-        // prefixing the path with a NUL byte - no native addon required.
-        return net.createConnection(`\0${params.abstract}`);
-      }
-      if (params.path) return net.createConnection(params.path);
-      throw new Error(
-        "not enough parameters for 'unix' connection - you need to specify 'socket' or 'abstract' or 'path' parameter"
-      );
-    case 'launchd': {
-      if (!params.env) {
-        throw new Error(
-          "not enough parameters for 'launchd' connection - you need to specify the 'env' parameter"
-        );
-      }
-      const path = launchdSocketPath(params.env);
-      if (!path) {
-        throw new Error(
-          `launchd address names ${params.env}, which is set neither in the launchd environment nor in this process. Is dbus running? (brew services start dbus)`
-        );
-      }
-      return net.createConnection(path);
-    }
-    case 'unixexec': {
-      const args = [];
-      for (let n = 1; params[`arg${n}`]; n++) args.push(params[`arg${n}`]);
-      const child = spawn(params.path, args);
-      return Duplex.from({ writable: child.stdin, readable: child.stdout });
-    }
-    default:
-      throw new Error(`unknown address type:${family}`);
-  }
-}
 
 // macOS does not set DBUS_SESSION_BUS_ADDRESS -- dbus there advertises the
 // session bus through launchd instead, which is what dbus's own client library
