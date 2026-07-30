@@ -56,6 +56,27 @@ describe('cli value shapes', () => {
     );
   });
 
+  it('indents a nested dict under its key', () => {
+    // GetManagedObjects returns a{oa{sa{sv}}}, three deep. Rendered flat --
+    // every level starting at column zero -- it is unreadable.
+    const body = [
+      { '/dev0': { 'com.example.D': { Name: new Variant('s', 'hci0') } } }
+    ];
+    const [objects] = read('a{oa{sa{sv}}}', body, SHAPE);
+    assert.strictEqual(
+      render(objects, 0),
+      [
+        '{',
+        '  "/dev0" -> {',
+        '    "com.example.D" -> {',
+        '      "Name" -> variant s "hci0"',
+        '    }',
+        '  }',
+        '}'
+      ].join('\n')
+    );
+  });
+
   it('does not round a 64-bit value on the way to the terminal', () => {
     const [value] = read('t', [18446744073709551615n], SHAPE);
     assert.strictEqual(render(value, 0), '18446744073709551615');
