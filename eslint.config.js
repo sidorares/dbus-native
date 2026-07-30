@@ -15,11 +15,11 @@ module.exports = [
       globals: {
         ...globals.node,
         // Explicit resource management. Measured, not assumed:
-        // `Symbol.asyncDispose` exists from Node 20, but these two stacks only
-        // from Node 24 -- so code using them has to feature-detect on our floor
-        // of 20.8. The `using` *keyword* also needs 24 and must not appear in
-        // source or tests: it is a syntax error on the older two, which fails
-        // the file before any skip can run.
+        // `Symbol.asyncDispose` predates our floor, but these two stacks only
+        // arrive in Node 24 -- so code using them has to feature-detect. The
+        // `using` *keyword* also needs 24 and must not appear in source or
+        // tests: it is a syntax error on 22, which fails the file before any
+        // skip can run.
         DisposableStack: 'readonly',
         AsyncDisposableStack: 'readonly'
       }
@@ -37,6 +37,13 @@ module.exports = [
       'no-useless-concat': 'error',
       'no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
     }
+  },
+  {
+    // The package is CommonJS, so `sourceType: 'commonjs'` above is right for
+    // everything except the one file that deliberately is not: the ESM interop
+    // check, which has to be real ESM to be worth anything.
+    files: ['**/*.mjs'],
+    languageOptions: { sourceType: 'module' }
   }
 ];
 // No test-globals block: node:test has no globals, so describe/it/before are
