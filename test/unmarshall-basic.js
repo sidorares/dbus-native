@@ -214,58 +214,22 @@ describe('marshall/unmarshall', () => {
       ['x', ['0x7FFFFFFFFFFFFFFF'], false, [9223372036854775807n]],
       ['x', ['-0x8000000000000000'], false, [-9223372036854775808n]],
       ['t', ['0xFFFFFFFFFFFFFFFF'], false, [18446744073709551615n]],
-      [
-        'x',
-        ['0x7FFFFFFFFFFFFFFF'],
-        false,
-        [LongMaxS64],
-        { ReturnLongjs: true }
-      ],
       ['t', ['0x1FFFFFFFFFFFFF'], false, [9007199254740991n]],
       ['t', ['0x0000'], false, [0n]],
-      [
-        't',
-        ['0xFFFFFFFFFFFFFFFF'],
-        false,
-        [LongMaxU64],
-        { ReturnLongjs: true }
-      ],
-      ['x', [LongMaxS53], false, [9007199254740991n]], // Longjs objects in
+      ['x', ['9223372036854775807'], false, [9223372036854775807n]], // decimal
+      ['x', ['-9223372036854775808'], false, [-9223372036854775808n]],
+      ['t', ['18446744073709551615'], false, [18446744073709551615n]],
+      // Long.js is no longer a dependency, but a Long -- and anything else
+      // carrying its {low, high, unsigned} shape -- is still accepted on the
+      // way in, because it is structural and costs nothing to keep.
+      ['x', [LongMaxS53], false, [9007199254740991n]],
       ['x', [LongMinS53], false, [-9007199254740991n]],
       ['t', [LongMaxU53], false, [9007199254740991n]],
       ['t', [LongMinU53], false, [0n]],
       ['x', [LongMaxS64], false, [9223372036854775807n]],
+      ['x', [LongMinS64], false, [-9223372036854775808n]],
       ['t', [LongMaxU64], false, [18446744073709551615n]],
-      ['x', [9007199254740991], false, [LongMaxS53], { ReturnLongjs: true }], // 53bit numbers to objects
-      ['x', [-9007199254740991], false, [LongMinS53], { ReturnLongjs: true }],
-      ['t', [9007199254740991], false, [LongMaxU53], { ReturnLongjs: true }],
-      ['t', [0], false, [LongMinU53], { ReturnLongjs: true }],
-      [
-        'x',
-        ['9223372036854775807'],
-        false,
-        [LongMaxS64],
-        { ReturnLongjs: true }
-      ], // strings to objects
-      [
-        'x',
-        ['-9223372036854775808'],
-        false,
-        [LongMinS64],
-        { ReturnLongjs: true }
-      ],
-      [
-        't',
-        ['18446744073709551615'],
-        false,
-        [LongMaxU64],
-        { ReturnLongjs: true }
-      ],
-      ['t', ['0'], false, [LongMinU64], { ReturnLongjs: true }],
-      ['x', [LongMaxS64], false, [LongMaxS64], { ReturnLongjs: true }], // Longjs object to objects
-      ['x', [LongMinS64], false, [LongMinS64], { ReturnLongjs: true }],
-      ['t', [LongMaxU64], false, [LongMaxU64], { ReturnLongjs: true }],
-      ['t', [LongMinU64], false, [LongMinU64], { ReturnLongjs: true }],
+      ['t', [LongMinU64], false, [0n]],
       [
         'x',
         [
@@ -276,9 +240,8 @@ describe('marshall/unmarshall', () => {
           }
         ],
         false,
-        [LongMaxS64],
-        { ReturnLongjs: true }
-      ], // non-instance Longjs object to objects
+        [9223372036854775807n]
+      ], // the same shape, on a plain object
       [
         'x',
         [
@@ -301,8 +264,7 @@ describe('marshall/unmarshall', () => {
           }
         ],
         false,
-        [LongMaxU64],
-        { ReturnLongjs: true }
+        [18446744073709551615n]
       ],
       [
         't',
