@@ -505,6 +505,63 @@ export interface DBusService {
 // The bus
 // ---------------------------------------------------------------------------
 
+/** `{ path: { interfaceName: { property: value } } }`, in plain values. */
+export type ManagedObjectTree = Record<
+  string,
+  Record<string, Record<string, unknown>>
+>;
+
+/**
+ * A live view of a service's object tree, from `bus.objects()`.
+ *
+ * Values are plain in every connection shape — a view whose contents depended
+ * on how the connection was configured would be useless to write against.
+ */
+export interface ManagedObjects extends EventEmitter {
+  /** The bus name being watched, and the manager's path. */
+  readonly service: string;
+  readonly path: string;
+  /** The unique name currently owning `service`. */
+  readonly owner: string;
+  readonly closed: boolean;
+
+  /** The whole tree. Mutated in place as signals arrive; do not hold slices. */
+  readonly objects: ManagedObjectTree;
+
+  paths(): string[];
+  get(path: string): Record<string, Record<string, unknown>> | undefined;
+  /** The objects implementing an interface, as `{ path: properties }`. */
+  filter(interfaceName: string): Record<string, Record<string, unknown>>;
+
+  /** Remove the match rules and stop listening. Idempotent. */
+  close(): Promise<void>;
+  [Symbol.asyncDispose](): Promise<void>;
+
+  on(
+    event: 'added',
+    listener: (
+      path: string,
+      interfaces: Record<string, Record<string, unknown>>
+    ) => void
+  ): this;
+  on(
+    event: 'removed',
+    listener: (path: string, interfaceNames: string[]) => void
+  ): this;
+  on(
+    event: 'changed',
+    listener: (
+      path: string,
+      interfaceName: string,
+      changed: Record<string, unknown>,
+      invalidated: string[]
+    ) => void
+  ): this;
+  /** The service was replaced or went away; this view is watching nothing. */
+  on(event: 'stale', listener: (newOwner: string) => void): this;
+  on(event: string, listener: (...args: any[]) => void): this;
+}
+
 export interface MessageBus {
   connection: DBusConnection;
   serial: number;
@@ -580,6 +637,25 @@ export interface MessageBus {
 
   /** Paths serving `org.freedesktop.DBus.ObjectManager`. */
   objectManagers: Set<string>;
+
+  /**
+   * A live view of the objects a service manages below `path`.
+   *
+   * One round trip for the whole tree, then kept current from
+   * `InterfacesAdded`, `InterfacesRemoved` and `PropertiesChanged`.
+   *
+   * ```js
+   * const bluez = await bus.objects('org.bluez', '/');
+   * const devices = bluez.filter('org.bluez.Device1');
+   * bluez.on('added', (path, interfaces) => { ... });
+   * await bluez.close();
+   * ```
+   */
+  objects(
+    service: string,
+    path: string,
+    options?: { properties?: boolean }
+  ): Promise<ManagedObjects>;
 
   /**
    * Emit org.freedesktop.DBus.Properties.PropertiesChanged for an exported

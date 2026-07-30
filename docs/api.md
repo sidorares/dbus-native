@@ -545,8 +545,63 @@ them: there is no value to report and the spec says to leave it out.
 last interface goes stops existing rather than lingering as a path with nothing
 on it.
 
-Reading the reply is the usual `a{oa{sa{sv}}}` — three levels deep, so
-`toPlain()` is worth reaching for:
+### Watching one: `bus.objects()`
+
+The client side. `GetManagedObjects` returns `a{oa{sa{sv}}}` — three levels of
+dict with variants at the bottom — and then you have to keep it current from
+three different signals, matched against the right service. Everyone using
+BlueZ or NetworkManager writes this, and writes it slightly wrong.
+
+```js
+const bluez = await bus.objects('org.bluez', '/');
+
+bluez.filter('org.bluez.Device1');
+// { '/org/bluez/hci0/dev_AA': { Alias: 'Headphones', Connected: false } }
+
+bluez.on('added', (path, interfaces) => {});
+bluez.on('removed', (path, interfaceNames) => {});
+bluez.on('changed', (path, iface, changed, invalidated) => {});
+
+await bluez.close();
+```
+
+| member                       |                                                        |
+| ---------------------------- | ------------------------------------------------------ |
+| `view.objects`               | `{ path: { interface: { property: value } } }`         |
+| `view.paths()`               | every managed path                                     |
+| `view.get(path)`             | one object's interfaces, or `undefined`                |
+| `view.filter(interfaceName)` | `{ path: properties }` for objects implementing it     |
+| `view.owner`                 | the unique name currently owning the service           |
+| `view.close()`               | remove the match rules and stop listening — idempotent |
+
+It also implements `Symbol.asyncDispose`, so the match rules — the resource
+people forget — can be scoped rather than released by hand:
+
+```js
+await using bluez = await bus.objects('org.bluez', '/');
+```
+
+**Values are plain in every connection shape.** A view whose contents depended
+on `plainValues` would be useless to write against.
+
+**It subscribes before it fetches.** Fetching first leaves a window where an
+object appears, its `InterfacesAdded` goes nowhere, and the view is permanently
+missing it. Signals arriving during startup are buffered and replayed onto the
+snapshot.
+
+**`PropertiesChanged` is tracked too**, so a value stays current and not just
+the set of objects. Pass `{ properties: false }` to skip it and the match rule
+it costs. An invalidated property is _dropped_ from the view rather than left
+at its old value — keeping a value the service has disowned is how a view
+starts lying; re-read it with `Properties.Get`.
+
+**A `'stale'` event fires if the service is replaced or goes away.** The view
+does not resynchronise itself: re-fetching would race whatever the caller is
+doing with it, and a half-updated tree is worse than a stale one that says so.
+Make a new view.
+
+If you only want the snapshot, the raw call is fine — just reach for
+`toPlain()`, because three levels of pairs is not readable:
 
 ```js
 const objects = toPlain(await bus.invoke({/* GetManagedObjects */}));

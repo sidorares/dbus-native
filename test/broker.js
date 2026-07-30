@@ -653,6 +653,64 @@ describe('broker', { timeout: 20000 }, () => {
       assert.strictEqual(seen[0].sender, sender.name);
     });
 
+    it("resolves a well-known sender='' to whoever owns it", async () => {
+      // A signal carries the sender's *unique* name, so comparing a
+      // well-known one literally never matches and the rule silently never
+      // fires. dbus-daemon resolves it; this did not, which made every
+      // signal-driven ObjectManager test pass against the daemon and fail here.
+      const sender = await client();
+      await request(sender, 'com.example.Named');
+      const listener = await client();
+      const seen = await watch(
+        listener,
+        "type='signal',sender='com.example.Named',interface='com.example.ByName'",
+        msg => msg['interface'] === 'com.example.ByName'
+      );
+      sender.sendSignal('/o', 'com.example.ByName', 'Fired', 's', ['payload']);
+      await settle();
+      assert.strictEqual(seen.length, 1);
+      // Delivered under the unique name, as the spec requires.
+      assert.strictEqual(seen[0].sender, sender.name);
+    });
+
+    it('does not deliver from a different owner of the same shape', async () => {
+      const named = await client();
+      await request(named, 'com.example.Owner');
+      const other = await client();
+      const listener = await client();
+      const seen = await watch(
+        listener,
+        "type='signal',sender='com.example.Owner',interface='com.example.Scoped'",
+        msg => msg['interface'] === 'com.example.Scoped'
+      );
+      // Same signal, from a connection that does not own the name.
+      other.sendSignal('/o', 'com.example.Scoped', 'Fired', 's', ['nope']);
+      await settle();
+      assert.deepStrictEqual(seen, []);
+
+      named.sendSignal('/o', 'com.example.Scoped', 'Fired', 's', ['yes']);
+      await settle();
+      assert.strictEqual(seen.length, 1);
+      assert.deepStrictEqual(seen[0].body, ['yes']);
+    });
+
+    it('follows the name when it changes hands', async () => {
+      // The rule is written once; ownership moves afterwards. dbus-daemon
+      // re-evaluates, so a rule added before a service starts works once it
+      // does -- which is the normal case for anything watching a system service.
+      const listener = await client();
+      const seen = await watch(
+        listener,
+        "type='signal',sender='com.example.Moving',interface='com.example.Moved'",
+        msg => msg['interface'] === 'com.example.Moved'
+      );
+      const later = await client();
+      await request(later, 'com.example.Moving');
+      later.sendSignal('/o', 'com.example.Moved', 'Fired', 's', ['after']);
+      await settle();
+      assert.strictEqual(seen.length, 1);
+    });
+
     it('does not deliver one nobody asked for', async () => {
       const sender = await client();
       const listener = await client();
