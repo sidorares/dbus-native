@@ -500,6 +500,59 @@ Lower-level pieces, if you are not using `exportInterface`:
 | `bus.sendError(msg, errorName, errorText)`                            | error-reply to a method call |
 | `bus.setMethodCallHandler(path, iface, member, [handler, signature])` | handle one member            |
 
+### Publishing a tree: ObjectManager
+
+`org.freedesktop.DBus.ObjectManager` is how a service with many objects lets a
+client fetch all of them, with their properties, in one round trip — and get
+told when they come and go. BlueZ, NetworkManager, systemd and UDisks all use
+it, so it is how "list the devices" is spelled on a real bus.
+
+```js
+bus.exportObjectManager('/com/example');
+
+bus.exportInterface(hci0, '/com/example/dev0', deviceIface); // InterfacesAdded
+bus.exportInterface(hci1, '/com/example/dev1', deviceIface); // InterfacesAdded
+
+bus.unexportInterface('/com/example/dev1'); // InterfacesRemoved
+```
+
+That is the whole API. `GetManagedObjects` is answered for you, the interface
+appears in the introspection XML at the manager path, and the two signals are
+emitted as objects are exported and unexported.
+
+| method                                         |                                         |
+| ---------------------------------------------- | --------------------------------------- |
+| `bus.exportObjectManager(path)`                | serve ObjectManager at `path`           |
+| `bus.unexportInterface(path[, interfaceName])` | stop serving an object or one interface |
+
+Four things worth knowing:
+
+- **A manager reports what is strictly below it**, never itself. This is why
+  BlueZ's manager is at `/` and reports `/org/bluez/hci0`.
+- **Opt-in.** A path only manages a tree if you say so — a client has no way to
+  know it can call `GetManagedObjects` unless the interface is advertised, and
+  answering everywhere would claim a tree at any path someone asked about.
+- **Managers may nest.** The deepest one containing an object is the one that
+  announces it, so `/` and `/com/example` can both be managers without every
+  signal arriving twice at the root.
+- **`InterfacesAdded` announces only what appeared.** Re-exporting one interface
+  on an object that already had three is not news about the other three.
+
+Write-only properties are omitted from the reply, exactly as `GetAll` omits
+them: there is no value to report and the spec says to leave it out.
+
+`unexportInterface` returns whether anything was removed, and an object whose
+last interface goes stops existing rather than lingering as a path with nothing
+on it.
+
+Reading the reply is the usual `a{oa{sa{sv}}}` — three levels deep, so
+`toPlain()` is worth reaching for:
+
+```js
+const objects = toPlain(await bus.invoke({/* GetManagedObjects */}));
+// { '/com/example/dev0': { 'com.example.Device': { Name: 'hci0' } } }
+```
+
 ---
 
 ## Connection (low-level)

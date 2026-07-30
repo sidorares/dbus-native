@@ -548,6 +548,40 @@ export interface MessageBus {
   exportInterface(obj: unknown, path: string, iface: InterfaceDescriptor): void;
 
   /**
+   * Stop serving an object, or one interface of it.
+   *
+   * Emits `InterfacesRemoved` if a manager is responsible for the path. An
+   * object whose last interface is removed stops existing entirely, rather
+   * than lingering as a path with nothing on it.
+   *
+   * @returns whether anything was actually removed
+   */
+  unexportInterface(path: string, interfaceName?: string): boolean;
+
+  /**
+   * Serve `org.freedesktop.DBus.ObjectManager` at `path`.
+   *
+   * It reports every object exported **strictly below** `path` — which is why
+   * BlueZ puts one at `/` and reports `/org/bluez/hci0` — and emits
+   * `InterfacesAdded`/`InterfacesRemoved` as objects come and go. Managers may
+   * nest; the deepest one containing an object announces it, so no object is
+   * announced twice.
+   *
+   * Opt-in rather than automatic: the interface has to appear in the
+   * introspection XML for a client to know it can call `GetManagedObjects`.
+   */
+  exportObjectManager(path: string): this;
+
+  /** Announce interfaces at `path`; `exportInterface` calls this for you. */
+  emitInterfacesAdded(path: string, interfaceNames: string[]): void;
+
+  /** Announce their removal; `unexportInterface` calls this for you. */
+  emitInterfacesRemoved(path: string, interfaceNames: string[]): void;
+
+  /** Paths serving `org.freedesktop.DBus.ObjectManager`. */
+  objectManagers: Set<string>;
+
+  /**
    * Emit org.freedesktop.DBus.Properties.PropertiesChanged for an exported
    * interface.
    *
