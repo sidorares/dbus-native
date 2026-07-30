@@ -97,7 +97,7 @@
     "arrowParens": "avoid"
   },
   "engines": {
-    "node": ">=20.8.0"
+    "node": ">=22.12.0"
   },
   "types": "index.d.ts"
 }

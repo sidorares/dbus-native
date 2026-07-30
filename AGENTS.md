@@ -15,9 +15,22 @@ not add a runtime dependency without a strong reason** — several past releases
 were spent removing them, and the small dependency tree is a feature users
 choose this package for. `devDependencies` are less precious.
 
-Node >= 20.8.0. That floor is load-bearing: it is the version that gained
-native Linux abstract-socket support, which let us delete the `abstract-socket`
-native addon.
+Node >= 22.12.0, and the exact number is load-bearing in two ways. Node 20
+reached end of life on 2026-04-30, and **22.12 is the first release where
+`require()` of an ESM module works unflagged** — 22.0 fails it with
+`ERR_REQUIRE_ESM`, verified rather than assumed. That is what keeps ESM-only a
+decision we can still make without a second major.
+
+The previous floor of 20.8.0 was load-bearing for its own reason: it was the
+version that gained native Linux abstract-socket support, which let us delete
+the `abstract-socket` native addon. Nothing needs that any more, since 22 has
+it too.
+
+`Symbol.asyncDispose` is available from Node 20, but `AsyncDisposableStack` and
+the `using` keyword only from 24. So the disposal protocol works everywhere we
+support and the keyword stays the consumer's choice — it cannot appear in our
+own tests, where it is a syntax error on anything below 24 and fails the file
+before a skip could run.
 
 ## Layout
 

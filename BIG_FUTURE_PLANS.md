@@ -390,12 +390,17 @@ erasable type. The original's conclusion stands unchanged: `defineInterface` is
 the API, decorators are an optional export for people who already have a
 TypeScript pipeline.
 
-**Node 20 reached end of life on 2026-04-30.** The current floor of 20.8.0 is
-now a dead LTS line. A major is the moment to raise it; Node 22 is the
-conservative choice and 24 buys `await using` in our own source. I would raise
-to 22 and use `Symbol.asyncDispose` without the syntax internally, because the
-embedded audience upgrades slowly and the syntax is a convenience for us, not a
-capability.
+**Node 20 reached end of life on 2026-04-30.** ✅ **Raised to 22.12.0**, and
+the patch number is the interesting part. The reasoning above said "22", but
+`require(esm)` — the thing that makes ESM-only tractable — is unflagged only
+from **22.12**: 22.0 fails it with `ERR_REQUIRE_ESM`, which I measured rather
+than assumed after writing §4 on the strength of "22.12+". A floor of `>=22.0`
+would have quietly given up the option this document argues for.
+
+24 would buy `await using` in our own source. It is not worth it: the embedded
+audience upgrades slowly, and the syntax is a convenience for us rather than a
+capability. `Symbol.asyncDispose` works from 20 and so works everywhere we
+support.
 
 ---
 

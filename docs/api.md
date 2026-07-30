@@ -399,10 +399,11 @@ stack.use(await bus.watch("type='signal',interface='org.example.Iface'"));
 ```
 
 **The protocol works on every supported Node; the syntax does not.**
-`Symbol.asyncDispose` is available from Node 20, so `await x[Symbol.asyncDispose]()`
-and the `close()`/`remove()`/`release()` methods work on the whole supported
-range. `AsyncDisposableStack` and the `using` keyword need Node 24 — that is
-the consumer's choice, not a floor this package imposes.
+`Symbol.asyncDispose` predates the 22.12 floor, so
+`await x[Symbol.asyncDispose]()` and the `close()`/`remove()`/`release()`
+methods work on the whole supported range. `AsyncDisposableStack` and the
+`using` keyword need Node 24 — that is the consumer's choice, not a floor this
+package imposes.
 
 `bus.close()` resolves once the connection is really closed, by which point
 every in-flight call has been failed with `ConnectionClosedError` rather than

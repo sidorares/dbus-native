@@ -338,7 +338,10 @@ rewrite.
 
 Note the library implements `Symbol.asyncDispose` regardless of the consumer's
 Node version — only the `using` _keyword_ needs Node 24, and that is the user's
-choice, not a floor we impose. The engines floor stays at 20.8 here.
+choice, not a floor we impose. The engines floor moved to **22.12.0** with the
+type-system release rather than here, because Node 20 reached end of life on
+2026-04-30 and 22.12 is where `require(esm)` becomes available — see
+BIG_FUTURE_PLANS §4.
 
 ---
 
