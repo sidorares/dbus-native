@@ -316,17 +316,18 @@ nothing behind it, is cheap insurance and belongs in this release train.
 
 Two of these change decisions the original made.
 
-| feature                                | status on Node 26          | consequence                               |
-| -------------------------------------- | -------------------------- | ----------------------------------------- |
-| `await using` / `Symbol.asyncDispose`  | ✅ native, syntax included | §1 is unblocked                           |
-| `AsyncDisposableStack`                 | ✅ native                  | §1                                        |
-| `Promise.withResolvers()`              | ✅ native                  | simplifies the cookie table               |
-| `AbortSignal.timeout()`, `Error.cause` | ✅ native                  | shipped already                           |
-| **`require()` of an ESM module**       | ✅ **unflagged** (22.12+)  | **weakens the ESM-only objection**        |
-| **TypeScript type stripping**          | ✅ **unflagged**           | changes the codegen story, not decorators |
-| Sync iterator helpers                  | ✅ native                  | —                                         |
-| **Async iterator helpers**             | ❌ still absent            | §2.4 — callbacks lead                     |
-| **Decorators**                         | ❌ still a `SyntaxError`   | §7 stays `defineInterface`                |
+| feature                                | status on Node 26         | consequence                               |
+| -------------------------------------- | ------------------------- | ----------------------------------------- |
+| `Symbol.asyncDispose`                  | ✅ from Node **20**       | §1 works across the whole supported range |
+| `await using` keyword                  | ✅ from Node **24**       | consumer's choice; unusable in our tests  |
+| `AsyncDisposableStack`                 | ✅ from Node **24**       | §1, feature-detected                      |
+| `Promise.withResolvers()`              | ✅ native                 | simplifies the cookie table               |
+| `AbortSignal.timeout()`, `Error.cause` | ✅ native                 | shipped already                           |
+| **`require()` of an ESM module**       | ✅ **unflagged** (22.12+) | **weakens the ESM-only objection**        |
+| **TypeScript type stripping**          | ✅ **unflagged**          | changes the codegen story, not decorators |
+| Sync iterator helpers                  | ✅ native                 | —                                         |
+| **Async iterator helpers**             | ❌ still absent           | §2.4 — callbacks lead                     |
+| **Decorators**                         | ❌ still a `SyntaxError`  | §7 stays `defineInterface`                |
 
 **`require(esm)` is the significant one.** The original argued for ESM-only on
 the grounds that a dual package ships two copies of `Variant` and breaks
@@ -393,8 +394,13 @@ The useful cut, now that the gate exists to verify it.
 
 **Additive, ships whenever it is ready:**
 
-- `await using` / `Symbol.asyncDispose` — implementing the protocol breaks
-  nothing
+- ~~`await using` / `Symbol.asyncDispose`~~ ✅ shipped. `bus.close()`,
+  `bus.watch()` and `bus.ownName()`, each disposable. Measured while building
+  it: `Symbol.asyncDispose` is available from Node 20 but `AsyncDisposableStack`
+  and the `using` keyword only from 24 — so the protocol works on the whole
+  supported range and the keyword stays the consumer's choice, exactly as this
+  document argued. The keyword cannot appear in our own tests at all: it is a
+  syntax error on 20 and 22, which fails the file before a skip could run.
 - `bus.proxy()` — a new method beside `getService()`
 - `bus.objects()` and `exportTree()` (§3.1)
 - signal subscriptions and the iterable form (§2.4)
