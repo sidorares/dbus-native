@@ -408,6 +408,12 @@ module.exports.isValidBusName = names.isValidBusName;
 
 module.exports.createConnection = createConnection;
 
+// Declaring a service interface without the positional arrays. Compiles to the
+// classic descriptor, so it exports through the same path. See
+// lib/define-interface.js.
+module.exports.defineInterface =
+  require('./lib/define-interface').defineInterface;
+
 module.exports.createServer = server.createServer;
 
 // An in-process message bus. Not a replacement for dbus-daemon -- no security

@@ -407,8 +407,13 @@ The useful cut, now that the gate exists to verify it.
 - the Node floor (§4)
 - dropping `long`, `ReturnLongjs`, `dbus2js`, and `lib/address-x11.js` — which
   is published in `lib/` and throws `Cannot find module 'x11'` on require
-- `defineInterface` replacing the positional descriptor arrays (§7 of the
-  original, unchanged and still right)
+- ~~`defineInterface` replacing the positional descriptor arrays~~ — shipped
+  **additively** instead, which turned out to be the whole of it: it compiles
+  to the classic descriptor, so `exportInterface` is unchanged and nothing
+  downstream knows which spelling was used. Nothing had to break. The handler
+  context (#230) came for free, because `bus.js` already passed the message
+  after the arguments — what was missing was a shape around it rather than the
+  data.
 
 **Additive, ships whenever it is ready:**
 

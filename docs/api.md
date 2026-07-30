@@ -600,6 +600,81 @@ iface.$signals; // { ActionInvoked: ['su', 'id', 'action'] }
 
 ## Exporting a service
 
+### `defineInterface()`
+
+```js
+const { defineInterface } = require('dbus-native');
+
+let volume = 0.5;
+
+const greeter = defineInterface({
+  name: 'com.example.Greeter',
+  methods: {
+    Hello: {
+      in: { name: 's' },
+      out: { greeting: 's' },
+      handler: ({ name }, { sender }) => `Hello ${name}, from ${sender}`
+    }
+  },
+  properties: {
+    Volume: {
+      type: 'd',
+      get: () => volume,
+      set: v => {
+        volume = v;
+      }
+    },
+    Version: { type: 's', access: 'read', get: () => '1.2.3' }
+  },
+  signals: { Greeted: { args: { who: 's' } } }
+});
+
+await bus.requestName('com.example.Greeter', 0);
+await using reg = await bus.export('/com/example/Greeter', greeter);
+
+greeter.emit.Greeted('world');
+```
+
+Four things this has that the positional form does not:
+
+- **Arguments have names in the source**, not just in the introspection XML,
+  and a handler receives them as an object. `in: { name: 's', count: 'u' }`
+  says what `'su'` meant.
+- **A handler is told who called it** — `{ sender, path, interface, member,
+message }`. That was reachable before only because the raw message happens to
+  be passed after the arguments, which is
+  [#230](https://github.com/sidorares/dbus-native/issues/230).
+- **A property can be computed.** `get`/`set` are functions, so a value can be
+  derived rather than stored, and a `set` still gets `PropertiesChanged`
+  emitted for it automatically.
+- **Mistakes are caught where they were written.** An unknown key, a `set` on a
+  read-only property, an invalid member name — all rejected by
+  `defineInterface()` rather than at export or on the first call.
+
+Returning values: give the value directly when one `out` is declared, and an
+object keyed by the `out` names when there are several.
+
+```js
+Split: {
+  in: { text: 's' },
+  out: { head: 's', tail: 's' },
+  handler: ({ text }) => ({ head: text[0], tail: text.slice(1) })
+}
+```
+
+That asymmetry is deliberate and matches how a reply is read: `invoke` hands
+back the value for a one-value reply and an array for several.
+
+`bus.export(path, definition)` resolves to a registration with `remove()` and
+`Symbol.asyncDispose`, so an exported object can be scoped like any other
+resource. `greeter.emit.Greeted(...)` throws if the interface has not been
+exported yet, rather than emitting into nothing.
+
+### The positional form
+
+Still supported, still what `exportInterface` takes, and what `defineInterface`
+compiles to:
+
 ```js
 const ifaceDesc = {
   name: 'com.example.Iface',

@@ -663,6 +663,94 @@ export interface DBusProxy {
   [member: string]: any;
 }
 
+/** What a handler is told about the call it is answering. Closes #230. */
+export interface HandlerContext {
+  /** The caller's unique name. */
+  sender?: string;
+  path?: string;
+  interface?: string;
+  member?: string;
+  /** The whole message, for anything this does not name. */
+  message?: Message;
+}
+
+/** A method, declared with named arguments rather than four positional slots. */
+export interface MethodDefinition {
+  /** `{ name: 's', count: 'u' }` — order is the wire order. */
+  in?: Record<string, string>;
+  out?: Record<string, string>;
+  /**
+   * Called with the arguments by name and a context.
+   *
+   * Return the value directly when one `out` is declared; return an object
+   * keyed by the `out` names when there are several.
+   */
+  handler: (args: any, context: HandlerContext) => unknown;
+}
+
+export interface PropertyDefinition {
+  type: string;
+  /** Defaults to `readwrite`, and is enforced. */
+  access?: 'read' | 'write' | 'readwrite';
+  get?: () => unknown;
+  /** Writing through this emits `PropertiesChanged` for you. */
+  set?: (value: unknown) => void;
+  /** A plain starting value, instead of `get`/`set`. */
+  value?: unknown;
+}
+
+export interface InterfaceDefinition {
+  name: string;
+  methods?: Record<
+    string,
+    MethodDefinition | ((args: any, context: HandlerContext) => unknown)
+  >;
+  properties?: Record<string, PropertyDefinition | string>;
+  signals?: Record<string, { args?: Record<string, string> }>;
+}
+
+/** What `defineInterface()` produces. */
+export interface DefinedInterface {
+  readonly name: string;
+  /** The classic positional descriptor, for `exportInterface()`. */
+  readonly descriptor: InterfaceDescriptor;
+  /** The object the descriptor is bound to. */
+  readonly impl: Record<string, any>;
+  /** One function per declared signal. Throws before the interface is exported. */
+  readonly emit: Record<string, (...args: any[]) => void>;
+}
+
+/**
+ * Declare an interface without the positional arrays.
+ *
+ * ```js
+ * const greeter = defineInterface({
+ *   name: 'com.example.Greeter',
+ *   methods: {
+ *     Hello: {
+ *       in: { name: 's' },
+ *       out: { greeting: 's' },
+ *       handler: ({ name }, { sender }) => `Hello ${name}, from ${sender}`
+ *     }
+ *   }
+ * });
+ * ```
+ *
+ * Compiles to the classic descriptor, so it exports through the same path.
+ * Names, accessors and unknown keys are checked here — where the declaration
+ * was written — rather than at export or on the first call.
+ */
+export function defineInterface(spec: InterfaceDefinition): DefinedInterface;
+
+/** An exported interface that can be unexported, from `bus.export()`. */
+export interface ExportRegistration {
+  readonly path: string;
+  readonly interfaceName: string;
+  readonly removed: boolean;
+  remove(): Promise<void>;
+  [Symbol.asyncDispose](): Promise<void>;
+}
+
 /** A signal subscription that can be removed, from `proxy.$watch()`. */
 export interface SignalSubscription {
   readonly signal: string;
@@ -750,6 +838,18 @@ export interface MessageBus {
     handler: [(...args: any[]) => any, string]
   ): void;
   exportInterface(obj: unknown, path: string, iface: InterfaceDescriptor): void;
+
+  /**
+   * Export an interface definition, and get something that unexports it.
+   *
+   * ```js
+   * await using reg = await bus.export('/com/example/Greeter', greeter);
+   * ```
+   */
+  export(
+    path: string,
+    definition: DefinedInterface
+  ): Promise<ExportRegistration>;
 
   /**
    * Stop serving an object, or one interface of it.
