@@ -208,6 +208,23 @@ function createConnection(opts) {
     return self;
   };
 
+  // Lets a raw connection be scoped the way a MessageBus can be. Resolves once
+  // the transport is actually down rather than merely asked to close, so a
+  // caller that awaits it knows the socket has gone.
+  self[Symbol.asyncDispose] = () =>
+    new Promise(resolve => {
+      if (stream.destroyed) return setImmediate(resolve);
+      let settled = false;
+      const done = () => {
+        if (settled) return;
+        settled = true;
+        resolve();
+      };
+      self.once('close', done);
+      self.once('end', done);
+      stream.end();
+    });
+
   // The shapes the parser hands back, changeable after the connection is up.
   //
   // This exists for `dbus-native/compat`, and it is the only faithful way to

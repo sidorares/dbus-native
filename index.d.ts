@@ -295,6 +295,8 @@ export interface DBusConnection extends EventEmitter {
     ayBuffer?: boolean;
     variants?: 'tree' | 'plain' | 'wrap';
   }): this;
+  /** End the transport, resolving once it is really down. */
+  [Symbol.asyncDispose](): Promise<void>;
 
   on(event: 'connect', listener: () => void): this;
   on(event: 'message', listener: (msg: Message) => void): this;
@@ -562,6 +564,25 @@ export interface ManagedObjects extends EventEmitter {
   on(event: string, listener: (...args: any[]) => void): this;
 }
 
+/** A match rule that can be removed, from `bus.watch()`. */
+export interface Subscription {
+  readonly rule: string;
+  readonly removed: boolean;
+  remove(): Promise<void>;
+  [Symbol.asyncDispose](): Promise<void>;
+}
+
+/** A well-known name that can be released, from `bus.ownName()`. */
+export interface NameRegistration {
+  readonly name: string;
+  /** The RequestName reply: 1 primary owner, 2 queued, 3 taken, 4 already ours. */
+  readonly result: number;
+  readonly isPrimaryOwner: boolean;
+  readonly released: boolean;
+  release(): Promise<void>;
+  [Symbol.asyncDispose](): Promise<void>;
+}
+
 export interface MessageBus {
   connection: DBusConnection;
   serial: number;
@@ -637,6 +658,40 @@ export interface MessageBus {
 
   /** Paths serving `org.freedesktop.DBus.ObjectManager`. */
   objectManagers: Set<string>;
+
+  /**
+   * Close the connection, resolving once it is actually closed.
+   *
+   * Every in-flight call has been failed with `ConnectionClosedError` by then,
+   * and writes already issued are flushed on the way out. Idempotent.
+   *
+   * It does not remove match rules or release names first — the bus drops both
+   * when the connection goes, so unwinding them by hand would only make
+   * shutdown slower. Use `watch()` and `ownName()` for resources that need to
+   * end before the connection does.
+   */
+  close(): Promise<void>;
+  [Symbol.asyncDispose](): Promise<void>;
+
+  /**
+   * Add a match rule, and get something that removes it.
+   *
+   * ```js
+   * await using sub = await bus.watch("type='signal',interface='…'");
+   * ```
+   *
+   * This is the resource people forget: a process that adds match rules and
+   * never removes them has the bus deliver steadily more traffic to it.
+   */
+  watch(rule: string): Promise<Subscription>;
+
+  /**
+   * Request a well-known name, and get something that releases it.
+   *
+   * Not getting the name is reported rather than thrown — being queued behind
+   * another owner is a legitimate outcome. Check `isPrimaryOwner`.
+   */
+  ownName(name: string, flags?: number): Promise<NameRegistration>;
 
   /**
    * A live view of the objects a service manages below `path`.

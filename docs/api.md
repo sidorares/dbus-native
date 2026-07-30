@@ -243,6 +243,60 @@ bus.signals.on(key, (body, signature) => console.log(body));
 The [proxy API](#proxy-api) wraps both steps — `iface.on('Pinged', handler)`
 adds the match rule for you.
 
+### Scoped resources
+
+A match rule is the thing people forget to remove. A process that adds them and
+never removes them has the bus deliver steadily more traffic to it, for signals
+nothing is still listening for. `bus.watch()` and `bus.ownName()` hand back
+something that releases itself:
+
+```js
+const sub = await bus.watch("type='signal',interface='org.example.Iface'");
+// …
+await sub.remove();
+
+const reg = await bus.ownName('com.example.Greeter');
+if (!reg.isPrimaryOwner) console.log('queued behind', reg.result);
+await reg.release();
+```
+
+Both implement `Symbol.asyncDispose`, as does the bus itself and the raw
+connection, so on Node 24+ the language can do it:
+
+```js
+await using bus = dbus.sessionBus();
+await using reg = await bus.ownName('com.example.Greeter');
+await using sub = await bus.watch(
+  "type='signal',interface='org.example.Iface'"
+);
+```
+
+or with `AsyncDisposableStack`, which is the shape of a whole service:
+
+```js
+await using stack = new AsyncDisposableStack();
+const bus = stack.use(dbus.sessionBus());
+stack.use(await bus.ownName('com.example.Greeter'));
+stack.use(await bus.watch("type='signal',interface='org.example.Iface'"));
+// everything unwinds in reverse, whether the scope ends normally or throws
+```
+
+**The protocol works on every supported Node; the syntax does not.**
+`Symbol.asyncDispose` is available from Node 20, so `await x[Symbol.asyncDispose]()`
+and the `close()`/`remove()`/`release()` methods work on the whole supported
+range. `AsyncDisposableStack` and the `using` keyword need Node 24 — that is
+the consumer's choice, not a floor this package imposes.
+
+`bus.close()` resolves once the connection is really closed, by which point
+every in-flight call has been failed with `ConnectionClosedError` rather than
+left waiting. Messages already sent are flushed on the way out. It is
+idempotent and safe on a connection that has already gone.
+
+It deliberately does **not** remove match rules or release names first: the bus
+drops both when the connection goes, so unwinding them by hand would be round
+trips whose only effect is a slower shutdown. Scope them individually when they
+need to end _before_ the connection does — which is the case that matters.
+
 ### Properties
 
 | property         |                                                           |
