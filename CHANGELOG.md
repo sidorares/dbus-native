@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.13.0](https://github.com/sidorares/dbus-native/compare/v0.12.0...v0.13.0) (2026-07-30)
+
+
+### Features
+
+* bus.close(), bus.watch() and bus.ownName(), each disposable ([#366](https://github.com/sidorares/dbus-native/issues/366)) ([9d3cc60](https://github.com/sidorares/dbus-native/commit/9d3cc60566c4f4e4c6f74cb871367bc7e9dc4328))
+* bus.objects(), a live view of a service's object tree ([#365](https://github.com/sidorares/dbus-native/issues/365)) ([de3f99e](https://github.com/sidorares/dbus-native/commit/de3f99e520b54ce4a0e5f37dac3e966138ae07ce))
+* bus.proxy(), the remote object as an object ([#367](https://github.com/sidorares/dbus-native/issues/367)) ([31c7e25](https://github.com/sidorares/dbus-native/commit/31c7e2529eaa40e55964dcf23d85964b8d084b7e))
+* defineInterface(), declaring a service without positional arrays ([#371](https://github.com/sidorares/dbus-native/issues/371)) ([77259b4](https://github.com/sidorares/dbus-native/commit/77259b43ea6cc705269c93c63aad93301422215f))
+* proxy.$watch() and proxy.$signal(), bounded ([#370](https://github.com/sidorares/dbus-native/issues/370)) ([6e05385](https://github.com/sidorares/dbus-native/commit/6e05385f2301186b954fc8fc2c003eac673d1ba4))
+* reconnect, opt-in, restoring names and match rules ([#372](https://github.com/sidorares/dbus-native/issues/372)) ([ba698f0](https://github.com/sidorares/dbus-native/commit/ba698f0da510213ae7e638c5a93a76e097a2e6c6))
+* serve org.freedesktop.DBus.ObjectManager ([#364](https://github.com/sidorares/dbus-native/issues/364)) ([e6839ec](https://github.com/sidorares/dbus-native/commit/e6839ec4e1833bb19d1e891965c56d601c8afbd1))
+* UNIX_FD, carried over a transport the caller supplies ([#368](https://github.com/sidorares/dbus-native/issues/368)) ([4ce6d5c](https://github.com/sidorares/dbus-native/commit/4ce6d5ca5d9a332b627235fe1adc6d0252ab9b8c))
+* variants: 'wrap', so a variant can carry its type without the tree ([#363](https://github.com/sidorares/dbus-native/issues/363)) ([2f68183](https://github.com/sidorares/dbus-native/commit/2f6818385ebecde678d16f45afef8c3852290147))
+
+
+### Bug Fixes
+
+* never answer a method call addressed to someone else ([#369](https://github.com/sidorares/dbus-native/issues/369)) ([9b02493](https://github.com/sidorares/dbus-native/commit/9b02493959aada2e78c42e250e4ce2149268b995))
+
+
+### Documentation
+
+* re-evaluate the clean-slate design at v0.12.0 ([#361](https://github.com/sidorares/dbus-native/issues/361)) ([27b218d](https://github.com/sidorares/dbus-native/commit/27b218d9b0e4afe5686ffc34ec12e615a7100eb2))
+
 ## [0.12.0](https://github.com/sidorares/dbus-native/compare/v0.11.0...v0.12.0) (2026-07-29)
 
 
