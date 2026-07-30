@@ -106,6 +106,7 @@ socket other processes can reach.
 | `plainValues`    | `boolean`                 | `false`                                         | read variants and dicts in the 2.0 shapes — see below          |
 | `variants`       | `'tree'\|'plain'\|'wrap'` | follows `plainValues`                           | how a `v` comes back; `'wrap'` keeps the signature — see below |
 | `ReturnLongjs`   | `boolean`                 | `false`                                         | **deprecated** (`DBUS_DEP0001`) — 64-bit as Long.js            |
+| `reconnect`      | `boolean \| object`       | `false`                                         | reconnect when the transport goes away — see below             |
 
 Address forms understood by `busAddress`: `unix:path=…`, `unix:abstract=…`,
 `unix:socket=…`, `tcp:host=…,port=…`, `unixexec:path=…,arg1=…`, and
@@ -307,6 +308,54 @@ Three details that matter if you write a transport:
   cork and goes on its own.
 - **Ownership is yours.** Nothing here dups or closes anything; a received
   descriptor is a live fd in your process and closing it is your job.
+
+### Reconnecting
+
+**Off by default**, and deliberately so: reconnecting changes what a connection
+means. The unique name is reassigned, so anyone holding the old one is talking
+to nobody, and every well-known name and match rule is gone until it is asked
+for again. That is a decision for the program.
+
+```js
+const bus = dbus.sessionBus({
+  reconnect: { retries: Infinity, minDelay: 100, maxDelay: 30_000, factor: 2 }
+});
+
+bus.on('reconnected', ({ name, names }) => {
+  // new unique name, and `names` are back
+});
+```
+
+`reconnect: true` takes the defaults above.
+
+| event                                    | on         |                                               |
+| ---------------------------------------- | ---------- | --------------------------------------------- |
+| `reconnecting` `{attempt, delay, cause}` | connection | a retry is scheduled                          |
+| `reconnect`                              | connection | the transport is back, nothing restored yet   |
+| `reconnected` `{name, names}`            | bus        | names and match rules are back                |
+| `reconnectError`                         | bus        | reconnected, but restoring them failed        |
+| `reconnectFailed`                        | connection | `retries` exhausted, nothing more will happen |
+
+**What comes back**, before `reconnected` fires: the unique name (a fresh
+`Hello`), every well-known name in `bus.names`, and every match rule added
+through `bus.addMatch` — which includes everything `bus.watch()`,
+`proxy.$watch()` and `bus.objects()` install. Objects exported with
+`exportInterface` never went anywhere; they live on the bus, not on the socket.
+
+**What does not.** A rule installed by calling
+`invokeDbus({ member: 'AddMatch' })` directly is not recorded and will not
+return. And **nothing in flight is retried** — those calls were already failed
+with `ConnectionClosedError` when the socket went, and a method call is not
+idempotent, so replaying one could charge a card twice. Re-issuing is yours to
+decide, which is what `reconnected` is for.
+
+Retries back off exponentially to `maxDelay`, because the usual reason a bus is
+unreachable is that it is restarting and hammering it does not help. A pending
+retry does not hold the process open.
+
+`reconnect` cannot be combined with `opts.stream`: a stream the caller supplied
+cannot be reopened, and pretending otherwise would redial the same dead socket
+forever. It throws at construction rather than at the first disconnect.
 
 ### Scoped resources
 
