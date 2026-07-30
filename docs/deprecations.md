@@ -40,27 +40,36 @@ individual codes.
 
 ## DBUS_DEP0001
 
-**Runtime.** The `ReturnLongjs` option is deprecated.
+**Removed in 2.0**, having warned since 0.6. The `ReturnLongjs` option.
 
-Since **2.0**, 64-bit values (`x` and `t`) come back as native `BigInt`, which
-represents the full 64-bit range with no dependency and no option. Before that
-they were a lossy `number`, or [long.js](https://github.com/dcodeIO/long.js)
-objects with `ReturnLongjs: true`.
+64-bit values (`x` and `t`) come back as native `BigInt`, which represents the
+full 64-bit range with no dependency and no option. Before 2.0 they were a
+lossy `number`, or [long.js](https://github.com/dcodeIO/long.js) objects with
+`ReturnLongjs: true`.
 
 ```js
-// deprecated
+// removed -- throws, naming the replacement
 const bus = dbus.sessionBus({ ReturnLongjs: true });
 const size = value.toNumber(); // lossy above 2^53
 
 // the default
 const size = await disk.Size(); // 2000398934016n
+
+// the lossy number, if that is genuinely what your code wants
+const bus = dbus.sessionBus({ returnBigInt: false });
 ```
 
-Setting `ReturnLongjs` opts back out of `BigInt`, which is the only thing it
-still does; `returnBigInt: true` wins if both are set. Writing a `bigint` is
-accepted whatever the read option, so a service and its clients could move
-separately. Note a service reads its _arguments_ through the same parser, so
-setting either option there affects large 64-bit inputs too.
+Passing it **throws** rather than being ignored. Code that sets it expects a
+Long back, and ignoring it would surface as `value.toNumber is not a function`
+somewhere else entirely — at whatever point the value is first used, which may
+be nowhere near the connection. `ReturnLongjs: false` is accepted, since it
+asked not to be given Longs and is not being given any.
+
+`long` is no longer a dependency. A Long is still _accepted_ on the way in,
+because the check is on its `{low, high, unsigned}` shape and so costs no
+import. Writing a `bigint` was never gated on the read option, so a service and
+its clients could move separately; note a service reads its _arguments_ through
+the same parser, so `returnBigInt` there affects large 64-bit inputs too.
 
 `BigInt` is not a drop-in for `number`: `size + 1` and `JSON.stringify({ size })`
 both throw. That is why it was opt-in for several releases before becoming the
@@ -189,11 +198,11 @@ Closed: [#39](https://github.com/sidorares/dbus-native/issues/39),
 
 ## DBUS_DEP0005
 
-**Runtime.** The `dbus2js` command is deprecated.
+**Removed in 2.0**, having warned since 0.6. The `dbus2js` command.
 
-It emits untyped ES5, does not generate properties at all, and gives generated
-signal handlers a match rule that asks the daemon for every signal of that name
-from every service on the bus. Until 0.7 it also printed parsed property
+It emitted untyped ES5, generated no properties at all, and gave generated
+signal handlers a match rule that asked the daemon for every signal of that
+name from every service on the bus. Until 0.7 it also printed parsed property
 objects into the middle of its own output, so redirecting it to a file produced
 something that was not valid JavaScript.
 
@@ -216,6 +225,7 @@ const iface = await bus
   .getInterface<OrgExampleIface>('/org/example', 'org.example.Iface');
 ```
 
-`dbus2js` still works and its remaining bugs have been fixed, since it is a
-published binary and removing it outright would break build scripts. It will go
-in a future major.
+It shipped as a published binary, so it was kept working -- remaining bugs and
+all -- for as long as it was deprecated rather than removed, on the grounds
+that a build script calling it should keep building until its author had a
+release note telling them why it would not.

@@ -10,10 +10,11 @@ A pure-JavaScript implementation of the D-Bus protocol — wire format
 build step, CommonJS. The reference for anything protocol-shaped is the
 [D-Bus specification](https://dbus.freedesktop.org/doc/dbus-specification.html).
 
-Runtime dependencies are deliberately minimal (`long`, `xml2js`). **Do
-not add a runtime dependency without a strong reason** — several past releases
-were spent removing them, and the small dependency tree is a feature users
-choose this package for. `devDependencies` are less precious.
+There is exactly **one runtime dependency**, `xml2js`, and it is only used to
+parse introspection XML. **Do not add another without a strong reason** —
+several releases were spent getting down to one, and the small dependency tree
+is a feature users choose this package for. `devDependencies` are less
+precious.
 
 Node >= 20.8.0. That floor is load-bearing: it is the version that gained
 native Linux abstract-socket support, which let us delete the `abstract-socket`
@@ -39,7 +40,7 @@ lib/
   stdifaces.js        org.freedesktop.DBus.{Introspectable,Properties,Peer}
   constants.js        message types, header fields, endianness
 bin/                  dbus-native (call/get/set/list/types/introspect/codemod/
-                      lint), dbus2js (legacy codegen), dbus-dissect (dumper)
+                      lint), dbus-dissect (dumper)
 lib/cli/              the dbus-send shaped subcommands
 lib/codegen/          introspection -> TypeScript declarations
 scripts/              dev helpers for running a private session bus
@@ -224,11 +225,12 @@ These have each bitten someone before:
   ugly, widely depended on, and changing it is a breaking change (ROADMAP 4.1).
 - **`ay` is special-cased to a Buffer** (`options.ayBuffer`, default true), so
   byte arrays do not round-trip as plain arrays.
-- **64-bit types lose precision above 2^53** unless `returnBigInt` is set.
-  BigInt becomes the default in 2.0 (RELEASE_PLAN).
-- **`lib/address-x11.js` requires `x11`, which is not a dependency.** Requiring
-  that file throws unless the user installed it separately. It is intentionally
-  opt-in.
+- **64-bit types are `bigint`** since 2.0. `returnBigInt: false` restores the
+  `number`, which loses precision above 2^53.
+- **`long` is a devDependency, not a dependency.** The marshaller still accepts
+  a Long on input, recognised structurally by its `{low, high, unsigned}`
+  shape, so it costs no import; the tests need the real package to build one.
+  The only runtime dependency is `xml2js`.
 - **`test/fixtures/` is excluded from Prettier.** Those bytes are test data;
   reformatting them breaks the tests.
 

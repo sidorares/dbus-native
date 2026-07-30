@@ -438,8 +438,15 @@ The useful cut, now that the gate exists to verify it.
   is not
 - ESM-only, with the no-top-level-await rule (§4)
 - the Node floor (§4)
-- dropping `long`, `ReturnLongjs`, `dbus2js`, and `lib/address-x11.js` — which
-  is published in `lib/` and throws `Cannot find module 'x11'` on require
+- ~~dropping `long`, `ReturnLongjs`, `dbus2js`, and `lib/address-x11.js` — which
+  is published in `lib/` and throws `Cannot find module 'x11'` on require~~ ✅
+  **done.** Runtime dependencies are down to **one**, `xml2js`. `long` became a
+  devDependency rather than disappearing: the marshaller still accepts a Long
+  on input, recognised structurally by `{low, high, unsigned}` so it costs no
+  import, and the tests need the real package to build one. `ReturnLongjs`
+  throws rather than being ignored, because code that sets it expects a Long
+  and would otherwise meet `value.toNumber is not a function` somewhere else
+  entirely.
 - ~~`defineInterface` replacing the positional descriptor arrays~~ — shipped
   **additively** instead, which turned out to be the whole of it: it compiles
   to the classic descriptor, so `exportInterface` is unchanged and nothing

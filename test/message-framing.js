@@ -315,7 +315,7 @@ describe('message.unmarshall', () => {
 describe('DBusBuffer options handling', () => {
   it('does not mutate the caller options object', () => {
     // A connection passes its own opts straight through to every message.
-    const opts = { ReturnLongjs: false };
+    const opts = { returnBigInt: false };
     const before = JSON.stringify(opts);
     message.unmarshall(methodCall({ signature: 's', body: ['x'] }), opts);
     assert.strictEqual(JSON.stringify(opts), before, 'opts gained a property');

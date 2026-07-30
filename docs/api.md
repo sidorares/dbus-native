@@ -105,7 +105,6 @@ socket other processes can reach.
 | `returnBigInt`   | `boolean`                 | `true`                                          | read `x`/`t` as native `bigint`, exactly — see below           |
 | `plainValues`    | `boolean`                 | `true`                                          | read variants and dicts as plain values — see below            |
 | `variants`       | `'tree'\|'plain'\|'wrap'` | follows `plainValues`                           | how a `v` comes back; `'wrap'` keeps the signature — see below |
-| `ReturnLongjs`   | `boolean`                 | `false`                                         | **deprecated** (`DBUS_DEP0001`) — 64-bit as Long.js            |
 | `reconnect`      | `boolean \| object`       | `false`                                         | reconnect when the transport goes away — see below             |
 
 Address forms understood by `busAddress`: `unix:path=…`, `unix:abstract=…`,
@@ -1037,22 +1036,22 @@ re-thrown asynchronously, matching Node's default for a throwing listener.
 
 ### Type mapping
 
-| D-Bus          | code    | JavaScript                                                                             |
-| -------------- | ------- | -------------------------------------------------------------------------------------- |
-| byte           | `y`     | `number`                                                                               |
-| boolean        | `b`     | `boolean`                                                                              |
-| int16 / uint16 | `n` `q` | `number`                                                                               |
-| int32 / uint32 | `i` `u` | `number`                                                                               |
-| int64 / uint64 | `x` `t` | `bigint`, exactly — `number` under `returnBigInt: false`, Long.js under `ReturnLongjs` |
-| double         | `d`     | `number`                                                                               |
-| string         | `s`     | `string`                                                                               |
-| object path    | `o`     | `string`                                                                               |
-| signature      | `g`     | `string`                                                                               |
-| array          | `a`     | `Array`                                                                                |
-| byte array     | `ay`    | `Buffer` — see `ayBuffer`                                                              |
-| struct         | `()`    | `Array`                                                                                |
-| dict           | `a{}`   | string keys: a plain object · other keys: `Array` of `[key, value]` pairs              |
-| variant        | `v`     | read: the value — see `variants` · write: any value, or `Variant` to state the type    |
+| D-Bus          | code    | JavaScript                                                                          |
+| -------------- | ------- | ----------------------------------------------------------------------------------- |
+| byte           | `y`     | `number`                                                                            |
+| boolean        | `b`     | `boolean`                                                                           |
+| int16 / uint16 | `n` `q` | `number`                                                                            |
+| int32 / uint32 | `i` `u` | `number`                                                                            |
+| int64 / uint64 | `x` `t` | `bigint`, exactly — a lossy `number` under `returnBigInt: false`                    |
+| double         | `d`     | `number`                                                                            |
+| string         | `s`     | `string`                                                                            |
+| object path    | `o`     | `string`                                                                            |
+| signature      | `g`     | `string`                                                                            |
+| array          | `a`     | `Array`                                                                             |
+| byte array     | `ay`    | `Buffer` — see `ayBuffer`                                                           |
+| struct         | `()`    | `Array`                                                                             |
+| dict           | `a{}`   | string keys: a plain object · other keys: `Array` of `[key, value]` pairs           |
+| variant        | `v`     | read: the value — see `variants` · write: any value, or `Variant` to state the type |
 
 `h` (UNIX_FD) is an index into the message's descriptor array — see
 [File descriptors](#file-descriptors).
@@ -1489,7 +1488,7 @@ never rewrites — reading a variant is an index chain and nothing in the source
 says what the value is, so it narrows the problem to a reviewed list rather
 than guessing. Findings marked `(possible)` are heuristic.
 
-`dbus2js` still exists and is **deprecated** (`DBUS_DEP0005`).
+`dbus2js` was removed in 2.0 (`DBUS_DEP0005`).
 
 See [the README](../README.md#generating-types-for-a-service) for the full flag
 list, and [docs/deprecations.md](./deprecations.md) for every deprecation code.

@@ -4,10 +4,6 @@ const dbus = require('../../index');
 // dbus-send --print-reply --type=method_call --dest='some.name' '/com/github/sidorares/1' com.example.service.respondWithDouble string:'test123'
 // dbus-send --print-reply --type=method_call --dest='some.name' '/com/github/sidorares/1' com.example.service.timesTwo double:123.4567
 
-//const addrx11 = require('../../lib/address-x11');
-//addrx11(function(err, address) {
-//var bus = dbus.sessionBus({busAddress: address});
-
 const bus = dbus.sessionBus();
 const name = 'some.name';
 bus.requestName(name, 0);

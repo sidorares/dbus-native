@@ -92,12 +92,6 @@ options:
 - returnBigInt - boolean (default:true): 64 bit dbus fields (x/t) are read out as
   native `bigint`, which covers the whole range exactly. Set `false` for the 1.x
   behaviour, a `number` that loses precision above 2^53.
-- ReturnLongjs - boolean (default:false): **deprecated** (`DBUS_DEP0001`). If true
-  64 bit dbus fields (x/t) are read out as Long.js objects. Setting it opts back
-  out of `bigint`, which is the only thing it still does. The capital R is a
-  historical accident — it is the only PascalCase option in the API, and fixing
-  it would break the callers who set it.
-- ( TODO: add/document option to use address from X11 session )
 
 connection has only one method, `message(msg)`
 
@@ -209,11 +203,11 @@ regenerating after upgrading is one command. The default `plain` target
 describes the default value shapes; use `classic` for a connection reading with
 `plainValues: false, returnBigInt: false`.
 
-> **`dbus2js` is deprecated** (`DBUS_DEP0005`). It emits untyped ES5, generates
-> no properties, and gives signals an over-broad match rule. It still works and
-> prints the equivalent `dbus-native types` command when you run it, but it
-> will be removed in a future major. See
-> [docs/deprecations.md](./docs/deprecations.md#dbus_dep0005).
+> **`dbus2js` was removed in 2.0** (`DBUS_DEP0005`), having warned since 0.6.
+> It emitted untyped ES5, generated no properties, and gave signals an
+> over-broad match rule. `dbus-native types` is the replacement — see
+> [docs/deprecations.md](./docs/deprecations.md#dbus_dep0005) for the
+> equivalent command.
 
 ### TypeScript
 
@@ -634,10 +628,12 @@ These can be **written** to a 64-bit field, whatever the read option:
 - `string`, decimal or `0x`-prefixed hex, over the full range
 - Long.js objects, or anything with compatible `low`/`high`/`unsigned`
 
-`{ ReturnLongjs: true }` still returns [Long.js](https://github.com/dcodeIO/long.js)
-objects and is **deprecated** (`DBUS_DEP0001`); setting it opts back out of
-`bigint`, and `returnBigInt: true` wins if both are set. Dropping Long.js also
-removes the ARMv6 crash that made downstream forks vendor their own copy.
+`ReturnLongjs` was removed in 2.0 and now throws, rather than quietly handing
+back a type it was not asked for; `returnBigInt: false` is the way to a
+`number`. [Long.js](https://github.com/dcodeIO/long.js) is no longer a
+dependency at all, which also removes the ARMv6 crash that made downstream
+forks vendor their own copy — a Long is still _accepted_ on the way in, since
+the check is on its `{low, high, unsigned}` shape and costs no import.
 
 Development
 -----------
