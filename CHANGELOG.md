@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.15.0](https://github.com/sidorares/dbus-native/compare/v0.14.0...v0.15.0) (2026-07-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* `unixexec:` addresses read `argv1`, `argv2`, ... rather than `arg1`, `arg2`, .... An address hand-written against the old spelling now passes no arguments -- use the spec keys. Conformant addresses, which passed no arguments before, now work.
+
+### Bug Fixes
+
+* a bus keeps the options it was given, and cannot be crashed by a path ([#382](https://github.com/sidorares/dbus-native/issues/382)) ([0fb0dbd](https://github.com/sidorares/dbus-native/commit/0fb0dbdaad7b8fe6c7e08d9e9192f218ba38f7a2))
+* exported signals follow the export, and stop when it ends ([#383](https://github.com/sidorares/dbus-native/issues/383)) ([799cebd](https://github.com/sidorares/dbus-native/commit/799cebd47707f3ccbdb1e23dcfb1a0ad84330a82))
+* unixexec addresses use the argv keys the spec defines ([#380](https://github.com/sidorares/dbus-native/issues/380)) ([588d6a2](https://github.com/sidorares/dbus-native/commit/588d6a2695a96e68d9457f6a2508dc60ed3e6c29))
+
 ## [0.14.0](https://github.com/sidorares/dbus-native/compare/v0.13.0...v0.14.0) (2026-07-30)
 
 
