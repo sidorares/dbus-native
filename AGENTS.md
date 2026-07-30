@@ -217,6 +217,18 @@ docker run --rm -it -v "$PWD":/app -w /app node:24 \
   (`feat:`, `fix:`, `deps:`, `docs:`, `chore:`). release-please derives the
   changelog and the version bump from them, so a mislabelled commit ships the
   wrong version.
+- **Check the changelog after squash-merging a stacked PR.** GitHub's default
+  squash message concatenates every commit on the branch — including commits
+  from a base PR that already landed separately. The squashed commit then
+  carries _two_ `BREAKING CHANGE:` footers, release-please takes one per
+  commit, and the other is silently dropped. That is how 0.14.0 nearly shipped
+  a changelog listing `ReturnLongjs` twice and the Node floor raise not at all,
+  and a missing breaking-change entry reads exactly like a release that had
+  none. Either trim the squash message to the PR's own commit, or correct
+  `CHANGELOG.md` afterwards — and note that fixing the file is not enough on
+  its own, because release-please builds the GitHub Release notes from the
+  release PR's **body**. Both need the correction, and both are reverted if
+  anything else lands on `master` before the release PR is merged.
 
 ## Landmines
 
