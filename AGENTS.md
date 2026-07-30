@@ -119,19 +119,36 @@ real connection delivers, because `DBUS_TEST_SHAPE` travels through two
 `npm run` hops and a wrapper process to get there. A broken chain would turn
 the whole gate green while testing nothing, which is worse than red.
 
-**The integration suite runs one file at a time** (`--test-concurrency=1`).
-That is deliberate. Every file shares the one daemon the wrapper started, and
-running them concurrently made roughly one run in five fail — a different test
-each time, always a service answering `UnknownObject` or `UnknownMethod` for
-something it had definitely exported. Measured on master before any of this
-was touched: 3 failures in 10 concurrent runs, 0 in 10 serial ones.
+**The integration suite used to run one file at a time**, because roughly one
+concurrent run in five failed — a different test each time, always a service
+answering `UnknownMethod` for something it had definitely exported. It runs in
+parallel again, and is about 3× faster for it (9.3s → 3.1s).
 
-The mechanism is not fully explained. One captured instance had a connection
-with an empty `exportedObjects` receiving a method call addressed to a
-well-known name it did not own, which should not be possible with unicast
-routing. It costs about three seconds to serialise (1.9s → 5.2s) and it makes
-the suite trustworthy, so it is serial until someone gets to the bottom of it.
-If you are chasing it, `--test-concurrency=8` in a loop reproduces.
+The cause was a **bug in this library, not in the tests**: dispatch never
+looked at `msg.destination`. A match rule with no `type=` — `''`, or
+`eavesdrop='true'` — makes the daemon deliver every message on the bus to that
+connection, method calls included. The connection answered each one as if it
+were its own, found nothing exported, and replied `UnknownMethod` **to the
+original sender, carrying the original serial** — settling a call the victim
+was waiting on with a failure from a process it had never spoken to, in a
+different test file.
+
+`test/integration/match-rules.js` asks the daemon which rules it accepts, and
+both of those are in its corpus, so the suite was generating the traffic that
+broke itself. `lib/bus.js` now ignores what is not addressed to it, checked
+before `stdifaces` so an eavesdropper does not answer `Introspect` for other
+people's objects either. See `test/integration/eavesdropping.js`, which fails
+three ways without the fix.
+
+Two things worth keeping in mind when touching dispatch:
+
+- A connection knows which well-known names it owns from `bus.names`, kept
+  current by the `NameAcquired`/`NameLost` signals the daemon sends unprompted.
+  The reply to `RequestName` is deliberately _not_ consulted — it would be
+  redundant, since the signal is emitted while the daemon handles RequestName,
+  before any other client can learn the name has an owner.
+- `--test-concurrency=8` in a loop is still the way to shake out anything like
+  this. It reproduced at 3/10 before and 0/15 after.
 
 The integration tests **skip themselves** when `DBUS_SESSION_BUS_ADDRESS` is
 unset, so a bare `node --test` run stays green without a bus. If you add
