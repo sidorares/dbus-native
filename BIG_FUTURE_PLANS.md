@@ -184,7 +184,7 @@ Two consequences for the design:
   `[A-Za-z_][A-Za-z0-9_]*`, so `$` is a **guaranteed-collision-free** namespace
   rather than merely an unlikely one.
 
-### 2.4 Signals: the callback form is primary, not the iterable
+### 2.4 Signals: the callback form is primary, not the iterable ✅
 
 The original §5 led with `for await`. That emphasis is wrong, for two reasons
 that only became clear with the async-iterator-helper check.
@@ -215,6 +215,16 @@ for await (const [state] of nm.signal('StateChanged', { queue: 64 })) {
 unbounded option, because a long-lived daemon with an unbounded signal queue is
 a memory leak with a countdown, and this library's users skew toward long-lived
 daemons.
+
+**Shipped** as `proxy.$watch()` and `proxy.$signal()`. Two details the sketch
+did not settle: overflow drops the _oldest_, because a consumer catching up
+wants current state rather than what it already missed, and the count is on
+`iterator.dropped` so it is not silent. `$watch` earns its place separately
+from `$on` by resolving once the match rule is actually in place — `$on` cannot
+report that, so a signal emitted immediately after subscribing was a coin flip.
+
+The queue policy is `lib/signal-stream.js`, which is pure logic and unit-tested
+without a bus; only "the rule really goes on and comes off" needs a daemon.
 
 ### 2.5 The value-shape gate is the precondition, and it now exists
 

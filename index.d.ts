@@ -628,12 +628,66 @@ export interface DBusProxy {
   $off(signal: string, handler: (...args: any[]) => void): this;
 
   /**
+   * Subscribe, and get something that unsubscribes.
+   *
+   * The primary signal API: it resolves once the match rule is really in
+   * place — which `$on` cannot report — and the subscription implements
+   * `Symbol.asyncDispose`.
+   */
+  $watch(
+    signal: string,
+    handler: (...args: any[]) => void
+  ): Promise<SignalSubscription>;
+
+  /**
+   * The same signal as an async iterable, for consuming in sequence.
+   *
+   * ```js
+   * for await (const [state] of nm.$signal('StateChanged')) {
+   *   if (state === CONNECTED) break; // removes the match rule
+   * }
+   * ```
+   *
+   * Bounded: `queue` is a positive integer or `'latest'`, defaulting to 64.
+   * There is no unbounded option — an unbounded signal queue in a long-lived
+   * process is a memory leak with a countdown.
+   */
+  $signal(signal: string, options?: SignalStreamOptions): SignalStream;
+
+  /**
    * Never present, whatever the object declares — a proxy that answered `then`
    * with a function would hang every `await` on it, forever.
    */
   readonly then?: undefined;
 
   [member: string]: any;
+}
+
+/** A signal subscription that can be removed, from `proxy.$watch()`. */
+export interface SignalSubscription {
+  readonly signal: string;
+  readonly removed: boolean;
+  remove(): Promise<void>;
+  [Symbol.asyncDispose](): Promise<void>;
+}
+
+export interface SignalStreamOptions {
+  /**
+   * How many undelivered signals to hold, or `'latest'` for just the most
+   * recent. Defaults to 64. There is deliberately no unbounded value.
+   */
+  queue?: number | 'latest';
+  /** Ends the loop and removes the match rule. */
+  signal?: AbortSignal;
+}
+
+export interface SignalStreamIterator extends AsyncIterableIterator<unknown[]> {
+  /** How many signals were discarded because the consumer fell behind. */
+  readonly dropped: number;
+}
+
+export interface SignalStream {
+  [Symbol.asyncIterator](): SignalStreamIterator;
 }
 
 /** A match rule that can be removed, from `bus.watch()`. */

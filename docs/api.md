@@ -400,7 +400,9 @@ await notifications.$props.$set('Volume', 0.5);
 | `proxy.$props.Name`        | read a property — a promise                 |
 | `proxy.$props.$all()`      | every readable property, in one `GetAll`    |
 | `proxy.$props.$set(n, v)`  | write one, or an object of several          |
-| `proxy.$on/$once/$off`     | signals, wherever they are declared         |
+| `proxy.$watch(sig, fn)`    | subscribe; resolves when live, disposable   |
+| `proxy.$signal(sig, opts)` | the same signal as a bounded async iterable |
+| `proxy.$on/$once/$off`     | signals, fire and forget                    |
 | `proxy.$as(interfaceName)` | the underlying interface, for anything else |
 | `proxy.$service`, `$path`  | what it stands for                          |
 | `proxy.$interfaces`        | the interfaces it dispatches across         |
@@ -433,6 +435,48 @@ happen at construction rather than at first use.
 **Assignment is refused**, for properties and members alike. `obj.x = v`
 evaluates to `v` rather than to a promise, so a failed write would be silently
 lost; `$props.$set()` can be awaited.
+
+#### Signals from a proxy
+
+**The callback form is the primary one.** `$watch` resolves once the match rule
+is really in place — which `$on` cannot report, so a signal emitted immediately
+after subscribing used to be a coin flip — and hands back something that
+unsubscribes:
+
+```js
+const sub = await nm.$watch('StateChanged', state => {});
+await sub.remove(); // or Symbol.asyncDispose, so a scope can release it
+```
+
+**Iteration is the convenience**, for consuming in sequence:
+
+```js
+for await (const [state] of nm.$signal('StateChanged')) {
+  if (state === CONNECTED) break; // removes the match rule
+}
+```
+
+Leaving the loop — `break`, `return`, a throw, or an `AbortSignal` — removes
+the subscription, which is the point of the shape.
+
+It is deliberately the secondary API. Async iterator helpers are **not** in
+Node yet (checked on 26), so `.map()`, `.filter()` and `.take()` do not exist on
+these streams, and composing by hand with an async generator is a worse API than
+a callback.
+
+```js
+const stream = nm.$signal('StateChanged', {
+  queue: 'latest', // or a positive integer; 64 by default
+  signal: AbortSignal.timeout(30_000)
+});
+```
+
+**There is no unbounded option.** An async iterator is a queue and a signal is a
+broadcast, so a slow consumer has to lose something — and an unbounded signal
+queue in a long-lived process is a memory leak with a countdown. When the bound
+is reached the _oldest_ is dropped, because a consumer catching up wants current
+state rather than what it already missed, and `iterator.dropped` says how many
+went so it is not silent.
 
 `console.log(proxy)` prints what it stands for and what it can do, rather than
 walking the connection:
