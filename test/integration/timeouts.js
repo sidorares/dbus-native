@@ -132,7 +132,7 @@ describe(
 
     // The default is 25 seconds, which is far too long to wait for here. What
     // can be checked against a real daemon is that a call made with no options
-    // at all now *has* a deadline -- before 2.0 it had none, and this would
+    // at all now *has* a deadline -- before 0.14.0 it had none, and this would
     // have stayed pending until the process ended.
     it('gives a call with no options a deadline of its own', async () => {
       const pending = clientBus.invoke(call('NeverReplies'));

@@ -194,7 +194,7 @@ describe('marshall/unmarshall', () => {
       ['u', [1048576]],
       ['u', [0]],
       //['u', [-1], false]  // TODO validate input, should fail
-      // 64-bit values come back as BigInt since 2.0. Every spelling that was
+      // 64-bit values come back as BigInt since 0.14.0. Every spelling that was
       // accepted on the way in still is -- a number, a decimal or hex string,
       // a Long, a Long-shaped plain object -- so only the result changed.
       ['x', [9007199254740991], false, [9007199254740991n]],

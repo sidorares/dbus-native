@@ -1,6 +1,6 @@
 // Writing a plain JavaScript object where a dict is expected.
 //
-// Since 2.0 the read side returns an object too, so a round trip is an
+// Since 0.14.0 the read side returns an object too, so a round trip is an
 // identity. `toPlain()` stays in the helper below because it is the identity
 // on the current shape and still flattens the old one, which is what makes
 // these assertions readable either way. The skipped test this file replaces

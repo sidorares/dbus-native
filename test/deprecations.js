@@ -40,7 +40,7 @@ describe('deprecate()', () => {
 });
 
 // DBUS_DEP0001 was the one deprecation that reached the end of its life. It
-// warned from 0.6 and the option it named was removed in 2.0, so the test that
+// warned from 0.6 and the option it named was removed in 0.14.0, so the test that
 // checked the warning is now a test that checks the error -- see
 // test/bigint.js, where it sits with the rest of the 64-bit behaviour.
 //

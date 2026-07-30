@@ -23,7 +23,7 @@ Commands:
   types        generate TypeScript declarations for a service
   introspect   print a service's raw introspection XML
   codemod      rewrite your source for a breaking change
-  lint         report reads of value shapes that change in 2.0
+  lint         report reads of value shapes that changed in 0.14.0
 
 Options for call/get/set/list:
   --dest <name>      bus name to talk to (call, get, set)
@@ -54,7 +54,7 @@ Options for types/introspect:
   --out <file>       write to a file instead of stdout
 
 Options for 'types':
-  --target <t>       'plain' (default) or 'classic' for the 1.x value shapes
+  --target <t>       'plain' (default) or 'classic' for the classic value shapes
   --module <name>    module specifier to import types from
                      (default: dbus-native)
   --all              include the standard org.freedesktop.DBus.* interfaces
@@ -217,13 +217,13 @@ function runCodemod(name, paths, argv) {
 }
 
 /**
- * Report reads of the value shapes that change in 2.0.
+ * Report reads of the value shapes that changed in 0.14.0.
  *
  * Separate from `codemod` because these are the patterns a codemod *cannot*
  * safely rewrite: reading a variant is an index chain, and nothing in the
  * source says what the value is. Being honest about that matters -- the
  * tooling narrows the problem to a reviewed list of call sites, and there is
- * no complete codemod for 2.0.
+ * no complete codemod for 0.14.0.
  */
 function runLint(paths, argv) {
   if (paths.length === 0) fail(`Nothing to lint.\n\n${USAGE}`);

@@ -1,5 +1,5 @@
-// Forward-compatible value helpers: the same call must work on the 1.x shapes
-// and on the 2.0 shapes, so each case is asserted against both.
+// Forward-compatible value helpers: the same call must work on the classic shapes
+// and on the 0.14.0 shapes, so each case is asserted against both.
 
 const { describe, it } = require('node:test');
 const assert = require('assert');
@@ -9,7 +9,7 @@ const unmarshall = require('../lib/unmarshall');
 const { Variant, variantValue, variantSignature, toPlain } = dbus;
 
 // The classic shapes are asked for explicitly. They stopped being the default
-// in 2.0, and a helper that just took the default would quietly stop reading
+// in 0.14.0, and a helper that just took the default would quietly stop reading
 // them -- turning most of the conversions below into identities that assert
 // nothing.
 const CLASSIC = { plainValues: false };
@@ -23,7 +23,7 @@ describe('variantValue', () => {
     assert.strictEqual(variantValue(value), 'hello');
   });
 
-  it('is the identity on an already-plain value (the 2.0 shape)', () => {
+  it('is the identity on an already-plain value (the 0.14.0 shape)', () => {
     assert.strictEqual(variantValue('hello'), 'hello');
     assert.strictEqual(variantValue(42), 42);
     assert.deepStrictEqual(variantValue([1, 2, 3]), [1, 2, 3]);
@@ -63,7 +63,7 @@ describe('variantSignature', () => {
     );
   });
 
-  it("reports it under variants: 'wrap' too, which is the 2.0 way", () => {
+  it("reports it under variants: 'wrap' too, which is the 0.14.0 way", () => {
     const wrap = { variants: 'wrap' };
     assert.strictEqual(
       variantSignature(roundTrip('v', [['s', 'x']], wrap)[0]),
@@ -132,7 +132,7 @@ describe('toPlain', () => {
     ]);
   });
 
-  it('is the identity on the 2.0 shape', () => {
+  it('is the identity on the 0.14.0 shape', () => {
     assert.deepStrictEqual(toPlain({ a: 1, b: 'two' }), { a: 1, b: 'two' });
     assert.deepStrictEqual(toPlain([1, 2, 3]), [1, 2, 3]);
     assert.strictEqual(toPlain('plain'), 'plain');

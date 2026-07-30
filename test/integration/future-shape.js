@@ -1,4 +1,4 @@
-// The 2.0 read shape, on a real daemon, with `plainValues` actually on.
+// The 0.14.0 read shape, on a real daemon, with `plainValues` actually on.
 //
 // A variant unmarshals as the value itself and a string-keyed dict as a plain
 // object. The library reads its *own* messages through the same parser, so
@@ -32,7 +32,7 @@ const ifaceDesc = {
 };
 
 describe(
-  'integration: the 2.0 read shape',
+  'integration: the 0.14.0 read shape',
   { timeout: 10000, skip: NO_BUS },
   () => {
     let serviceBus, clientBus, impl, iface;

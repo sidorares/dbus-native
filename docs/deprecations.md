@@ -27,7 +27,7 @@ npx dbus-native lint src/
 
 ```
 src/net.js:42  DBUS_DEP0002  variant index chain `[1][1][0]`
-    -> variantValue(), or a plain property read after 2.0
+    -> variantValue(), or a plain property read after 0.14.0
 ```
 
 It reports and never rewrites, because reading a variant is an index chain and
@@ -40,10 +40,10 @@ individual codes.
 
 ## DBUS_DEP0001
 
-**Removed in 2.0**, having warned since 0.6. The `ReturnLongjs` option.
+**Removed in 0.14.0**, having warned since 0.6. The `ReturnLongjs` option.
 
 64-bit values (`x` and `t`) come back as native `BigInt`, which represents the
-full 64-bit range with no dependency and no option. Before 2.0 they were a
+full 64-bit range with no dependency and no option. Before 0.14.0 they were a
 lossy `number`, or [long.js](https://github.com/dcodeIO/long.js) objects with
 `ReturnLongjs: true`.
 
@@ -85,7 +85,7 @@ this one.
 
 **Documentation.** Reading a variant as `[signature, [value]]`.
 
-Since **2.0** a variant unmarshals to the value itself. Before that it was a
+Since **0.14.0** a variant unmarshals to the value itself. Before that it was a
 two-element array of the _parsed signature tree_ and a one-element array
 holding the value, which `plainValues: false` still gives you.
 
@@ -93,11 +93,11 @@ holding the value, which `plainValues: false` still gives you.
 // the old shape, and the source of more issues than anything else here
 const udi = dict.find(([key]) => key === 'Udi')[1][1][0];
 
-// forward-compatible: identical behaviour before and after 2.0
+// forward-compatible: identical behaviour before and after 0.14.0
 import { variantValue } from 'dbus-native';
 const udi = variantValue(dict.find(([key]) => key === 'Udi')[1]);
 
-// 2.0
+// 0.14.0
 const { Udi } = await device.props.$all;
 ```
 
@@ -123,7 +123,7 @@ Related: [#3](https://github.com/sidorares/dbus-native/issues/3),
 
 **Documentation.** Reading a dict as an array of pairs.
 
-Since **2.0**, `a{sv}` and friends unmarshal to a plain object. Before that
+Since **0.14.0**, `a{sv}` and friends unmarshal to a plain object. Before that
 they were an array of `[key, value]` pairs, which `plainValues: false` still
 gives you.
 
@@ -136,7 +136,7 @@ for (const [key, variant] of result) props[key] = variant[1][0];
 import { toPlain } from 'dbus-native';
 const props = toPlain(result);
 
-// 2.0
+// 0.14.0
 const props = result;
 ```
 
@@ -198,7 +198,7 @@ Closed: [#39](https://github.com/sidorares/dbus-native/issues/39),
 
 ## DBUS_DEP0005
 
-**Removed in 2.0**, having warned since 0.6. The `dbus2js` command.
+**Removed in 0.14.0**, having warned since 0.6. The `dbus2js` command.
 
 It emitted untyped ES5, generated no properties at all, and gave generated
 signal handlers a match rule that asked the daemon for every signal of that

@@ -27,7 +27,7 @@ export interface ClassicDBusError extends Array<unknown> {
 export function toClassicError(err: unknown): ClassicDBusError | unknown;
 
 /**
- * Read 1.x value shapes on a 2.0 connection: a variant as
+ * Read classic value shapes on a 0.14.0 connection: a variant as
  * `[signatureTree, [value]]`, a string-keyed dict as an array of pairs, and
  * `x`/`t` as a lossy `number`.
  *

@@ -3,7 +3,7 @@
 // Hand-written and checked in CI against test/types/usage.ts, so they cannot
 // drift from the implementation without the build failing.
 //
-// Note the value shapes here describe the *current* API. The 2.0 type-system
+// Note the value shapes here describe the *current* API. The 0.14.0 type-system
 // change is documented in docs/deprecations.md and RELEASE_PLAN.md; the
 // forward-compatible helpers (variantValue, toPlain, Variant) are typed to
 // accept both shapes so code written against them keeps type-checking.
@@ -45,7 +45,7 @@ export interface SignatureNode {
 
 /**
  * A variant as it is unmarshalled today: the parsed signature, then a
- * one-element array holding the value. Changes in 2.0 -- read it with
+ * one-element array holding the value. Changes in 0.14.0 -- read it with
  * `variantValue()` rather than by index.
  */
 export type ClassicVariant = [SignatureNode[], unknown[]];
@@ -65,7 +65,7 @@ export class Variant<T = unknown> {
 }
 
 /**
- * Read the value out of a variant, in either the current or the 2.0 shape.
+ * Read the value out of a variant, in either the current or the 0.14.0 shape.
  * Returns the argument unchanged if it is already a plain value.
  */
 export function variantValue<T = unknown>(value: unknown): T;
@@ -228,17 +228,17 @@ export interface ConnectionOptions {
   ayBuffer?: boolean | 'view';
   /**
    * Read 64-bit values (`x`, `t`) as native `bigint`, exactly. Default `true`
-   * since 2.0.
+   * since 0.14.0.
    *
-   * Set `false` for the 1.x behaviour: a `number`, which loses precision above
+   * Set `false` for the classic behaviour: a `number`, which loses precision above
    * 2^53. Writing a `bigint` is accepted regardless of this option.
    */
   returnBigInt?: boolean;
   /**
    * Read the plain value shapes: a variant comes back as the value itself
    * rather than `[signatureTree, [value]]`, and a string-keyed dict as a plain
-   * object rather than an array of pairs. Default `true` since 2.0; set
-   * `false` for the 1.x shapes.
+   * object rather than an array of pairs. Default `true` since 0.14.0; set
+   * `false` for the classic shapes.
    *
    * Affects reading only. The marshaller accepts plain objects and `Variant`,
    * so a value read this way can be written straight back out.
@@ -254,7 +254,7 @@ export interface ConnectionOptions {
   /**
    * How a variant (`v`) comes back.
    *
-   * - `'tree'` — `[parsedSignatureTree, [value]]`, what 1.x handed back
+   * - `'tree'` — `[parsedSignatureTree, [value]]`, what classic handed back
    * - `'plain'` — the value, and the signature is gone
    * - `'wrap'` — a {@link Variant}, carrying both
    *
@@ -271,7 +271,7 @@ export interface ConnectionOptions {
   variants?: 'tree' | 'plain' | 'wrap';
   /**
    * @deprecated DBUS_DEP0001 -- removed. 64-bit values are `bigint`; pass
-   * `returnBigInt: false` for the lossy `number` 1.x returned. Passing `true`
+   * `returnBigInt: false` for the lossy `number` classic returned. Passing `true`
    * throws rather than silently handing back a different type. Declared only
    * so the type checker points at the replacement.
    */
@@ -281,7 +281,7 @@ export interface ConnectionOptions {
   /**
    * ms every call on this client waits for its reply. Default `25000`, the
    * figure libdbus, GDBus and sd-bus all use. `0` disables it, restoring the
-   * pre-2.0 behaviour of waiting indefinitely.
+   * pre-0.14.0 behaviour of waiting indefinitely.
    */
   timeout?: number;
   /**

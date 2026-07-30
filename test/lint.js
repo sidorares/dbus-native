@@ -1,7 +1,7 @@
 // Fixtures for the deprecated-value-shapes linter.
 //
 // The rules that matter most here are the negative ones. A linter that flags
-// `for (const [k, v] of Object.entries(o))` -- ordinary JavaScript that 2.0
+// `for (const [k, v] of Object.entries(o))` -- ordinary JavaScript that 0.14.0
 // does not touch -- gets switched off, and then it protects nobody.
 
 const { describe, it } = require('node:test');

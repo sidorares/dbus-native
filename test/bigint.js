@@ -1,4 +1,4 @@
-// BigInt for the 64-bit types -- the default since 2.0.
+// BigInt for the 64-bit types -- the default since 0.14.0.
 //
 // `x` and `t` cover the full signed/unsigned 64-bit range, which a JS `number`
 // cannot: everything above 2^53 used to come back approximated. These tests
@@ -211,7 +211,7 @@ describe('BigInt: diagnostics survive a bigint body', () => {
 });
 
 // The 64-bit paths have used `bigint` internally since 0.11, and Long.js
-// stopped being a dependency in 2.0. A Long is still *accepted* on input --
+// stopped being a dependency in 0.14.0. A Long is still *accepted* on input --
 // the check is structural, on {low, high, unsigned}, so it costs nothing --
 // which is what these cover. `long` is a devDependency now, only so the tests
 // can build the objects they are asserting about.

@@ -39,13 +39,20 @@ the classic track keeps its semver promises.
 Each major is chosen so its blast radius is small enough to tool for, and so
 it unblocks the next one.
 
-| release | theme                         | blast radius              | migration mechanism               |
-| ------- | ----------------------------- | ------------------------- | --------------------------------- |
-| **0.6** | preparation, all additive     | none                      | —                                 |
-| **1.0** | errors are `Error`s ✅        | error-handling paths only | codemod + forward-compatible shim |
-| **2.0** | the type system ✅            | every value read          | accessors + lint + compat wrapper |
-| **3.0** | lifecycle and cancellation ✅ | connection setup/teardown | codemod + deprecations            |
-| **4.0** | ~~ESM~~, `/next` default      | imports                   | codemod                           |
+> **None of these shipped under the names below.** Every one of them landed as
+> a `0.x` minor, because under semver a pre-1.0 minor is already the breaking
+> bump and 1.0.0 is a statement about stability worth making deliberately. The
+> planned names are kept here because the rest of this document argues in them;
+> the **shipped as** column is what actually exists. Anything user-facing should
+> cite the shipped version, not the planned one.
+
+| release | shipped as | theme                         | blast radius              | migration mechanism               |
+| ------- | ---------- | ----------------------------- | ------------------------- | --------------------------------- |
+| **0.6** | 0.6.0      | preparation, all additive     | none                      | —                                 |
+| **1.0** | **0.7.0**  | errors are `Error`s ✅        | error-handling paths only | codemod + forward-compatible shim |
+| **2.0** | **0.14.0** | the type system ✅            | every value read          | accessors + lint + compat wrapper |
+| **3.0** | **0.13.0** | lifecycle and cancellation ✅ | connection setup/teardown | codemod + deprecations            |
+| **4.0** | —          | ~~ESM~~, `/next` default      | imports                   | codemod                           |
 
 Errors come before types because a rejected promise has to carry an `Error` for
 promises to be worth anything, and because it touches only `catch` blocks
