@@ -5,10 +5,13 @@
 
 ### ⚠ BREAKING CHANGES
 
-* calls that previously hung forever now reject with a TimeoutError after 25 seconds. Pass `timeout: 0` per call or per client to restore the old behaviour, or raise `timeout` for a method that genuinely takes longer.
-* the `ReturnLongjs` option now throws -- pass `returnBigInt: false` for a lossy `number`. The `dbus2js` binary is removed; use `dbus-native types`. `lib/address-x11.js` is removed.
-* the `ReturnLongjs` option now throws -- pass `returnBigInt: false` for a lossy `number`. The `dbus2js` binary is removed; use `dbus-native types`. `lib/address-x11.js` is removed.
-* `plainValues` and `returnBigInt` now default to true, so a variant reads as its value, a string-keyed dict as a plain object, and `x`/`t` as `bigint`. See docs/migrating-to-2.0.md.
+**[docs/migrating-to-2.0.md](https://github.com/sidorares/dbus-native/blob/master/docs/migrating-to-2.0.md) is the guide.** Listed here in the order they will stop you, not the order they were written.
+
+* **Node.js 22.12.0 or newer is required**, up from 20.8.0. Node 20 reached end of life on 2026-04-30. 22.12 rather than 22.0 because that is where `require()` of an ESM module works unflagged.
+* **`plainValues` and `returnBigInt` now default to true**, so a variant reads as its value, a string-keyed dict as a plain object, and `x`/`t` as `bigint`. This touches every value your code reads. `variantValue()` and `toPlain()` read either shape, and `withClassicTypes()` from `dbus-native/compat` restores the 1.x shapes wholesale. Note `bigint` is not a drop-in for `number`: arithmetic and `JSON.stringify` both throw on one.
+* **Calls that previously hung forever now reject with a `TimeoutError` after 25 seconds**, the figure libdbus, GDBus and sd-bus all use. Pass `timeout: 0` per call or per client to restore the old behaviour, or raise `timeout` for a method that genuinely takes longer.
+* **`ReturnLongjs` now throws** rather than being ignored -- pass `returnBigInt: false` for a lossy `number`. `long` is no longer a dependency; a Long is still accepted on input.
+* **The `dbus2js` binary is removed**; use `dbus-native types`. **`lib/address-x11.js` is removed** -- it required a package that was never a dependency, so it threw on require for anyone who found it.
 
 ### Features
 
