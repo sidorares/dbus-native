@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.12.0](https://github.com/sidorares/dbus-native/compare/v0.11.0...v0.12.0) (2026-07-29)
+
+
+### Features
+
+* a real server-side SASL handshake ([#353](https://github.com/sidorares/dbus-native/issues/353)) ([a34c77b](https://github.com/sidorares/dbus-native/commit/a34c77b0214f836349de98325d84d8572ad1f4d2))
+* an in-process message bus ([#355](https://github.com/sidorares/dbus-native/issues/355)) ([eda10e4](https://github.com/sidorares/dbus-native/commit/eda10e4964bbeb3025757c9ecb0e3db7ae6b9460))
+* call methods and read properties from the command line ([#357](https://github.com/sidorares/dbus-native/issues/357)) ([d487c7a](https://github.com/sidorares/dbus-native/commit/d487c7ad19792718cccba1645775a4cc9b8eaf6e))
+* parse and evaluate match rules ([#354](https://github.com/sidorares/dbus-native/issues/354)) ([091f698](https://github.com/sidorares/dbus-native/commit/091f698fdc30680c96a86a0b84fb6ff7b7d30f2b))
+* withClassicTypes, and a guide for the 2.0 value shapes ([#360](https://github.com/sidorares/dbus-native/issues/360)) ([0542283](https://github.com/sidorares/dbus-native/commit/0542283ce43142ea224d6e840df753ce77439935))
+
+
+### Bug Fixes
+
+* accept '-' in property names, which 0.11.0 wrongly rejected ([#346](https://github.com/sidorares/dbus-native/issues/346)) ([46e9d63](https://github.com/sidorares/dbus-native/commit/46e9d632c58d9f7f7d3878bdaf5f4561481e26fe))
+* advertise child objects on a path that is itself exported ([#351](https://github.com/sidorares/dbus-native/issues/351)) ([bf0e077](https://github.com/sidorares/dbus-native/commit/bf0e077e876849cd91521a15cd86ebb9ef9696db))
+* escape the introspection XML, which a stray '&' made unparseable ([#347](https://github.com/sidorares/dbus-native/issues/347)) ([ffce811](https://github.com/sidorares/dbus-native/commit/ffce811f11595d02e0e7e14235a69bcc9bad64b2))
+* put the space back in the DBUS_COOKIE_SHA1 response ([#352](https://github.com/sidorares/dbus-native/issues/352)) ([d13164a](https://github.com/sidorares/dbus-native/commit/d13164a477cebc33860c341f01c8b127b250bbfb))
+* return the object that was asked for, and all of its children ([#350](https://github.com/sidorares/dbus-native/issues/350)) ([84695c8](https://github.com/sidorares/dbus-native/commit/84695c8adec8fdd0496de3f00562b555b5d1cd52))
+* run the integration suite one file at a time ([#358](https://github.com/sidorares/dbus-native/issues/358)) ([5940f73](https://github.com/sidorares/dbus-native/commit/5940f73c0cd07a2919313d693cd05d9e9b402e08))
+
 ## [0.11.0](https://github.com/sidorares/dbus-native/compare/v0.10.0...v0.11.0) (2026-07-29)
 
 
