@@ -136,7 +136,7 @@ describe('marshall: alignment at a non-zero base offset', () => {
         );
       }
       // and the value must land where the reader expects it
-      assert.deepStrictEqual(unmarshall(buf, 'yx', offset), [1, 2]);
+      assert.deepStrictEqual(unmarshall(buf, 'yx', offset), [1, 2n]);
     });
   }
 });

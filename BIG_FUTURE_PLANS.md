@@ -22,24 +22,24 @@ Feature availability was re-checked on Node 26 (§4), not assumed.
 
 The original §0 listed what was wrong with the library. Most of it is fixed.
 
-| the complaint                      | then                           | now                                                          |
-| ---------------------------------- | ------------------------------ | ------------------------------------------------------------ |
-| errors are not `Error`s            | `err` is an array of strings   | ✅ `DBusError` with `dbusName`, `body`, a real stack (0.7)   |
-| everything is a callback           | #9 open since 2013             | ✅ promises everywhere, callbacks still supported            |
-| no timeouts, no cancellation       | `bus.cookies` leaked forever   | ✅ `timeout`, `AbortSignal`, entries removed on settle       |
-| no types                           | #276                           | ✅ hand-written `index.d.ts` + `dbus-native types` codegen   |
-| reading a value walks a parse tree | `dict.find(…)[1][1][0]`        | ✅ `variantValue()`/`toPlain()`; `plainValues` opt-in        |
-| 64-bit is lossy                    | `number`, or a long.js object  | ✅ `returnBigInt` opt-in; default in 2.0                     |
-| nothing is inspectable             | "I sent something and it hung" | ✅ `diagnostics_channel`, `dbus-dissect`, `dbus-native call` |
-| tests need a system daemon         | `brew install dbus`            | ✅ `createBroker()` — in-process bus, 161 tests run on it    |
-| the server side is a stub          | hardcoded 2014 GUID            | ✅ real SASL, three mechanisms, match rules, routing         |
-| properties are all `readwrite`     | #89                            | ✅ `access` declared, enforced, and in the introspection XML |
-| a bad name produced a dead message | #309                           | ✅ validated on export and send                              |
+| the complaint                      | then                           | now                                                           |
+| ---------------------------------- | ------------------------------ | ------------------------------------------------------------- |
+| errors are not `Error`s            | `err` is an array of strings   | ✅ `DBusError` with `dbusName`, `body`, a real stack (0.7)    |
+| everything is a callback           | #9 open since 2013             | ✅ promises everywhere, callbacks still supported             |
+| no timeouts, no cancellation       | `bus.cookies` leaked forever   | ✅ `timeout`, `AbortSignal`, entries removed on settle        |
+| no types                           | #276                           | ✅ hand-written `index.d.ts` + `dbus-native types` codegen    |
+| reading a value walks a parse tree | `dict.find(…)[1][1][0]`        | ✅ the value itself, by default; `variantValue()`/`toPlain()` |
+| 64-bit is lossy                    | `number`, or a long.js object  | ✅ `bigint`, by default                                       |
+| nothing is inspectable             | "I sent something and it hung" | ✅ `diagnostics_channel`, `dbus-dissect`, `dbus-native call`  |
+| tests need a system daemon         | `brew install dbus`            | ✅ `createBroker()` — in-process bus, 161 tests run on it     |
+| the server side is a stub          | hardcoded 2014 GUID            | ✅ real SASL, three mechanisms, match rules, routing          |
+| properties are all `readwrite`     | #89                            | ✅ `access` declared, enforced, and in the introspection XML  |
+| a bad name produced a dead message | #309                           | ✅ validated on export and send                               |
 
 What is left from the original sketch: **`await using` (§1), proxies (§2), the
 value-shape flag day (§3), async-iterable signals (§5), `defineInterface` (§7),
 and ESM (§9).** That is the breaking window, and it is the subject of the rest
-of this document.
+of this document. Everything in it has now shipped except ESM.
 
 The single most important thing the sketch got right, and it is worth
 restating because it constrains everything below: **the wire layer is good and
@@ -128,7 +128,7 @@ into a better API than the one being replaced.
 
 **Shipped.** `variants: 'tree' | 'plain' | 'wrap'`, defaulting to whatever
 `plainValues` implied so it is purely additive. The whole integration suite runs
-under it (`npm run test:integration:2.0-wrap`) and found **no place in the
+under it (`npm run test:integration:wrap`) and found **no place in the
 library that indexes into a variant** — only the tests written to assert a
 specific shape, plus one real bug: `withClassicTypes` had to pin
 `variants: 'tree'` as well, or a caller who opted into `'wrap'` kept their
@@ -226,17 +226,31 @@ report that, so a signal emitted immediately after subscribing was a coin flip.
 The queue policy is `lib/signal-stream.js`, which is pure logic and unit-tested
 without a bus; only "the rule really goes on and comes off" needs a daemon.
 
-### 2.5 The value-shape gate is the precondition, and it now exists
+### 2.5 The value-shape gate is the precondition ✅
 
-Not a correction so much as a change in what is possible. `npm run
-test:integration:2.0` runs the whole suite with the 2.0 defaults on, against
-both `dbus-daemon` and the in-process broker. Before it existed, the flag day
-was unverifiable; the measurement that motivated it found 9 failures, **all of
-them in tests asserting old shapes rather than in the library**.
+Not a correction so much as a change in what was possible. The whole suite runs
+under each of the three value shapes, against both `dbus-daemon` and the
+in-process broker — six runs. Before it existed the flag day was unverifiable;
+the measurement that motivated it found 9 failures, **all of them in tests
+asserting old shapes rather than in the library**.
 
-The practical consequence for everything below: a breaking value change can now
-be proven green before it is released, so the sequencing can be more aggressive
-than the original assumed.
+**The flip has since happened, and the gate was worth more than that suggests.**
+Two things it caught that the `2.0` run alone would not have:
+
+- The `wrap` run found a real routing bug. `lib/broker.js` read variants
+  flattened and re-marshalled them, so `Variant('u', 9)` was delivered to the
+  next hop as `i` — a type its sender never wrote. The lesson generalises: a
+  router must opt out of _every_ convenience shape, because each one discards
+  something (the signature, duplicate dict keys, the low bits of a 64-bit
+  integer) that the next hop was entitled to.
+- Keeping `classic` as a run of its own is what makes `withClassicTypes` a
+  supported escape hatch rather than a claim. An escape hatch nothing exercises
+  stops working quietly.
+
+The unit suite has no such gate, and that showed: several files read a shape
+through the _default_ rather than naming it, so the flip would have turned them
+into assertions that pass trivially. Naming both shapes explicitly is the fix,
+and is now the rule in AGENTS.md.
 
 ---
 
@@ -412,7 +426,14 @@ The useful cut, now that the gate exists to verify it.
 
 **Breaking, needs the major:**
 
-- the value shapes becoming the default (§5)
+- ~~the value shapes becoming the default (§5)~~ ✅ **done.** Every failure it
+  produced was a test asserting a shape rather than a defect — except one,
+  which only the gate's `wrap` run caught: `lib/broker.js` read variants
+  flattened and re-marshalled them, so a routed `Variant('u', 9)` was delivered
+  as `i`. A router has to opt out of _every_ convenience shape, not just the
+  lossy 64-bit one it already knew about. The flip also made the plain shape
+  unwritable at a bare `v` until `write()` learned to infer there, exactly as
+  it already did inside `a{sv}`.
 - the `{ bytes, fds }` message seam (§3.3) — the feature is additive, the seam
   is not
 - ESM-only, with the no-top-level-await rule (§4)
@@ -522,8 +543,8 @@ Of the 11, these are the ones the remaining work touches:
 
 | issue                                                       | what it needs                                                                                         |
 | ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| [#3](https://github.com/sidorares/dbus-native/issues/3)     | the value-shape flip (§5) — the oldest one                                                            |
-| [#248](https://github.com/sidorares/dbus-native/issues/248) | `bigint` becoming the default (§5)                                                                    |
+| [#3](https://github.com/sidorares/dbus-native/issues/3)     | ✅ the value-shape flip (§5) — the oldest one, closed                                                 |
+| [#248](https://github.com/sidorares/dbus-native/issues/248) | ✅ `bigint` becoming the default (§5), closed                                                         |
 | [#141](https://github.com/sidorares/dbus-native/issues/141) | proxies (§1)                                                                                          |
 | [#104](https://github.com/sidorares/dbus-native/issues/104) | the gap against python-dbus ergonomics                                                                |
 | [#228](https://github.com/sidorares/dbus-native/issues/228) | a BlueZ user hunting for `GattService` — the shape of problem `ObjectManager` (§3.1) exists to remove |

@@ -42,8 +42,8 @@ it unblocks the next one.
 | release | theme                        | blast radius              | migration mechanism               |
 | ------- | ---------------------------- | ------------------------- | --------------------------------- |
 | **0.6** | preparation, all additive    | none                      | —                                 |
-| **1.0** | errors are `Error`s          | error-handling paths only | codemod + forward-compatible shim |
-| **2.0** | the type system              | every value read          | accessors + lint + compat wrapper |
+| **1.0** | errors are `Error`s ✅       | error-handling paths only | codemod + forward-compatible shim |
+| **2.0** | the type system ✅           | every value read          | accessors + lint + compat wrapper |
 | **3.0** | lifecycle and cancellation   | connection setup/teardown | codemod + deprecations            |
 | **4.0** | ESM, `/next` becomes default | imports                   | codemod                           |
 
@@ -198,6 +198,26 @@ greppable, obviously temporary, and deletable in one commit.
 ---
 
 ## 2.0 — the type system
+
+> **Shipped.** Same reasoning as the errors release above: a `0.x` minor is
+> already the breaking bump, so this landed without needing a `2.0.0` tag.
+> `plainValues` and `returnBigInt` default to `true`; `variants` follows
+> `plainValues`, so a `v` reads as its value. Every old shape is still an
+> option, and `withClassicTypes` still restores all three at once — the
+> `classic` run of the shape gate exists to keep that true.
+>
+> Two things the plan below did not anticipate, both found by the gate rather
+> than by reasoning:
+>
+> - **A router has to opt out of every convenience shape, not just the lossy
+>   one.** `lib/broker.js` already read 64-bit exactly; it still lost a
+>   variant's signature, and delivered `Variant('u', 9)` to the next hop as
+>   `i`. Only the `wrap` run of the gate could see it, because the other two
+>   have nowhere to put the signature.
+> - **The plain shape was unwritable at a bare `v`.** Reading gave a plain
+>   value and writing one back threw "variant data should be [signature,
+>   data]", so the round-trip property the shape is sold on did not hold. The
+>   fix was to infer at `v` exactly as a value inside `a{sv}` already did.
 
 **Closes** [#3](https://github.com/sidorares/dbus-native/issues/3),
 [#67](https://github.com/sidorares/dbus-native/issues/67),

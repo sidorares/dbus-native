@@ -194,17 +194,26 @@ describe('marshall/unmarshall', () => {
       ['u', [1048576]],
       ['u', [0]],
       //['u', [-1], false]  // TODO validate input, should fail
-      ['x', [9007199254740991]], // 53bit numbers convert to 53bit numbers
-      ['x', [-9007199254740991]],
-      ['t', [9007199254740991]],
-      ['t', [0]],
-      ['x', ['9007199254740991'], false, [9007199254740991]], // strings should parse and convert to 53bit numbers
-      ['x', ['-9007199254740991'], false, [-9007199254740991]],
-      ['t', ['9007199254740991'], false, [9007199254740991]],
-      ['t', ['0'], false, [0]],
-      ['x', ['0x1FFFFFFFFFFFFF'], false, [9007199254740991]], // hex strings
-      ['x', ['-0x1FFFFFFFFFFFFF'], false, [-9007199254740991]],
-      ['x', ['0x0000'], false, [0]],
+      // 64-bit values come back as BigInt since 2.0. Every spelling that was
+      // accepted on the way in still is -- a number, a decimal or hex string,
+      // a Long, a Long-shaped plain object -- so only the result changed.
+      ['x', [9007199254740991], false, [9007199254740991n]],
+      ['x', [-9007199254740991], false, [-9007199254740991n]],
+      ['t', [9007199254740991], false, [9007199254740991n]],
+      ['t', [0], false, [0n]],
+      ['x', ['9007199254740991'], false, [9007199254740991n]], // strings parse
+      ['x', ['-9007199254740991'], false, [-9007199254740991n]],
+      ['t', ['9007199254740991'], false, [9007199254740991n]],
+      ['t', ['0'], false, [0n]],
+      ['x', ['0x1FFFFFFFFFFFFF'], false, [9007199254740991n]], // hex strings
+      ['x', ['-0x1FFFFFFFFFFFFF'], false, [-9007199254740991n]],
+      ['x', ['0x0000'], false, [0n]],
+      // The whole 64-bit range, which is the point: these used to need
+      // `ReturnLongjs` because a JS number could not hold them, and the
+      // default silently rounded.
+      ['x', ['0x7FFFFFFFFFFFFFFF'], false, [9223372036854775807n]],
+      ['x', ['-0x8000000000000000'], false, [-9223372036854775808n]],
+      ['t', ['0xFFFFFFFFFFFFFFFF'], false, [18446744073709551615n]],
       [
         'x',
         ['0x7FFFFFFFFFFFFFFF'],
@@ -212,8 +221,8 @@ describe('marshall/unmarshall', () => {
         [LongMaxS64],
         { ReturnLongjs: true }
       ],
-      ['t', ['0x1FFFFFFFFFFFFF'], false, [9007199254740991]],
-      ['t', ['0x0000'], false, [0]],
+      ['t', ['0x1FFFFFFFFFFFFF'], false, [9007199254740991n]],
+      ['t', ['0x0000'], false, [0n]],
       [
         't',
         ['0xFFFFFFFFFFFFFFFF'],
@@ -221,10 +230,12 @@ describe('marshall/unmarshall', () => {
         [LongMaxU64],
         { ReturnLongjs: true }
       ],
-      ['x', [LongMaxS53], false, [9007199254740991]], // make sure Longjs objects convert to 53bit numbers
-      ['x', [LongMinS53], false, [-9007199254740991]],
-      ['t', [LongMaxU53], false, [9007199254740991]],
-      ['t', [LongMinU53], false, [0]],
+      ['x', [LongMaxS53], false, [9007199254740991n]], // Longjs objects in
+      ['x', [LongMinS53], false, [-9007199254740991n]],
+      ['t', [LongMaxU53], false, [9007199254740991n]],
+      ['t', [LongMinU53], false, [0n]],
+      ['x', [LongMaxS64], false, [9223372036854775807n]],
+      ['t', [LongMaxU64], false, [18446744073709551615n]],
       ['x', [9007199254740991], false, [LongMaxS53], { ReturnLongjs: true }], // 53bit numbers to objects
       ['x', [-9007199254740991], false, [LongMinS53], { ReturnLongjs: true }],
       ['t', [9007199254740991], false, [LongMaxU53], { ReturnLongjs: true }],
@@ -278,7 +289,7 @@ describe('marshall/unmarshall', () => {
           }
         ],
         false,
-        [9007199254740991]
+        [9007199254740991n]
       ],
       [
         't',
@@ -303,12 +314,12 @@ describe('marshall/unmarshall', () => {
           }
         ],
         false,
-        [9007199254740991]
+        [9007199254740991n]
       ],
-      ['x', [new String(9007199254740991)], false, [9007199254740991]], // quick check String instance conversion
-      ['t', [new String('9007199254740991')], false, [9007199254740991]],
-      ['x', [new Number(9007199254740991)], false, [9007199254740991]], // quick check Number instance conversion
-      ['t', [new Number('9007199254740991')], false, [9007199254740991]]
+      ['x', [new String(9007199254740991)], false, [9007199254740991n]], // quick check String instance conversion
+      ['t', [new String('9007199254740991')], false, [9007199254740991n]],
+      ['x', [new Number(9007199254740991)], false, [9007199254740991n]], // quick check Number instance conversion
+      ['t', [new Number('9007199254740991')], false, [9007199254740991n]]
     ],
     'simple structs': [
       ['(yyy)y', [[1, 2, 3], 4]],

@@ -42,35 +42,30 @@ individual codes.
 
 **Runtime.** The `ReturnLongjs` option is deprecated.
 
-64-bit values (`x` and `t`) currently come back as lossy `number`, or as
-[long.js](https://github.com/dcodeIO/long.js) objects with `ReturnLongjs: true`.
-In **2.0** they become native `BigInt`, which represents the full 64-bit range
-with no dependency and no option.
-
-**You can have that now**, on a released version, with `returnBigInt: true` —
-the same values 2.0 returns by default, so a call site migrated today needs no
-change then:
+Since **2.0**, 64-bit values (`x` and `t`) come back as native `BigInt`, which
+represents the full 64-bit range with no dependency and no option. Before that
+they were a lossy `number`, or [long.js](https://github.com/dcodeIO/long.js)
+objects with `ReturnLongjs: true`.
 
 ```js
 // deprecated
 const bus = dbus.sessionBus({ ReturnLongjs: true });
 const size = value.toNumber(); // lossy above 2^53
 
-// available now, and the default in 2.0
-const bus = dbus.sessionBus({ returnBigInt: true });
+// the default
 const size = await disk.Size(); // 2000398934016n
 ```
 
-`returnBigInt` wins if both options are set, and writing a `bigint` is accepted
-whatever the read option — so a service and its clients can move separately.
-Note a service reads its _arguments_ through the same parser, so it needs the
-option too if it handles large 64-bit inputs.
+Setting `ReturnLongjs` opts back out of `BigInt`, which is the only thing it
+still does; `returnBigInt: true` wins if both are set. Writing a `bigint` is
+accepted whatever the read option, so a service and its clients could move
+separately. Note a service reads its _arguments_ through the same parser, so
+setting either option there affects large 64-bit inputs too.
 
 `BigInt` is not a drop-in for `number`: `size + 1` and `JSON.stringify({ size })`
-both throw. That is the whole reason this is opt-in for a release before it
-becomes the default — the failure mode is a `TypeError` in production rather
-than a subtly wrong value, so it is better found deliberately than on upgrade
-day.
+both throw. That is why it was opt-in for several releases before becoming the
+default — the failure mode is a `TypeError` in production rather than a subtly
+wrong value, so it was better found deliberately than on upgrade day.
 
 Migration: [docs/migrating-to-2.0.md](./migrating-to-2.0.md), which leads with
 this one.
@@ -81,12 +76,12 @@ this one.
 
 **Documentation.** Reading a variant as `[signature, [value]]`.
 
-A variant currently unmarshals to a two-element array of the _parsed signature
-tree_ and a one-element array holding the value. In **2.0** it unmarshals to the
-value itself.
+Since **2.0** a variant unmarshals to the value itself. Before that it was a
+two-element array of the _parsed signature tree_ and a one-element array
+holding the value, which `plainValues: false` still gives you.
 
 ```js
-// today, and the source of more issues than anything else in this project
+// the old shape, and the source of more issues than anything else here
 const udi = dict.find(([key]) => key === 'Udi')[1][1][0];
 
 // forward-compatible: identical behaviour before and after 2.0
@@ -97,21 +92,14 @@ const udi = variantValue(dict.find(([key]) => key === 'Udi')[1]);
 const { Udi } = await device.props.$all;
 ```
 
-`variantValue()` returns the value from either shape, so you can migrate now.
-`variantSignature()` gets the signature if you need the type information that
+`variantValue()` returns the value from either shape, so a file converted to it
+needed no second pass. `variantSignature()` gets the signature where there is
+one — under `variants: 'wrap'`, which is how you ask for the type information
 the flattened form drops.
 
-**You can also have the 2.0 shape itself now**, with `plainValues: true`:
-
-```js
-const bus = dbus.sessionBus({ plainValues: true });
-const udi = variantValue(entry); // already the plain value; this is now a no-op
-```
-
 Reading only — the marshaller has taken plain objects and `Variant` since 0.11,
-so a value read this way can be written straight back out. Set it on a service
-too if it takes variants as arguments, since it reads them through the same
-parser. See [docs/api.md](./api.md#reading-the-20-shapes-today-plainvalues).
+so a value read this way can be written straight back out. See
+[docs/api.md](./api.md#reading-values-plainvalues).
 
 Migration: [docs/migrating-to-2.0.md](./migrating-to-2.0.md).
 
@@ -126,11 +114,12 @@ Related: [#3](https://github.com/sidorares/dbus-native/issues/3),
 
 **Documentation.** Reading a dict as an array of pairs.
 
-`a{sv}` and friends currently unmarshal to an array of `[key, value]` pairs. In
-**2.0** they unmarshal to a plain object.
+Since **2.0**, `a{sv}` and friends unmarshal to a plain object. Before that
+they were an array of `[key, value]` pairs, which `plainValues: false` still
+gives you.
 
 ```js
-// today
+// the old shape
 const props = {};
 for (const [key, variant] of result) props[key] = variant[1][0];
 
@@ -149,10 +138,7 @@ It only converts arrays this library tagged as dicts while parsing, so `a(ss)`
 (an array of two-string structs) is left alone. A shape-based heuristic cannot
 tell those two apart, which is why the parser tags them instead of guessing.
 
-**You can also have the 2.0 shape itself now**, with `plainValues: true`:
-
 ```js
-const bus = dbus.sessionBus({ plainValues: true });
 const props = await iface.GetAll(name); // { Greeting: 'hello', Count: 7 }
 ```
 

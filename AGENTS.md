@@ -80,39 +80,45 @@ tests never touch (or depend on) the user's real session bus.
 - `npm run dbus:session` starts one in the foreground and prints the
   `DBUS_SESSION_BUS_ADDRESS` export line, for poking at examples by hand.
 
-### The 2.0 shape gate
+### The value-shape gate
 
 ```sh
-npm run test:integration:2.0               # against dbus-daemon
-npm run test:integration:2.0:broker        # against lib/broker.js
-npm run test:integration:2.0-wrap          # variants: 'wrap' as well
-npm run test:integration:2.0-wrap:broker
+npm run test:integration:wrap              # variants: 'wrap'
+npm run test:integration:wrap:broker
+npm run test:integration:classic           # the 1.x shapes
+npm run test:integration:classic:broker
 ```
 
-Same suite, run with the value shapes 2.0 makes the default: a variant reads as
-its value, a string-keyed `a{sv}` as a plain object, and `x`/`t` as `bigint`.
-`DBUS_TEST_SHAPE` turns them on through `test/utils/shape.js`, which every
-integration file gets its connections from. It takes `classic` (the default),
-`2.0`, or `2.0-wrap` — the last being the same shapes but with variants read as
-`Variant` instances, which is what a caller opts into when it needs the type
-back. All three must pass.
+Same suite, run with each of the three value shapes. `DBUS_TEST_SHAPE` selects
+one through `test/utils/shape.js`, which every integration file gets its
+connections from: `plain` (the default — a variant reads as its value, a
+string-keyed `a{sv}` as a plain object, `x`/`t` as `bigint`), `wrap` (the same,
+but variants read as `Variant` instances, which is what a caller opts into when
+it needs the type back), and `classic` (the 1.x shapes, which is what
+`dbus-native/compat` configures). All three must pass, on both buses — six runs.
 
-**This is the gate for the major.** Flipping those defaults is the largest
-break in RELEASE_PLAN, and until this passed there was no way to find out what
-it costs except by shipping it. Both runs are green today, which is the useful
-fact: the library already works in the flipped shape, so what remains is
-migration support rather than repair.
+**This was the gate for the flip**, which was the largest break in
+RELEASE_PLAN. It stayed green for six releases before the defaults moved, so
+what the flip actually cost was migration support rather than repair. It earns
+its keep afterwards for the same reason in reverse: `withClassicTypes` is only
+a supported escape hatch for as long as something proves the old shapes still
+work.
 
 Two rules keep it meaningful:
 
 - **A test asserts behaviour, not a shape.** Read values with `variantValue()`
   and `toPlain()` from `lib/values.js` — the accessors we tell users to migrate
   to, which are the identity in the new shape. Any test that reads `[1][0]` or
-  maps over dict pairs passes in exactly one of the two runs.
+  maps over dict pairs passes in exactly one of the three runs.
 - **A test that _is_ about a shape says so in its options.** `sessionBus()`
-  layers caller options over the defaults, so `{ returnBigInt: false }` keeps
-  meaning that after the flip. `PLAIN_VALUES` and `RETURN_BIGINT` are exported
-  for the handful of assertions that genuinely cannot be written both ways.
+  layers caller options over the defaults, so `{ returnBigInt: false }` means
+  that in every run. `PLAIN_VALUES` and `RETURN_BIGINT` are exported for the
+  handful of assertions that genuinely cannot be written both ways.
+
+The same rule applies to the unit suite, which has no gate: a test that leans
+on the default rather than stating the shape it means stops testing what it was
+written for the moment the default moves. `test/values.js` and
+`test/plain-values.js` both name both shapes explicitly for that reason.
 
 `test/integration/shape.js` asserts that the requested shape is the shape a
 real connection delivers, because `DBUS_TEST_SHAPE` travels through two

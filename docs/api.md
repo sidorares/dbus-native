@@ -102,8 +102,8 @@ socket other processes can reach.
 | `timeout`        | `number`                  | none                                            | default timeout in ms for every call on this client            |
 | `ayBuffer`       | `true \| false \| 'view'` | `true`                                          | how `ay` comes back — see [Values](#values-and-types)          |
 | `maxMessageSize` | `number`                  | 128 MiB                                         | reject a message declaring more than this                      |
-| `returnBigInt`   | `boolean`                 | `false`                                         | read `x`/`t` as native `bigint`, exactly — the 2.0 default     |
-| `plainValues`    | `boolean`                 | `false`                                         | read variants and dicts in the 2.0 shapes — see below          |
+| `returnBigInt`   | `boolean`                 | `true`                                          | read `x`/`t` as native `bigint`, exactly — see below           |
+| `plainValues`    | `boolean`                 | `true`                                          | read variants and dicts as plain values — see below            |
 | `variants`       | `'tree'\|'plain'\|'wrap'` | follows `plainValues`                           | how a `v` comes back; `'wrap'` keeps the signature — see below |
 | `ReturnLongjs`   | `boolean`                 | `false`                                         | **deprecated** (`DBUS_DEP0001`) — 64-bit as Long.js            |
 | `reconnect`      | `boolean \| object`       | `false`                                         | reconnect when the transport goes away — see below             |
@@ -836,16 +836,17 @@ const props = await bus
 await props.$subscribe(
   'PropertiesChanged',
   (interfaceName, changed, invalidated) => {
-    for (const [prop, value] of changed) {
+    for (const [prop, value] of Object.entries(changed)) {
       console.log(prop, variantValue(value));
     }
   }
 );
 ```
 
-`changed` is an `a{sv}`, so until 2.0 it is an array of pairs whose values are
-variants — see [Values and types](#values-and-types) and use `variantValue()` so
-the code survives the change.
+`changed` is an `a{sv}`, so it is a plain object by default and an array of
+pairs under `plainValues: false` — see
+[Values and types](#values-and-types). `toPlain(changed)` reads either, and
+`variantValue()` covers the value whichever way `variants` is set.
 
 The `invalidated` list names properties whose value changed but is not being
 sent — write-only ones, or anything expensive to compute. Listing them tells a
@@ -1036,31 +1037,39 @@ re-thrown asynchronously, matching Node's default for a throwing listener.
 
 ### Type mapping
 
-| D-Bus          | code    | JavaScript                                                                                        |
-| -------------- | ------- | ------------------------------------------------------------------------------------------------- |
-| byte           | `y`     | `number`                                                                                          |
-| boolean        | `b`     | `boolean`                                                                                         |
-| int16 / uint16 | `n` `q` | `number`                                                                                          |
-| int32 / uint32 | `i` `u` | `number`                                                                                          |
-| int64 / uint64 | `x` `t` | `number`, lossy above 2⁵³ — `bigint` with `returnBigInt`, or Long.js with `ReturnLongjs`          |
-| double         | `d`     | `number`                                                                                          |
-| string         | `s`     | `string`                                                                                          |
-| object path    | `o`     | `string`                                                                                          |
-| signature      | `g`     | `string`                                                                                          |
-| array          | `a`     | `Array`                                                                                           |
-| byte array     | `ay`    | `Buffer` — see `ayBuffer`                                                                         |
-| struct         | `()`    | `Array`                                                                                           |
-| dict           | `a{}`   | read: `Array` of `[key, value]` pairs · write: that, **or a plain object**                        |
-| variant        | `v`     | read: `[parsedSignature, [value]]` · write: `Variant`, `[signature, value]`, or either read shape |
+| D-Bus          | code    | JavaScript                                                                             |
+| -------------- | ------- | -------------------------------------------------------------------------------------- |
+| byte           | `y`     | `number`                                                                               |
+| boolean        | `b`     | `boolean`                                                                              |
+| int16 / uint16 | `n` `q` | `number`                                                                               |
+| int32 / uint32 | `i` `u` | `number`                                                                               |
+| int64 / uint64 | `x` `t` | `bigint`, exactly — `number` under `returnBigInt: false`, Long.js under `ReturnLongjs` |
+| double         | `d`     | `number`                                                                               |
+| string         | `s`     | `string`                                                                               |
+| object path    | `o`     | `string`                                                                               |
+| signature      | `g`     | `string`                                                                               |
+| array          | `a`     | `Array`                                                                                |
+| byte array     | `ay`    | `Buffer` — see `ayBuffer`                                                              |
+| struct         | `()`    | `Array`                                                                                |
+| dict           | `a{}`   | string keys: a plain object · other keys: `Array` of `[key, value]` pairs              |
+| variant        | `v`     | read: the value — see `variants` · write: any value, or `Variant` to state the type    |
 
-`h` (UNIX_FD) is not supported.
+`h` (UNIX_FD) is an index into the message's descriptor array — see
+[File descriptors](#file-descriptors).
 
-Two of these are awkward, and both change in 2.0 — see
-[docs/deprecations.md](./deprecations.md). Read them through the helpers below
-and your code survives that change untouched.
+**Writing** 64-bit values accepts a `bigint`, a `number` up to 53 bits, a
+decimal or `0x`-prefixed string for the full range, or a Long.js object.
 
-**Writing** 64-bit values accepts a `number` up to 53 bits, a decimal or
-`0x`-prefixed string for the full range, or a Long.js object.
+**`bigint` is the one to read carefully.** It is not a drop-in for `number`:
+
+```js
+size + 1; // TypeError: Cannot mix BigInt and other types
+JSON.stringify({ size }); // TypeError: Do not know how to serialize a BigInt
+size > 100; // fine, comparisons work
+Number(size); // fine, if you accept the precision loss you already had
+```
+
+[docs/migrating-to-2.0.md](./migrating-to-2.0.md) covers this in full.
 
 ### Writing a dict as a plain object
 
@@ -1115,49 +1124,51 @@ A class instance is not treated as a dict — only objects whose prototype is
 `Object.prototype` or `null`. Being wrong about that would write a garbled
 message instead of failing.
 
-### Reading the 2.0 shapes today: `plainValues`
+### Reading values: `plainValues`
 
-The awkward half of the type system is on the **read** side, and it changes in
-2.0. `plainValues: true` gives you that shape now, so code can be migrated on a
-released version instead of on a flag day — the same path `returnBigInt` took:
+A variant reads as the value itself and a string-keyed dict as a plain object.
+`plainValues: false` reads the 1.x shapes instead.
 
-```js
-const bus = dbus.sessionBus({ plainValues: true });
-```
+| signature | `plainValues` (default)     | `plainValues: false`            |
+| --------- | --------------------------- | ------------------------------- |
+| `v`       | `value`                     | `[signatureTree, [value]]`      |
+| `a{sv}`   | `{ key: value }`            | array of pairs, values variants |
+| `a{ss}`   | `{ key: value }`            | array of pairs                  |
+| `a{us}`   | **pairs** — see below       | array of pairs                  |
+| `a(ss)`   | array of arrays, not a dict | array of arrays                 |
 
-| signature | default                         | `plainValues`               |
-| --------- | ------------------------------- | --------------------------- |
-| `v`       | `[signatureTree, [value]]`      | `value`                     |
-| `a{sv}`   | array of pairs, values variants | `{ key: value }`            |
-| `a{ss}`   | array of pairs                  | `{ key: value }`            |
-| `a{us}`   | array of pairs                  | **unchanged** — see below   |
-| `a(ss)`   | array of arrays                 | unchanged, it is not a dict |
-
-Reading only. The marshaller already takes plain objects and `Variant`, so a
-value read this way can be written straight back out — including passing one
-from one service to another.
+Reading only. The marshaller takes plain objects and `Variant`, so a value read
+this way can be written straight back out — including passing one from one
+service to another.
 
 **A dict whose keys are not strings stays as pairs.** A JavaScript object key is
 always a string, so `a{us}` read as an object would turn the key `1` into `'1'`,
-and with `returnBigInt` a 64-bit key would stringify and lose precision on the
-way back. Quiet corruption is worse than an inconvenient shape.
+and a 64-bit key would stringify and lose precision on the way back. Quiet
+corruption is worse than an inconvenient shape.
 
 **Reading a variant this way discards its signature** — `variantSignature()`
 returns `undefined` for it. That is usually what you want, and when it is not,
 see `variants` below.
 
-Both sides of a conversation should agree: a service reads its own method
-arguments through the same parser, so set it there too.
+Both sides of a conversation see the same shapes, since a service reads its own
+method arguments through the same parser. If you change this, change it on both.
 
-`variantValue()` and `toPlain()` read either shape and become the identity under
-this one, so code written against them needs no change when the default flips.
+`variantValue()` and `toPlain()` read either shape and are the identity under
+this one, so code written against them works whichever is in force. For code
+that cannot be migrated yet, `dbus-native/compat` restores the 1.x shapes
+wholesale:
+
+```js
+const { withClassicTypes } = require('dbus-native/compat');
+const bus = withClassicTypes(dbus.sessionBus());
+```
 
 ### Getting the type back: `variants`
 
 Sometimes the value is not enough. A tool that prints a reply has to say
 `variant u 501` rather than `501`, and a service handed an `a{sv}` may need to
 know what its caller actually sent. Both used to mean reading the parser's
-internal tree, which is the thing 2.0 exists to stop.
+internal tree, which is the thing this replaced.
 
 `variants` decides how a `v` comes back, independently of the dict shape:
 
@@ -1167,11 +1178,11 @@ internal tree, which is the thing 2.0 exists to stop.
 | `'plain'` | `value`                    | `undefined`          |
 | `'wrap'`  | `Variant(sig, value)`      | the signature        |
 
-It defaults to `'plain'` when `plainValues` is set and `'tree'` otherwise, so
-existing code is unaffected either way.
+It follows `plainValues` when unset — `'plain'` by default, `'tree'` under
+`plainValues: false`.
 
 ```js
-const bus = dbus.sessionBus({ plainValues: true, variants: 'wrap' });
+const bus = dbus.sessionBus({ variants: 'wrap' });
 
 const props = await iface.$readProp('Metadata');
 props.Volume.signature; // 'd'
@@ -1193,15 +1204,27 @@ The signature is the one the sender wrote, never one re-derived from the value:
 `y`, `n`, `q`, `i`, `u` and `d` all arrive as a JavaScript number, so inferring
 it back would be a guess presented as type information.
 
+A router is the case that needs all of this at once. `lib/broker.js` reads with
+`variants: 'wrap'`, `plainValues: false` and `returnBigInt: true` — every
+convenience shape turned off — because forwarding means unmarshalling a message
+and marshalling it again, and each of those conveniences discards something the
+next hop was entitled to: the variant's signature, duplicate dict keys, and the
+low bits of a 64-bit integer respectively.
+
 ---
 
-A variant read off the wire can also be written straight back, so a value can
-be passed from one service to another without unwrapping it:
+A variant read off the wire can be written straight back, so a value can be
+passed from one service to another without unwrapping it:
 
 ```js
 const opts = await source.GetOptions();
-await sink.SetOptions(opts); // the [parsedSignature, [value]] shape is accepted
+await sink.SetOptions(opts);
 ```
+
+Under `'plain'` the type is genuinely gone, so writing the value back infers a
+signature from it the same way a value inside a plain object does — which means
+`u`, `i` and `d` all come back out as whatever the number implies. Read with
+`'wrap'` when a value has to arrive typed exactly as it was sent.
 
 **`ayBuffer`** controls byte arrays: `true` (default) copies into a `Buffer`;
 `'view'` returns a `Buffer` sharing memory with the message, which avoids the
@@ -1220,16 +1243,16 @@ const {
 } = require('dbus-native');
 ```
 
-| function                        |                                                                                               |
-| ------------------------------- | --------------------------------------------------------------------------------------------- |
-| `variantValue(v)`               | the value inside a variant, in either the current or the 2.0 shape; identity on a plain value |
-| `variantSignature(v)`           | the variant's signature, or `undefined` once flattened                                        |
-| `toPlain(v)`                    | recursively: dicts to objects, variants unwrapped; no-op on plain values                      |
-| `new Variant(signature, value)` | an explicitly typed value, for writing                                                        |
+| function                        |                                                                                   |
+| ------------------------------- | --------------------------------------------------------------------------------- |
+| `variantValue(v)`               | the value inside a variant, in any of the three shapes; identity on a plain value |
+| `variantSignature(v)`           | the variant's signature, or `undefined` once flattened                            |
+| `toPlain(v)`                    | recursively: dicts to objects, variants unwrapped; no-op on plain values          |
+| `new Variant(signature, value)` | an explicitly typed value, for writing                                            |
 
 ```js
-const udi = variantValue(entry); // today: entry[1][0];  2.0: entry
-const props = toPlain(dict); // today: array of pairs;  2.0: identity
+const udi = variantValue(entry); // 'tree': entry[1][0];  'plain': entry
+const props = toPlain(dict); // 1.x: array of pairs;  now: identity
 
 bus.invoke({
   /* … */ signature: 'ssv',
@@ -1380,15 +1403,15 @@ dc.subscribe('tracing:dbus:call:error', ctx =>
 
 ## CLI
 
-| command      |                                                     |
-| ------------ | --------------------------------------------------- |
-| `call`       | call a method, the way `dbus-send` does             |
-| `get`, `set` | read or write a property                            |
-| `list`       | the names on the bus                                |
-| `types`      | TypeScript declarations for a service               |
-| `introspect` | a service's raw introspection XML                   |
-| `codemod`    | rewrite your source for a breaking change           |
-| `lint`       | report reads of the value shapes that change in 2.0 |
+| command      |                                                      |
+| ------------ | ---------------------------------------------------- |
+| `call`       | call a method, the way `dbus-send` does              |
+| `get`, `set` | read or write a property                             |
+| `list`       | the names on the bus                                 |
+| `types`      | TypeScript declarations for a service                |
+| `introspect` | a service's raw introspection XML                    |
+| `codemod`    | rewrite your source for a breaking change            |
+| `lint`       | report reads of the value shapes that changed in 2.0 |
 
 ### Talking to the bus
 

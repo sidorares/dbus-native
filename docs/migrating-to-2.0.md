@@ -9,11 +9,13 @@ It is the release people have been asking for since
 one that breaks the most code, because these shapes are what every `invoke`
 callback in your program reads.
 
-**The whole of it can be done before you upgrade.** Every change below is
-available today, per connection, behind an option. You can migrate one file at
-a time on a released version, verify it against your real bus, and arrive at
-2.0 with nothing left to do. Read [Doing it early](#doing-it-early) first if you
-read nothing else.
+**Every change is still an option, now pointing the other way.** Each of the
+new shapes was available before the flip and each of the old ones is available
+after it, per connection — so a program can move across in either direction,
+one connection at a time, rather than in a single step. If you have not
+upgraded yet, read [Doing it before you upgrade](#doing-it-before-you-upgrade)
+first; if you have, and something broke, go to
+[If you cannot migrate yet](#if-you-cannot-migrate-yet).
 
 ---
 
@@ -91,11 +93,12 @@ or generate typings and let the type checker find them, which is less work:
 
 ```bash
 dbus-native types --system --service org.freedesktop.UPower \
-  --path /org/freedesktop/UPower --target next --out upower.d.ts
+  --path /org/freedesktop/UPower --out upower.d.ts
 ```
 
-`--target next` emits the 2.0 shapes, so `tsc` reports every place a `bigint`
-meets a `number` before you have run anything.
+The default `plain` target emits the 2.0 shapes, so `tsc` reports every place a
+`bigint` meets a `number` before you have run anything. (Generate with
+`--target classic` first if you want to see the two side by side.)
 
 ---
 
@@ -203,10 +206,10 @@ Writing a dict has accepted a plain object since 0.11.0, so code that sends
 
 ---
 
-## Doing it early
+## Doing it before you upgrade
 
-None of the above has to wait for 2.0. Both shapes are options today, per
-connection:
+None of the above has to wait for the upgrade. The new shapes have been options
+since 0.11, per connection:
 
 ```js
 const bus = dbus.sessionBus({ plainValues: true, returnBigInt: true });
@@ -239,7 +242,7 @@ xs)` is also ordinary JavaScript, and a linter that cries wolf gets switched
    connection, a large program can move a subsystem at a time against its real
    bus rather than all at once.
 
-4. **Upgrade.** If steps 1–3 are done, 2.0 is a version bump.
+4. **Upgrade.** If steps 1–3 are done, this release is a version bump.
 
 ---
 
@@ -255,8 +258,9 @@ const bus = withClassicTypes(dbus.sessionBus());
 `number`. For code with `result[1][1][0]` in three hundred places and a reason
 to upgrade that is not this.
 
-It is available now, where it does nothing, so the import can land before the
-flag day rather than during it.
+It shipped ahead of the flip, where it was a no-op, so the import could land
+before the flag day rather than during it — and it means an upgrade that breaks
+you is one line to unbreak while you work through the rest.
 
 Four things to know:
 

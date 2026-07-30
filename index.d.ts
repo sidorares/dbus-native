@@ -227,22 +227,21 @@ export interface ConnectionOptions {
    */
   ayBuffer?: boolean | 'view';
   /**
-   * Read 64-bit values (`x`, `t`) as native `bigint`, exactly, instead of a
-   * `number` that loses precision above 2^53. This is what they become by
-   * default in 2.0 — opting in now means no change then.
+   * Read 64-bit values (`x`, `t`) as native `bigint`, exactly. Default `true`
+   * since 2.0.
    *
-   * Wins over `ReturnLongjs` if both are set. Writing a `bigint` is accepted
-   * regardless of this option.
+   * Set `false` for the 1.x behaviour: a `number`, which loses precision above
+   * 2^53. Writing a `bigint` is accepted regardless of this option.
    */
   returnBigInt?: boolean;
   /**
-   * Read the 2.0 value shapes: a variant comes back as the value itself rather
-   * than `[signatureTree, [value]]`, and a string-keyed dict as a plain object
-   * rather than an array of pairs. This is what they become by default in 2.0 —
-   * opting in now means no change then.
+   * Read the plain value shapes: a variant comes back as the value itself
+   * rather than `[signatureTree, [value]]`, and a string-keyed dict as a plain
+   * object rather than an array of pairs. Default `true` since 2.0; set
+   * `false` for the 1.x shapes.
    *
-   * Affects reading only. The marshaller already accepts plain objects and
-   * `Variant`, so a value read this way can be written straight back out.
+   * Affects reading only. The marshaller accepts plain objects and `Variant`,
+   * so a value read this way can be written straight back out.
    *
    * A dict whose keys are not strings (`a{us}`, `a{ts}`) stays as pairs: a
    * JavaScript object key is always a string, so converting those would change
@@ -255,27 +254,26 @@ export interface ConnectionOptions {
   /**
    * How a variant (`v`) comes back.
    *
-   * - `'tree'` — `[parsedSignatureTree, [value]]`, what 1.x hands back
+   * - `'tree'` — `[parsedSignatureTree, [value]]`, what 1.x handed back
    * - `'plain'` — the value, and the signature is gone
    * - `'wrap'` — a {@link Variant}, carrying both
    *
-   * Defaults to `'plain'` when `plainValues` is set and `'tree'` otherwise, so
-   * setting neither keeps 1.x behaviour and setting only `plainValues` keeps
-   * the behaviour it had before this option existed.
+   * Follows `plainValues` when unset, so it is `'plain'` by default and
+   * `'tree'` under `plainValues: false`.
    *
    * `'wrap'` is how you ask for the type information without reading the
    * parser's internal tree: a `Variant` prints readably, `variantValue()` and
    * `toPlain()` understand it, and the marshaller accepts it, so a value read
-   * this way can be sent straight back out. Combining it with
-   * `plainValues: true` gives plain dicts whose values still carry their types
-   * — what `dbus-native call` uses to print `variant u 501`.
+   * this way can be sent straight back out. It is the shape to reach for when
+   * a service needs to know what types an `a{sv}` argument arrived with, and
+   * what `dbus-native call` uses to print `variant u 501`.
    */
   variants?: 'tree' | 'plain' | 'wrap';
   /**
-   * @deprecated DBUS_DEP0001 -- 64-bit values become BigInt in 2.0; use
-   * `returnBigInt`. Note the capital R: this one option predates the rest and
-   * is the only PascalCase name in the API. It cannot be corrected without
-   * breaking the callers who set it.
+   * @deprecated DBUS_DEP0001 -- 64-bit values are BigInt as of 2.0. Setting
+   * this opts back out of that, and is the only reason it still does anything.
+   * Note the capital R: this one option predates the rest and is the only
+   * PascalCase name in the API.
    */
   ReturnLongjs?: boolean;
   /** reject a message declaring more than this many bytes; default 128 MiB */

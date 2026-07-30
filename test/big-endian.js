@@ -51,15 +51,17 @@ describe('DBusBuffer: big-endian scalars', () => {
   it('reads 64-bit values with the correct word order', () => {
     const bytes = Buffer.alloc(8);
     bytes.writeBigInt64BE(0x0000000100000002n, 0);
-    assert.strictEqual(read([...bytes], 'x', BE), 0x0000000100000002);
+    assert.strictEqual(read([...bytes], 'x', BE), 0x0000000100000002n);
 
+    // The top word is the one a half-right implementation loses, so read the
+    // full range rather than a value a 32-bit slip could still get right.
     const big = Buffer.alloc(8);
-    big.writeBigUInt64BE(9007199254740991n, 0);
-    assert.strictEqual(read([...big], 't', BE), 9007199254740991);
+    big.writeBigUInt64BE(18446744073709551615n, 0);
+    assert.strictEqual(read([...big], 't', BE), 18446744073709551615n);
 
     const negative = Buffer.alloc(8);
     negative.writeBigInt64BE(-42n, 0);
-    assert.strictEqual(read([...negative], 'x', BE), -42);
+    assert.strictEqual(read([...negative], 'x', BE), -42n);
   });
 
   it('reads a string, whose length field is byte-order sensitive', () => {
