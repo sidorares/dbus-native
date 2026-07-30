@@ -466,14 +466,19 @@ Mostly unchanged, with one downgraded and one added.
   migration tooling now exists — lint rule, codemod, `withClassicTypes`,
   `docs/migrating-to-2.0.md` — which is the difference between a break and a
   fork.
-- **New: the integration flake is mitigated, not explained.** The suite runs
-  serially because concurrent runs failed roughly 1 in 5, always a service
-  answering `UnknownObject` for something it had exported. One captured instance
-  had a connection with an empty `exportedObjects` receiving a call addressed to
-  a name it did not own, which should not be possible with unicast routing.
-  Rewriting the dispatch layer on top of an unexplained dispatch bug is how a
-  known-flaky suite becomes a mysteriously-broken one. **Root-cause it before
-  the proxy and service work lands**, not after.
+- ~~**The integration flake is mitigated, not explained.**~~ **Root-caused and
+  fixed.** It was a real dispatch bug, and the instinct to chase it before
+  building more on top was right: a connection answered method calls it was
+  merely _overhearing_, because dispatch never checked `msg.destination`. A
+  match rule with no `type=` makes the daemon deliver everything, and the
+  eavesdropper's `UnknownMethod` reply carried the real sender's serial —
+  settling somebody else's call, in another process, with an error. The suite's
+  own `match-rules.js` corpus generates exactly that traffic.
+
+  The suite runs in parallel again and is 3× faster. Worth noting what it says
+  about the earlier evidence: "a connection with an empty `exportedObjects`
+  receiving a call for a name it does not own" was reported as impossible under
+  unicast routing, and it _was_ — the message was never unicast to it.
 
 ---
 
