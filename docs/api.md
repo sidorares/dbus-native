@@ -350,8 +350,12 @@ idempotent, so replaying one could charge a card twice. Re-issuing is yours to
 decide, which is what `reconnected` is for.
 
 Retries back off exponentially to `maxDelay`, because the usual reason a bus is
-unreachable is that it is restarting and hammering it does not help. A pending
-retry does not hold the process open.
+unreachable is that it is restarting and hammering it does not help.
+
+A pending retry **does** hold the event loop open, exactly as a live socket
+would. A daemon whose bus restarted should not exit during the gap — that is
+the case this exists for. `bus.close()` cancels the retry, so a program that
+wants to stop still can.
 
 `reconnect` cannot be combined with `opts.stream`: a stream the caller supplied
 cannot be reopened, and pretending otherwise would redial the same dead socket

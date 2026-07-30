@@ -409,8 +409,11 @@ function createConnection(opts) {
       self.message = bufferMessage;
       attachStream();
     }, delay);
-    // A pending retry should not hold the process open by itself.
-    if (typeof retryTimer.unref === 'function') retryTimer.unref();
+    // Deliberately *not* unref'd. A live socket holds the event loop open, so
+    // a connection trying to get back to one should too -- otherwise a daemon
+    // whose bus restarted exits during the gap, which is precisely the case
+    // this exists for. `end()` and the disposer clear the timer, so a program
+    // that wants to stop can.
   }
 
   self.end = () => {
