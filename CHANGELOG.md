@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.14.0](https://github.com/sidorares/dbus-native/compare/v0.13.0...v0.14.0) (2026-07-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* calls that previously hung forever now reject with a TimeoutError after 25 seconds. Pass `timeout: 0` per call or per client to restore the old behaviour, or raise `timeout` for a method that genuinely takes longer.
+* the `ReturnLongjs` option now throws -- pass `returnBigInt: false` for a lossy `number`. The `dbus2js` binary is removed; use `dbus-native types`. `lib/address-x11.js` is removed.
+* the `ReturnLongjs` option now throws -- pass `returnBigInt: false` for a lossy `number`. The `dbus2js` binary is removed; use `dbus-native types`. `lib/address-x11.js` is removed.
+* `plainValues` and `returnBigInt` now default to true, so a variant reads as its value, a string-keyed dict as a plain object, and `x`/`t` as `bigint`. See docs/migrating-to-2.0.md.
+
+### Features
+
+* drop long, ReturnLongjs, dbus2js and lib/address-x11.js ([#374](https://github.com/sidorares/dbus-native/issues/374)) ([1af463b](https://github.com/sidorares/dbus-native/commit/1af463bf404c0b75f3b0728dcd746dcef5465adf))
+* every call has a deadline ([#378](https://github.com/sidorares/dbus-native/issues/378)) ([72d956b](https://github.com/sidorares/dbus-native/commit/72d956b363df28a4e802d5368c15215d02657e45))
+* raise the Node floor to 22.12.0 ([#375](https://github.com/sidorares/dbus-native/issues/375)) ([7a35321](https://github.com/sidorares/dbus-native/commit/7a353216a3f50de55d814c6595d2060be6949a57))
+* the plain value shapes are the default ([#373](https://github.com/sidorares/dbus-native/issues/373)) ([209f2a1](https://github.com/sidorares/dbus-native/commit/209f2a1ccc9eca60e37724078ea88f5fb779194c))
+
+
+### Documentation
+
+* note the stacked-squash changelog trap ([#379](https://github.com/sidorares/dbus-native/issues/379)) ([50782f5](https://github.com/sidorares/dbus-native/commit/50782f5412ead1d35ea3932d9cfc3addfd24a771))
+
 ## [0.13.0](https://github.com/sidorares/dbus-native/compare/v0.12.0...v0.13.0) (2026-07-30)
 
 
