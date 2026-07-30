@@ -310,6 +310,14 @@ closes without it, UNIX_FD costs another major later. Defining
 `stream.writeWithFds?` / `stream.on('fds')` as an optional capability now, with
 nothing behind it, is cheap insurance and belongs in this release train.
 
+**Shipped, and it turned out to be more than a seam.** Once the message is
+`{ bytes, fds }` and `h` is the uint32 index the spec always said it was, the
+only missing piece is the stream — so the whole protocol is implemented and
+tested against a mock transport, and UNIX_FD works today for anyone who supplies
+one. The package still depends on nothing. That is a better outcome than the
+placeholder this section asked for, and it came from noticing that "not
+buildable" was about the _transport_, never about the protocol.
+
 ---
 
 ## 4. The platform moved — re-checked on Node 26
