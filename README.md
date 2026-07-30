@@ -14,7 +14,7 @@ Installation
 npm install dbus-native
 ```
 
-Requires Node.js 20.8.0 or newer.
+Requires Node.js 22.12.0 or newer.
 
 Or from a checkout:
 

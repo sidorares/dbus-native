@@ -39,20 +39,21 @@ the classic track keeps its semver promises.
 Each major is chosen so its blast radius is small enough to tool for, and so
 it unblocks the next one.
 
-| release | theme                        | blast radius              | migration mechanism               |
-| ------- | ---------------------------- | ------------------------- | --------------------------------- |
-| **0.6** | preparation, all additive    | none                      | —                                 |
-| **1.0** | errors are `Error`s ✅       | error-handling paths only | codemod + forward-compatible shim |
-| **2.0** | the type system ✅           | every value read          | accessors + lint + compat wrapper |
-| **3.0** | lifecycle and cancellation   | connection setup/teardown | codemod + deprecations            |
-| **4.0** | ESM, `/next` becomes default | imports                   | codemod                           |
+| release | theme                      | blast radius              | migration mechanism               |
+| ------- | -------------------------- | ------------------------- | --------------------------------- |
+| **0.6** | preparation, all additive  | none                      | —                                 |
+| **1.0** | errors are `Error`s ✅     | error-handling paths only | codemod + forward-compatible shim |
+| **2.0** | the type system ✅         | every value read          | accessors + lint + compat wrapper |
+| **3.0** | lifecycle and cancellation | connection setup/teardown | codemod + deprecations            |
+| **4.0** | ~~ESM~~, `/next` default   | imports                   | codemod                           |
 
 Errors come before types because a rejected promise has to carry an `Error` for
 promises to be worth anything, and because it touches only `catch` blocks
 rather than every value in the program. Types come before lifecycle because it
 is the highest-value change and the one people are actually waiting for. ESM
-comes last because it is the one break with no functional benefit — it is
-packaging, and it can wait until everything else has settled.
+came last because it is the one break with no functional benefit — and having
+got there, it turned out not to be worth doing at all: see §4.0 below and
+BIG_FUTURE_PLANS §4.1.
 
 ---
 
@@ -338,11 +339,24 @@ rewrite.
 
 Note the library implements `Symbol.asyncDispose` regardless of the consumer's
 Node version — only the `using` _keyword_ needs Node 24, and that is the user's
-choice, not a floor we impose. The engines floor stays at 20.8 here.
+choice, not a floor we impose. The engines floor moved to **22.12.0** with the
+type-system release rather than here, because Node 20 reached end of life on
+2026-04-30 and 22.12 is where `require(esm)` becomes available — see
+BIG_FUTURE_PLANS §4.
 
 ---
 
 ## 4.0 — ESM, and `/next` becomes the default
+
+> **The ESM half is dropped.** Not deferred — measured. An ESM consumer can
+> already import the CJS package completely: default import, every named
+> export, subpaths, deep subpaths, and `instanceof` across the boundary. So
+> ESM-only buys nothing, while costing `require()` for every consumer on
+> Node < 22.12 and anyone whose bundler does not implement `require(esm)`.
+> See BIG_FUTURE_PLANS §4.1 for the measurements.
+>
+> The dual-package hazard below is still real and is still a good reason never
+> to publish one. It was never a reason to abandon CJS.
 
 - `dbus-native` resolves to the modern API; the classic surface moves to
   `dbus-native/classic` and stays supported for a defined period.

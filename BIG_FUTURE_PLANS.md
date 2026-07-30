@@ -39,7 +39,8 @@ The original §0 listed what was wrong with the library. Most of it is fixed.
 What is left from the original sketch: **`await using` (§1), proxies (§2), the
 value-shape flag day (§3), async-iterable signals (§5), `defineInterface` (§7),
 and ESM (§9).** That is the breaking window, and it is the subject of the rest
-of this document. Everything in it has now shipped except ESM.
+of this document. Everything in it has now shipped, except ESM — which §4.1
+argues should not be done at all.
 
 The single most important thing the sketch got right, and it is worth
 restating because it constrains everything below: **the wire layer is good and
@@ -367,11 +368,65 @@ Two of these change decisions the original made.
 | `AsyncDisposableStack`                 | ✅ from Node **24**       | §1, feature-detected                      |
 | `Promise.withResolvers()`              | ✅ native                 | simplifies the cookie table               |
 | `AbortSignal.timeout()`, `Error.cause` | ✅ native                 | shipped already                           |
-| **`require()` of an ESM module**       | ✅ **unflagged** (22.12+) | **weakens the ESM-only objection**        |
+| **`require()` of an ESM module**       | ✅ **unflagged** (22.12+) | §4.1 — and ESM-only turns out to be moot  |
 | **TypeScript type stripping**          | ✅ **unflagged**          | changes the codegen story, not decorators |
 | Sync iterator helpers                  | ✅ native                 | —                                         |
 | **Async iterator helpers**             | ❌ still absent           | §2.4 — callbacks lead                     |
 | **Decorators**                         | ❌ still a `SyntaxError`  | §7 stays `defineInterface`                |
+
+### 4.1 ESM-only: measured, and the answer is no
+
+**Correction, and the last one this document needs.** Everything below §4 was
+written from the cost side: how much would ESM-only hurt, now that
+`require(esm)` exists? That was the wrong question. The right one is what it
+_buys_, and the answer turns out to be nothing at all.
+
+The current CJS package was installed from its own tarball into a clean
+project and imported from ESM. Every consumption shape works today:
+
+```js
+import dbus from 'dbus-native'; // default
+import { sessionBus, Variant, toPlain } from 'dbus-native'; // named
+import { withClassicTypes } from 'dbus-native/compat'; // subpath
+import marshall from 'dbus-native/lib/marshall.js'; // deep subpath
+new Variant('s', 'x') instanceof dbus.Variant; // true, across the boundary
+```
+
+**All 23 runtime exports are visible as ESM named imports** — checked by
+diffing `Object.keys(require(…))` against `import * as ns`, not by spot-check,
+because `cjs-module-lexer` is a static analysis and the failure mode is a
+_silently missing_ named export. `index.js` assigns several exports after the
+initial object literal and the lexer finds those too.
+
+So the interop matrix has no hole in it either way:
+
+| package is   | CJS consumer                       | ESM consumer              |
+| ------------ | ---------------------------------- | ------------------------- |
+| CJS (today)  | native                             | ✅ works — verified above |
+| **ESM-only** | needs `require(esm)`, Node ≥ 22.12 | native                    |
+
+The asymmetry is the whole argument. Staying CJS costs an ESM consumer
+nothing. Going ESM-only costs **every CJS consumer on Node < 22.12**, plus
+anyone whose bundler or toolchain does not implement `require(esm)` — and the
+floor in `engines` does not help, because that constrains what _we_ run on
+while a consumer on Node 20 can `require()` this package perfectly well today.
+
+For an audience that is 61% Homebridge on Raspberry Pi, that is a real cost
+against a benefit `RELEASE_PLAN` already described as "the only break in the
+plan with no functional payoff". **Recommendation: do not do it.** Not "defer
+it" — the reason it looked worth doing was an interop gap that measurement
+says is not there.
+
+What survives from the original reasoning is the narrow bit: a **dual**
+package really would ship two copies of `Variant` and break `instanceof`
+across them. That remains a good reason never to publish one. It is not a
+reason to abandon CJS.
+
+If this is ever revisited, the one rule that must hold is **no top-level await
+in any entry point** — `ERR_REQUIRE_ASYNC_MODULE`, verified — since that is
+what makes `require(esm)` work at all.
+
+---
 
 **`require(esm)` is the significant one.** The original argued for ESM-only on
 the grounds that a dual package ships two copies of `Variant` and breaks
@@ -390,12 +445,17 @@ erasable type. The original's conclusion stands unchanged: `defineInterface` is
 the API, decorators are an optional export for people who already have a
 TypeScript pipeline.
 
-**Node 20 reached end of life on 2026-04-30.** The current floor of 20.8.0 is
-now a dead LTS line. A major is the moment to raise it; Node 22 is the
-conservative choice and 24 buys `await using` in our own source. I would raise
-to 22 and use `Symbol.asyncDispose` without the syntax internally, because the
-embedded audience upgrades slowly and the syntax is a convenience for us, not a
-capability.
+**Node 20 reached end of life on 2026-04-30.** ✅ **Raised to 22.12.0**, and
+the patch number is the interesting part. The reasoning above said "22", but
+`require(esm)` — the thing that makes ESM-only tractable — is unflagged only
+from **22.12**: 22.0 fails it with `ERR_REQUIRE_ESM`, which I measured rather
+than assumed after writing §4 on the strength of "22.12+". A floor of `>=22.0`
+would have quietly given up the option this document argues for.
+
+24 would buy `await using` in our own source. It is not worth it: the embedded
+audience upgrades slowly, and the syntax is a convenience for us rather than a
+capability. `Symbol.asyncDispose` works from 20 and so works everywhere we
+support.
 
 ---
 
@@ -436,7 +496,11 @@ The useful cut, now that the gate exists to verify it.
   it already did inside `a{sv}`.
 - the `{ bytes, fds }` message seam (§3.3) — the feature is additive, the seam
   is not
-- ESM-only, with the no-top-level-await rule (§4)
+- ~~ESM-only, with the no-top-level-await rule (§4)~~ — **dropped, §4.1.**
+  Measured rather than argued: an ESM consumer can already import the CJS
+  package completely, including every named export, subpaths and `instanceof`.
+  ESM-only would buy nothing and would break `require()` for every consumer on
+  Node < 22.12.
 - the Node floor (§4)
 - ~~dropping `long`, `ReturnLongjs`, `dbus2js`, and `lib/address-x11.js` — which
   is published in `lib/` and throws `Cannot find module 'x11'` on require~~ ✅

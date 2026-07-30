@@ -48,7 +48,8 @@ of the three and is now the most modern. Instead:
 
 Landed and verified; listed here so the changelog writes itself.
 
-- Travis → GitHub Actions; matrix over Node 20/22/24 on Linux and macOS.
+- Travis → GitHub Actions; matrix over Node 22/24/26 on Linux and macOS
+  (20/22/24 until 2.0, when Node 20 went end-of-life).
 - release-please with npm **trusted publishing (OIDC)** — no `NPM_TOKEN`, and
   provenance attached automatically.
 - Dependabot for npm and GitHub Actions.
