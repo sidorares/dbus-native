@@ -10,14 +10,18 @@ other document and the current backlog in [ROADMAP.md](./ROADMAP.md).
 
 ## The decision
 
+> **Track 1 is dropped.** Not deferred — the premise it rested on turned out to
+> be false, and the work is what disproved it. See
+> [The `/next` track](#the-next-track) below. Track 2 shipped in full.
+
 Two tracks, one package, no new npm name.
 
-1. **`dbus-native/next`** — the modern API from BIG_FUTURE_PLANS, developed as
+1. ~~**`dbus-native/next`** — the modern API from BIG_FUTURE_PLANS, developed as
    a subpath export alongside the existing one. No migration required to keep
-   using the classic surface.
+   using the classic surface.~~ **Dropped.**
 2. **A short series of major releases** that fix the genuine defects in the
    _classic_ API — variants, errors, 64-bit — each one narrow enough to
-   document and tool properly.
+   document and tool properly. ✅
 
 The second track is the departure from "add alongside forever". The reason is
 the flag-sprawl failure mode: `ayBuffer: true|false|'view'`, `ReturnLongjs`,
@@ -52,7 +56,7 @@ it unblocks the next one.
 | **1.0** | **0.7.0**  | errors are `Error`s ✅        | error-handling paths only | codemod + forward-compatible shim |
 | **2.0** | **0.14.0** | the type system ✅            | every value read          | accessors + lint + compat wrapper |
 | **3.0** | **0.13.0** | lifecycle and cancellation ✅ | connection setup/teardown | codemod + deprecations            |
-| **4.0** | —          | ~~ESM~~, `/next` default      | imports                   | codemod                           |
+| **4.0** | —          | ~~ESM~~, ~~`/next` default~~  | imports                   | codemod                           |
 
 Errors come before types because a rejected promise has to carry an `Error` for
 promises to be worth anything, and because it touches only `catch` blocks
@@ -143,9 +147,9 @@ the lint rule's job. `docs/deprecations.md` labels each code **runtime** or
 Warnings fire once per code per process, so normal runs stay quiet.
 
 **Also in 0.6, all additive:** `AbortSignal` on calls,
-`diagnostics_channel` instrumentation, a hand-written `index.d.ts`
-([#276](https://github.com/sidorares/dbus-native/issues/276)), and the first
-`/next` preview.
+`diagnostics_channel` instrumentation, and a hand-written `index.d.ts`
+([#276](https://github.com/sidorares/dbus-native/issues/276)). ~~The first
+`/next` preview~~ — never shipped, and the track is dropped.
 
 ---
 
@@ -371,6 +375,10 @@ BIG_FUTURE_PLANS §4.
 
 ## 4.0 — ESM, and `/next` becomes the default
 
+> **Both halves are dropped, so this release does not exist.** The `/next` half
+> went with the track itself — there is nothing to make the default. The ESM
+> half is below.
+>
 > **The ESM half is dropped.** Not deferred — measured. An ESM consumer can
 > already import the CJS package completely: default import, every named
 > export, subpaths, deep subpaths, and `instanceof` across the boundary. So
@@ -395,21 +403,43 @@ the only break in the plan with no functional payoff.
 
 ## The `/next` track
 
-Runs in parallel from 0.6, versioned by the package but explicitly unstable
-until 4.0:
+> **Dropped, and never built.** There is no `./next` in the `exports` map and no
+> such directory. The reasoning below is kept because the refutation only makes
+> sense against it.
 
-```js
-import { sessionBus } from 'dbus-native/next'; // 0.x rules apply here
-```
+The case for a second surface was this, from [The decision](#the-decision):
 
-Documented as experimental in the README, with breaking changes allowed in
-minors. It shares the wire layer, the test suite and the release process, so it
-costs no extra infrastructure — which is the whole reason for preferring a
-subpath over a second package.
+> some of the design — `await using`, proxies, async-iterable signals — is not a
+> modified version of the current API, it is a different shape. Forcing it
+> through the classic surface would compromise it.
 
-Convergence: when `/next` covers what the classic API does and has real users,
-4.0 swaps the default. If it never gets there, the classic track has still had
-three majors of genuine improvement and nothing is stranded.
+**All of it went through the classic surface, additively, uncompromised:**
+
+| predicted not to fit     | shipped as                                        | broke anything? |
+| ------------------------ | ------------------------------------------------- | --------------- |
+| `await using`            | `bus.close()`, `bus.watch()`, `bus.ownName()`     | no              |
+| proxies                  | `bus.proxy()`, beside `getService()`              | no              |
+| async-iterable signals   | `proxy.$signal()`, bounded; `$watch()` for events | no              |
+| declarative service defs | `defineInterface()`, compiles to the old arrays   | no              |
+
+Four for four against the prediction. The one thing that _did_ need a break —
+the value shapes — needed it on the classic surface, where a second track would
+not have helped: `/next` would have carried the new shapes for new code while
+leaving every existing consumer exactly where they were.
+
+So the subpath would have bought nothing that was not already had, and cost the
+top risk in this document — **two live surfaces, which is how `dbus-next` and
+this package both ended up half-maintained.** Same shape of conclusion as the
+ESM decision in §4.0: the thing that looked necessary turned out, on contact
+with the work, not to be.
+
+What survives is the part that was right for a different reason: **whatever
+ships must be this package.** That is now true by construction rather than by
+discipline, because there is only one surface to ship.
+
+If a future design genuinely cannot fit, this decision is one commit to revisit
+and the design is in git. Nothing is stranded by dropping it; a half-built
+subpath published under a compatibility promise would have been.
 
 ---
 
@@ -472,9 +502,12 @@ and the docs have to lead with them. If 0.6 lands quietly, 2.0 hurts.
 years is a lot of churn. Mitigation: no fixed schedule, ship each when it is
 ready and documented, and be willing to merge 3.0 and 4.0.
 
-**`/next` half-finished.** The failure mode of #251, and of `dbus-next` itself.
-Mitigation: the classic track delivers value independently, so `/next` stalling
-costs nothing but the subpath.
+~~**`/next` half-finished.** The failure mode of #251, and of `dbus-next`
+itself.~~ **Retired** — the track was dropped before anything was published
+under it, which is the only mitigation that actually works. The mitigation
+written here ("the classic track delivers value independently") turned out to
+be the whole answer: the classic track delivered _everything_, so there was
+nothing left for a second surface to carry.
 
 **`bigint` in 2.0 is underestimated.** I would rather over-invest in that guide
 than under-invest. Consider shipping 2.0 with `bigint` behind an opt-in for one
