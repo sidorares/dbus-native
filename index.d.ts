@@ -445,6 +445,12 @@ export interface DBusInterface {
   $callMethod(name: string, args: unknown[]): DBusPromise<any>;
   $readProp(name: string): DBusPromise<any>;
   $readProp(name: string, callback: InvokeCallback): void;
+  /**
+   * Every readable property, in one `GetAll` rather than N `Get`s. Values are
+   * plain whatever shape the connection reads in.
+   */
+  $readAllProps(): DBusPromise<Record<string, unknown>>;
+  $readAllProps(callback: InvokeCallback): void;
   $writeProp(name: string, value: unknown): DBusPromise<void>;
   $writeProp(name: string, value: unknown, callback: InvokeCallback): void;
 
@@ -562,6 +568,54 @@ export interface ManagedObjects extends EventEmitter {
   /** The service was replaced or went away; this view is watching nothing. */
   on(event: 'stale', listener: (newOwner: string) => void): this;
   on(event: string, listener: (...args: any[]) => void): this;
+}
+
+/**
+ * The property accessor on a proxy.
+ *
+ * A property reads as a promise; writing goes through `$set`, because
+ * `obj.x = v` evaluates to `v` and a failed write would have nowhere to go.
+ */
+export interface ProxyProps {
+  /** Every readable property, flattened across interfaces, in one call. */
+  $all(): Promise<Record<string, unknown>>;
+  $set(name: string, value: unknown): Promise<void>;
+  $set(values: Record<string, unknown>): Promise<void>;
+  [property: string]: any;
+}
+
+/**
+ * A remote object, from `bus.proxy()`.
+ *
+ * Members resolve against what the object introspected as, so a method can be
+ * called without naming its interface. Everything the proxy itself adds is
+ * `$`-prefixed — a D-Bus member name is `[A-Za-z_][A-Za-z0-9_]*`, so `$` is an
+ * impossible prefix rather than merely an unlikely one.
+ */
+export interface DBusProxy {
+  readonly $bus: MessageBus;
+  readonly $service: string;
+  readonly $path: string;
+  /** The interfaces this proxy dispatches across. */
+  readonly $interfaces: string[];
+  /** Child object paths, from the same introspection. */
+  readonly $nodes: string[];
+  readonly $props: ProxyProps;
+
+  /** The underlying interface, for anything the proxy will not do. */
+  $as(interfaceName: string): DBusInterface;
+
+  $on(signal: string, handler: (...args: any[]) => void): this;
+  $once(signal: string, handler: (...args: any[]) => void): this;
+  $off(signal: string, handler: (...args: any[]) => void): this;
+
+  /**
+   * Never present, whatever the object declares — a proxy that answered `then`
+   * with a function would hang every `await` on it, forever.
+   */
+  readonly then?: undefined;
+
+  [member: string]: any;
 }
 
 /** A match rule that can be removed, from `bus.watch()`. */
@@ -692,6 +746,29 @@ export interface MessageBus {
    * another owner is a legitimate outcome. Check `isPrimaryOwner`.
    */
   ownName(name: string, flags?: number): Promise<NameRegistration>;
+
+  /**
+   * The remote object, as an object.
+   *
+   * ```js
+   * const notifications = await bus.proxy(
+   *   'org.freedesktop.Notifications',
+   *   '/org/freedesktop/Notifications'
+   * );
+   * await notifications.Notify('app', 0, '', 'hi', '', [], {}, 5000);
+   * await notifications.$props.$all();
+   * ```
+   *
+   * Introspects once and resolves each member against what the object declares,
+   * instead of making you name the interface first. A member declared by two
+   * interfaces throws rather than being guessed at — pass `{ interface }` or
+   * use `$as()`.
+   */
+  proxy(
+    service: string,
+    path: string,
+    options?: { interface?: string }
+  ): Promise<DBusProxy>;
 
   /**
    * A live view of the objects a service manages below `path`.

@@ -311,6 +311,79 @@ need to end _before_ the connection does — which is the case that matters.
 
 Introspects a remote object and builds a JavaScript object from it.
 
+### `bus.proxy()`
+
+The short way. Resolves each member against what the object actually declares,
+so you do not have to know which interface it lives on:
+
+```js
+const notifications = await bus.proxy(
+  'org.freedesktop.Notifications',
+  '/org/freedesktop/Notifications'
+);
+
+const id = await notifications.Notify('app', 0, '', 'hi', '', [], {}, 5000);
+notifications.$on('NotificationClosed', (id, reason) => {});
+
+await notifications.$props.$all();
+await notifications.$props.$set('Volume', 0.5);
+```
+
+| member                     |                                             |
+| -------------------------- | ------------------------------------------- |
+| `proxy.Member(...)`        | call it, wherever it is declared            |
+| `proxy.$props.Name`        | read a property — a promise                 |
+| `proxy.$props.$all()`      | every readable property, in one `GetAll`    |
+| `proxy.$props.$set(n, v)`  | write one, or an object of several          |
+| `proxy.$on/$once/$off`     | signals, wherever they are declared         |
+| `proxy.$as(interfaceName)` | the underlying interface, for anything else |
+| `proxy.$service`, `$path`  | what it stands for                          |
+| `proxy.$interfaces`        | the interfaces it dispatches across         |
+| `proxy.$nodes`             | child object paths                          |
+
+**Everything the proxy adds is `$`-prefixed**, and that is a guarantee rather
+than a convention: a D-Bus member name matches `[A-Za-z_][A-Za-z0-9_]*`, so `$`
+is an impossible first character and nothing can collide.
+
+**An ambiguous member throws, naming both interfaces.** Two interfaces on one
+object may declare the same member, and picking one silently would send the
+call to whichever introspected first. Narrow it:
+
+```js
+const player = await bus.proxy(
+  'org.mpris.MediaPlayer2.vlc',
+  '/org/mpris/MediaPlayer2',
+  {
+    interface: 'org.mpris.MediaPlayer2.Player'
+  }
+);
+```
+
+**`proxy.then` is always `undefined`**, even if the service really does declare
+a member called `then` — reach that one through `$as()`. A proxy that answered
+`then` with a function would make `await proxy` call it and wait forever for a
+resolve that never comes. Since `bus.proxy()` is itself async, that hang would
+happen at construction rather than at first use.
+
+**Assignment is refused**, for properties and members alike. `obj.x = v`
+evaluates to `v` rather than to a promise, so a failed write would be silently
+lost; `$props.$set()` can be awaited.
+
+`console.log(proxy)` prints what it stands for and what it can do, rather than
+walking the connection:
+
+```
+DBusProxy com.example.Proxy /com/example/Proxy
+  methods: Add, Echo, Get, GetAll, GetMachineId, Introspect, Ping, Set
+  properties: Greeting, Level
+  signals: Pinged, PropertiesChanged
+```
+
+### The explicit form
+
+Still there, and what `proxy()` is built on. Use it when you want one named
+interface and nothing else:
+
 ```js
 const iface = await bus
   .getService('org.freedesktop.Notifications')
