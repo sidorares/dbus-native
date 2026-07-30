@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.15.1](https://github.com/sidorares/dbus-native/compare/v0.15.0...v0.15.1) (2026-07-30)
+
+
+### Bug Fixes
+
+* a message that cannot be written settles its call once ([#387](https://github.com/sidorares/dbus-native/issues/387)) ([3183647](https://github.com/sidorares/dbus-native/commit/318364746f764937df97a5f8a4013b8bda65e8d1))
+
+
+### Documentation
+
+* cite the versions that shipped, not the ones that were planned ([#384](https://github.com/sidorares/dbus-native/issues/384)) ([e69744d](https://github.com/sidorares/dbus-native/commit/e69744df5c3a3d127dd17962cc74ae11448564e0))
+* drop the /next subpath track ([#386](https://github.com/sidorares/dbus-native/issues/386)) ([8374dc7](https://github.com/sidorares/dbus-native/commit/8374dc700e5b3eeb434650cfb5923a7c90ec113c))
+
 ## [0.15.0](https://github.com/sidorares/dbus-native/compare/v0.14.0...v0.15.0) (2026-07-30)
 
 
