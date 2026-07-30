@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.14.0](https://github.com/sidorares/dbus-native/compare/v0.13.0...v0.14.0) (2026-07-30)
+
+
+### ⚠ BREAKING CHANGES
+
+**[docs/migrating-to-2.0.md](https://github.com/sidorares/dbus-native/blob/master/docs/migrating-to-2.0.md) is the guide.** Listed here in the order they will stop you, not the order they were written.
+
+* **Node.js 22.12.0 or newer is required**, up from 20.8.0. Node 20 reached end of life on 2026-04-30. 22.12 rather than 22.0 because that is where `require()` of an ESM module works unflagged.
+* **`plainValues` and `returnBigInt` now default to true**, so a variant reads as its value, a string-keyed dict as a plain object, and `x`/`t` as `bigint`. This touches every value your code reads. `variantValue()` and `toPlain()` read either shape, and `withClassicTypes()` from `dbus-native/compat` restores the 1.x shapes wholesale. Note `bigint` is not a drop-in for `number`: arithmetic and `JSON.stringify` both throw on one.
+* **Calls that previously hung forever now reject with a `TimeoutError` after 25 seconds**, the figure libdbus, GDBus and sd-bus all use. Pass `timeout: 0` per call or per client to restore the old behaviour, or raise `timeout` for a method that genuinely takes longer.
+* **`ReturnLongjs` now throws** rather than being ignored -- pass `returnBigInt: false` for a lossy `number`. `long` is no longer a dependency; a Long is still accepted on input.
+* **The `dbus2js` binary is removed**; use `dbus-native types`. **`lib/address-x11.js` is removed** -- it required a package that was never a dependency, so it threw on require for anyone who found it.
+
+### Features
+
+* drop long, ReturnLongjs, dbus2js and lib/address-x11.js ([#374](https://github.com/sidorares/dbus-native/issues/374)) ([1af463b](https://github.com/sidorares/dbus-native/commit/1af463bf404c0b75f3b0728dcd746dcef5465adf))
+* every call has a deadline ([#378](https://github.com/sidorares/dbus-native/issues/378)) ([72d956b](https://github.com/sidorares/dbus-native/commit/72d956b363df28a4e802d5368c15215d02657e45))
+* raise the Node floor to 22.12.0 ([#375](https://github.com/sidorares/dbus-native/issues/375)) ([7a35321](https://github.com/sidorares/dbus-native/commit/7a353216a3f50de55d814c6595d2060be6949a57))
+* the plain value shapes are the default ([#373](https://github.com/sidorares/dbus-native/issues/373)) ([209f2a1](https://github.com/sidorares/dbus-native/commit/209f2a1ccc9eca60e37724078ea88f5fb779194c))
+
+
+### Documentation
+
+* note the stacked-squash changelog trap ([#379](https://github.com/sidorares/dbus-native/issues/379)) ([50782f5](https://github.com/sidorares/dbus-native/commit/50782f5412ead1d35ea3932d9cfc3addfd24a771))
+
 ## [0.13.0](https://github.com/sidorares/dbus-native/compare/v0.12.0...v0.13.0) (2026-07-30)
 
 
