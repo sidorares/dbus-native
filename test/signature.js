@@ -112,6 +112,6 @@ describe('Signature cache', () => {
 
   it('still round-trips correctly after eviction churn', () => {
     const buf = marshall('a{sv}', [[['k', ['s', 'v']]]]);
-    assert.deepStrictEqual(unmarshall(buf, 'a{sv}')[0][0][0], 'k');
+    assert.deepStrictEqual(unmarshall(buf, 'a{sv}')[0], { k: 'v' });
   });
 });

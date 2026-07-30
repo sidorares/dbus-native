@@ -89,13 +89,12 @@ options:
     you hold the byte array — a 4 byte `ay` taken from a 4 MB message keeps all
     4 MB alive. Only use it if you consume the value and drop it promptly.
   - `false` returns a plain array of numbers.
-- returnBigInt - boolean (default:false): if true 64 bit dbus fields (x/t) are read
-  out as native `bigint`, which covers the whole range exactly. This is what they
-  become by default in 2.0, so opting in now means nothing changes then. Wins over
-  `ReturnLongjs` if both are set.
+- returnBigInt - boolean (default:true): 64 bit dbus fields (x/t) are read out as
+  native `bigint`, which covers the whole range exactly. Set `false` for the 1.x
+  behaviour, a `number` that loses precision above 2^53.
 - ReturnLongjs - boolean (default:false): **deprecated** (`DBUS_DEP0001`). If true
-  64 bit dbus fields (x/t) are read out as Long.js objects, otherwise they are
-  converted to numbers (which should be good up to 53 bits). The capital R is a
+  64 bit dbus fields (x/t) are read out as Long.js objects. Setting it opts back
+  out of `bigint`, which is the only thing it still does. The capital R is a
   historical accident — it is the only PascalCase option in the API, and fixing
   it would break the callers who set it.
 - ( TODO: add/document option to use address from X11 session )
@@ -198,7 +197,7 @@ from the introspection data where the service provides them.
 | `--system`            | use the system bus (default: session)                    |
 | `--xml <file>`        | read saved introspection XML instead of a live bus       |
 | `--out <file>`        | write to a file instead of stdout                        |
-| `--target next`       | emit the 2.0 value shapes (`bigint`, plain objects)      |
+| `--target classic`    | emit the 1.x value shapes (`number`, arrays of pairs)    |
 | `--all`               | include the standard `org.freedesktop.DBus.*` interfaces |
 | `--module <name>`     | module specifier for the type import                     |
 
@@ -206,9 +205,9 @@ from the introspection data where the service provides them.
 service's shape or for saving a fixture to generate from later.
 
 The generated file records the service, path and target it came from, so
-regenerating after upgrading is one command. Types generated with the default
-`classic` target describe today's value shapes; see
-[RELEASE_PLAN.md](./RELEASE_PLAN.md) for what changes in 2.0.
+regenerating after upgrading is one command. The default `plain` target
+describes the default value shapes; use `classic` for a connection reading with
+`plainValues: false, returnBigInt: false`.
 
 > **`dbus2js` is deprecated** (`DBUS_DEP0005`). It emits untyped ES5, generates
 > no properties, and gives signals an over-broad match rule. It still works and
@@ -416,10 +415,26 @@ failing is a behaviour change, and belongs in a major. See
 
 ### Reading values: variants and dicts
 
-A variant currently unmarshals as `[parsedSignature, [value]]` and a dict as an
-array of `[key, value]` pairs. Both shapes change in 2.0 — see
-[RELEASE_PLAN.md](./RELEASE_PLAN.md). Two helpers read either shape, so code
-written against them behaves the same before and after:
+A variant unmarshals as the value it holds, and a string-keyed dict as a plain
+object:
+
+```js
+const props = await iface.GetAll(name); // { Greeting: 'hello', Count: 7 }
+const udi = await device.Udi(); // the value, not [tree, [value]]
+```
+
+| signature | default          | `plainValues: false`            |
+| --------- | ---------------- | ------------------------------- |
+| `v`       | `value`          | `[signatureTree, [value]]`      |
+| `a{sv}`   | `{ key: value }` | array of pairs, values variants |
+
+Reading only — writing takes plain objects and `Variant` — so a value read this
+way can be written straight back out. A dict whose keys are not strings
+(`a{us}`) stays as pairs, because a JavaScript object key is always a string
+and converting one would change the key's type.
+
+Both shapes changed in 2.0. Two helpers read either, so code written against
+them behaves the same before and after:
 
 ```js
 const { variantValue, toPlain } = require('dbus-native');
@@ -433,25 +448,12 @@ const props = toPlain(getAllResult); // { Greeting: 'hello', Count: 7 }
 
 `toPlain()` only converts arrays this library parsed as dicts, so an `a(ss)`
 (array of two-string structs) is left as an array rather than being guessed at.
-
-Or take the 2.0 shapes directly, on a released version, with `plainValues`:
+`dbus-native/compat` restores the 1.x shapes wholesale if you are not ready:
 
 ```js
-const bus = dbus.sessionBus({ plainValues: true });
-
-const props = await iface.GetAll(name); // { Greeting: 'hello', Count: 7 }
-const udi = await device.Udi(); // the value, not [tree, [value]]
+const { withClassicTypes } = require('dbus-native/compat');
+const bus = withClassicTypes(dbus.sessionBus());
 ```
-
-| signature | default                         | `plainValues`    |
-| --------- | ------------------------------- | ---------------- |
-| `v`       | `[signatureTree, [value]]`      | `value`          |
-| `a{sv}`   | array of pairs, values variants | `{ key: value }` |
-
-Reading only — writing already takes plain objects and `Variant` — so a value
-read this way can be written straight back out. A dict whose keys are not
-strings (`a{us}`) stays as pairs, because a JavaScript object key is always a
-string and converting one would change the key's type.
 
 To find the call sites in your own code that still read the old shapes:
 
@@ -553,20 +555,22 @@ old shape while you migrate.
 
 ### The 2.0 value shapes
 
-The next major changes what values look like: a variant becomes the value it
-holds, a string-keyed dict becomes a plain object, and `x`/`t` become `bigint`.
+2.0 changed what values look like: a variant is the value it holds, a
+string-keyed dict is a plain object, and `x`/`t` are `bigint`.
 
-**None of it has to wait for the release.** Both shapes are options today, per
-connection, so you can migrate a subsystem at a time against your real bus:
-
-```js
-const bus = dbus.sessionBus({ plainValues: true, returnBigInt: true });
-```
-
-Code written against `variantValue()` and `toPlain()` needs no change at all —
+Code written against `variantValue()` and `toPlain()` needed no change at all —
 they read either shape. `npx dbus-native lint src/` finds the rest.
 [docs/migrating-to-2.0.md](docs/migrating-to-2.0.md) is the guide, and leads
 with `bigint`, which is the part that breaks code far away from the call.
+
+**Each old shape is still an option**, per connection, so a program can move
+back a subsystem at a time rather than in one step:
+
+```js
+const bus = dbus.sessionBus({ plainValues: false, returnBigInt: false });
+```
+
+or all at once, with `withClassicTypes` from `dbus-native/compat`.
 
 ### Names
 
@@ -600,19 +604,18 @@ See [docs/api.md](docs/api.md#names) for the full rules.
 
 ### 64-bit values: INT64 'x' and UINT64 't'
 
-By default these are unmarshalled into a `number`, which **loses precision
-above 2⁵³** — `9223372036854775807` comes back as `9223372036854776000`. Ask
-for `bigint` and you get the whole range, exactly:
+These are unmarshalled into a native `bigint`, which covers the whole range
+exactly:
 
 ```js
-const bus = dbus.sessionBus({ returnBigInt: true });
 const size = await disk.Size(); // 2000398934016n
 ```
 
-This is what 64-bit values become **by default in 2.0**, so opting in now means
-nothing changes then. It is per connection, so services and clients can be
-migrated one at a time — though note a service reads its _arguments_ through
-the same parser, so it needs the option too if it handles large 64-bit inputs.
+Before 2.0 they were a `number`, which **loses precision above 2⁵³** —
+`9223372036854775807` came back as `9223372036854776000`. `returnBigInt: false`
+restores that, per connection, so services and clients can be moved one at a
+time — though note a service reads its _arguments_ through the same parser, so
+setting it there affects large 64-bit inputs too.
 
 `bigint` is not a drop-in for `number`, and the failure mode is a `TypeError`
 in production rather than a subtly wrong value. Plan for it:
@@ -632,9 +635,9 @@ These can be **written** to a 64-bit field, whatever the read option:
 - Long.js objects, or anything with compatible `low`/`high`/`unsigned`
 
 `{ ReturnLongjs: true }` still returns [Long.js](https://github.com/dcodeIO/long.js)
-objects and is **deprecated** (`DBUS_DEP0001`); `returnBigInt` wins if both are
-set. Dropping Long.js also removes the ARMv6 crash that made downstream forks
-vendor their own copy.
+objects and is **deprecated** (`DBUS_DEP0001`); setting it opts back out of
+`bigint`, and `returnBigInt: true` wins if both are set. Dropping Long.js also
+removes the ARMv6 crash that made downstream forks vendor their own copy.
 
 Development
 -----------

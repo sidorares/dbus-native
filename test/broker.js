@@ -910,8 +910,14 @@ describe('broker', { timeout: 20000 }, () => {
     let service, caller;
 
     before(async () => {
-      service = dbus.createClient({ busAddress: address, returnBigInt: true });
-      caller = dbus.createClient({ busAddress: address, returnBigInt: true });
+      // `variants: 'wrap'` on both ends, so the only thing left that could
+      // rewrite a type in transit is the broker. The default shape flattens a
+      // variant to its value, which discards the signature by design -- an
+      // echo service reading that way would lose the type itself and the
+      // assertions below would be blaming the wrong hop.
+      const wrap = { busAddress: address, variants: 'wrap' };
+      service = dbus.createClient(wrap);
+      caller = dbus.createClient(wrap);
       service.connection.on('error', () => {});
       caller.connection.on('error', () => {});
       await Promise.all([service.getId(), caller.getId()]);
@@ -978,11 +984,16 @@ describe('broker', { timeout: 20000 }, () => {
     }
 
     it('routes a dict intact', async () => {
+      // Sent as pairs, which is still accepted, and read back as the object
+      // that shape becomes.
       const sent = [
         ['alpha', 'one'],
         ['beta', 'two']
       ];
-      assert.deepStrictEqual(await echo('EchoDict', 'a{ss}', sent), sent);
+      assert.deepStrictEqual(await echo('EchoDict', 'a{ss}', sent), {
+        alpha: 'one',
+        beta: 'two'
+      });
     });
 
     it('routes a byte array intact', async () => {
@@ -995,6 +1006,26 @@ describe('broker', { timeout: 20000 }, () => {
       const back = await echo('EchoVariant', 'v', ['s', 'inside a variant']);
       assert.strictEqual(dbus.variantValue(back), 'inside a variant');
       assert.strictEqual(dbus.variantSignature(back), 's');
+    });
+
+    // A signature the value cannot be re-derived from. 'u', 'i' and 'd' all
+    // arrive as a JS number, so a router that reads a variant flattened has to
+    // guess on the way out -- and delivers a type the sender never wrote.
+    it('routes a variant type the value alone does not imply', async () => {
+      for (const [signature, value] of [
+        ['u', 9],
+        ['n', 9],
+        ['d', 9],
+        ['y', 9]
+      ]) {
+        const back = await echo('EchoVariant', 'v', [signature, value]);
+        assert.strictEqual(
+          dbus.variantSignature(back),
+          signature,
+          `variant ${signature} was rewritten in transit`
+        );
+        assert.strictEqual(dbus.variantValue(back), value);
+      }
     });
 
     it('routes a nested struct with a 64-bit field intact', async () => {

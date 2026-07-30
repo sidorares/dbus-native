@@ -1,9 +1,13 @@
-// The `plainValues` option: the 2.0 read shapes, available now.
+// The `plainValues` option: the 2.0 read shapes, and the default since 2.0.
 //
 // A variant reads as the value itself, and a string-keyed dict as a plain
 // object. Writing is unaffected -- the marshaller has taken plain objects and
 // `Variant` since 0.11, so a value read under this option can be written
 // straight back out.
+//
+// Both shapes are asked for explicitly below rather than one of them being
+// left to the default, so the file keeps saying what it means whichever way
+// the default points.
 
 const { describe, it } = require('node:test');
 const assert = require('assert');
@@ -12,12 +16,13 @@ const unmarshall = require('../lib/unmarshall');
 const { Variant, toPlain, variantSignature } = require('../lib/values');
 
 const PLAIN = { plainValues: true };
+const CLASSIC = { plainValues: false };
 
 /** Read a value back both ways, from identical bytes. */
 function bothShapes(signature, value) {
   const buf = marshall(signature, [value]);
   return {
-    classic: unmarshall(buf, signature)[0],
+    classic: unmarshall(buf, signature, undefined, CLASSIC)[0],
     plain: unmarshall(buf, signature, undefined, PLAIN)[0]
   };
 }
@@ -149,8 +154,8 @@ describe('plainValues', () => {
     assert.deepStrictEqual(again, data);
   });
 
-  it('is off by default', () => {
+  it('is on by default', () => {
     const [dict] = unmarshall(marshall('a{ss}', [{ a: 'b' }]), 'a{ss}');
-    assert.ok(Array.isArray(dict));
+    assert.deepStrictEqual(dict, { a: 'b' });
   });
 });

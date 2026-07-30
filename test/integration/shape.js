@@ -1,6 +1,6 @@
 // Proves the run is testing the shape it claims to be testing.
 //
-// `npm run test:integration:2.0` is only worth anything if DBUS_TEST_SHAPE
+// `npm run test:integration:classic` is only worth anything if DBUS_TEST_SHAPE
 // actually reaches the tests -- it travels through two `npm run` hops and a
 // wrapper process to get here. If a rename or a lost `env` spread ever breaks
 // that chain the whole suite goes green while exercising nothing new, which is

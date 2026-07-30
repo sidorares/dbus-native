@@ -1,9 +1,9 @@
-// Opt-in BigInt for the 64-bit types.
+// BigInt for the 64-bit types -- the default since 2.0.
 //
 // `x` and `t` cover the full signed/unsigned 64-bit range, which a JS `number`
-// cannot: everything above 2^53 comes back approximated. These tests use the
-// exact boundary values, because that is where the current behaviour is wrong
-// and where an off-by-one in the conversion would hide.
+// cannot: everything above 2^53 used to come back approximated. These tests
+// use the exact boundary values, because that is where the old behaviour was
+// wrong and where an off-by-one in the conversion would hide.
 
 const { describe, it } = require('node:test');
 const assert = require('assert');
@@ -21,7 +21,10 @@ const read = (buf, sig, options) => unmarshall(buf, sig, 0, options);
 const roundTrip = (sig, value, options) =>
   read(marshall(sig, [value]), sig, options)[0];
 
-describe('BigInt: reading with returnBigInt', () => {
+describe('BigInt: reading', () => {
+  // Left as an explicit option rather than dropped now that it is the default,
+  // so these keep asserting the shape they are named for even if the default
+  // moves again.
   const big = { returnBigInt: true };
 
   it('round-trips the signed 64-bit extremes exactly', () => {
@@ -44,9 +47,14 @@ describe('BigInt: reading with returnBigInt', () => {
     assert.strictEqual(typeof roundTrip('t', 7n, big), 'bigint');
   });
 
-  // The reason the option exists.
+  it('is the default', () => {
+    assert.strictEqual(roundTrip('x', INT64_MAX), INT64_MAX);
+    assert.strictEqual(typeof roundTrip('t', 7n), 'bigint');
+  });
+
+  // The reason it became the default.
   it('is exact where a number is not', () => {
-    const asNumber = roundTrip('x', INT64_MAX);
+    const asNumber = roundTrip('x', INT64_MAX, { returnBigInt: false });
     assert.strictEqual(typeof asNumber, 'number');
     assert.notStrictEqual(BigInt(asNumber), INT64_MAX);
     assert.strictEqual(roundTrip('x', INT64_MAX, big), INT64_MAX);
@@ -80,21 +88,25 @@ describe('BigInt: reading with returnBigInt', () => {
   });
 });
 
-describe('BigInt: the default is unchanged', () => {
-  it('still returns a number when the option is absent', () => {
-    assert.strictEqual(typeof roundTrip('x', 42n), 'number');
-    assert.strictEqual(roundTrip('x', 42n), 42);
+describe('BigInt: opting back out', () => {
+  it('returns the lossy number again with returnBigInt: false', () => {
+    const v = roundTrip('x', 42n, { returnBigInt: false });
+    assert.strictEqual(typeof v, 'number');
+    assert.strictEqual(v, 42);
   });
 
-  it('still returns a Long with ReturnLongjs', () => {
+  it('still returns a Long with ReturnLongjs alone', () => {
+    // Asking for the deprecated shape opts out of BigInt on its own. Reading
+    // this as "both are set, so BigInt wins" would leave the option doing
+    // nothing at all the moment BigInt became the default.
     const v = roundTrip('x', 42n, { ReturnLongjs: true });
     assert.strictEqual(typeof v, 'object');
     assert.strictEqual(v.toString(), '42');
   });
 
   it('prefers BigInt when both options are set', () => {
-    // returnBigInt is the shape these become in 2.0. Someone who sets both is
-    // migrating, and should get the destination rather than the deprecation.
+    // Someone who sets both is migrating, and should get the destination
+    // rather than the deprecation.
     assert.strictEqual(
       roundTrip('x', 42n, { returnBigInt: true, ReturnLongjs: true }),
       42n
@@ -103,10 +115,11 @@ describe('BigInt: the default is unchanged', () => {
 });
 
 describe('BigInt: writing', () => {
-  // Accepting bigint on write is not gated on the read option, so a call site
-  // can be migrated on its own rather than in a flag day.
-  it('accepts a bigint without returnBigInt', () => {
-    assert.strictEqual(roundTrip('x', 123n), 123);
+  // Accepting bigint on write was never gated on the read option, so a call
+  // site could be migrated on its own rather than in a flag day.
+  it('accepts a bigint whatever the read shape', () => {
+    assert.strictEqual(roundTrip('x', 123n), 123n);
+    assert.strictEqual(roundTrip('x', 123n, { returnBigInt: false }), 123);
   });
 
   it('accepts the 64-bit extremes', () => {
@@ -189,7 +202,7 @@ describe('BigInt: diagnostics survive a bigint body', () => {
 
 // The 64-bit paths use `bigint` internally as of 0.11. Long.js is still
 // accepted on input and is still what `ReturnLongjs` returns, but nothing
-// inside the marshaller or the default read path depends on it.
+// inside the marshaller or the read path depends on it.
 describe('64-bit values without Long.js internally', () => {
   const Long = require('long');
 

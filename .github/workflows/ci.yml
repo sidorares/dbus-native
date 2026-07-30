@@ -55,3 +55,30 @@ jobs:
       - run: npm ci
       - run: npm run test:raw
       - run: npm run test:integration
+
+  shapes:
+    name: value shapes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: sudo apt-get update && sudo apt-get install -y dbus
+      - run: npm ci
+
+      # The whole integration suite under each value shape, against both buses.
+      # The matrix job above covers 'plain' on dbus-daemon; these are the other
+      # five. One OS and one Node version is enough: a value shape is library
+      # logic, not platform behaviour, and the suite takes about three seconds.
+      #
+      # 'classic' is here because `dbus-native/compat` is only a supported
+      # escape hatch for as long as something runs it. 'wrap' is here because it
+      # is the only shape that can tell a preserved variant signature from a
+      # re-inferred one -- which is how the broker's routing bug was found.
+      - run: npm run test:integration:wrap
+      - run: npm run test:integration:classic
+      - run: npm run test:integration:broker
+      - run: npm run test:integration:wrap:broker
+      - run: npm run test:integration:classic:broker

@@ -54,7 +54,7 @@ Options for types/introspect:
   --out <file>       write to a file instead of stdout
 
 Options for 'types':
-  --target <t>       'classic' (default) or 'next' for the 2.0 value shapes
+  --target <t>       'plain' (default) or 'classic' for the 1.x value shapes
   --module <name>    module specifier to import types from
                      (default: dbus-native)
   --all              include the standard org.freedesktop.DBus.* interfaces
@@ -111,7 +111,7 @@ function parse(argv) {
         system: { type: 'boolean', default: false },
         xml: { type: 'string' },
         out: { type: 'string' },
-        target: { type: 'string', default: 'classic' },
+        target: { type: 'string', default: 'plain' },
         module: { type: 'string', default: 'dbus-native' },
         all: { type: 'boolean', default: false },
         dry: { type: 'boolean', default: false },
@@ -325,8 +325,12 @@ async function main() {
     fail(`Unknown command '${command}'.\n\n${USAGE}`);
   }
 
-  if (!['classic', 'next'].includes(argv.target)) {
-    fail(`--target must be 'classic' or 'next', got '${argv.target}'`);
+  // 'next' was what 'plain' was called while these shapes were the future.
+  // Still accepted, because it is written down in whatever script generated
+  // the file you are regenerating.
+  if (argv.target === 'next') argv.target = 'plain';
+  if (!['plain', 'classic'].includes(argv.target)) {
+    fail(`--target must be 'plain' or 'classic', got '${argv.target}'`);
   }
 
   const xml = await getXml(argv);

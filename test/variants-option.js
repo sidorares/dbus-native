@@ -22,14 +22,17 @@ const read = (signature, body, options) =>
 const readVariant = options => read('v', [['u', 501]], options)[0];
 
 describe('variants option', () => {
-  it("defaults to 'tree', which is what 1.x hands back", () => {
-    const v = readVariant({});
-    assert.ok(Array.isArray(v));
-    assert.strictEqual(v[1][0], 501);
+  it("defaults to 'plain', which is the value and nothing else", () => {
+    assert.strictEqual(readVariant({}), 501);
   });
 
   it('follows plainValues when it is not given', () => {
     assert.strictEqual(readVariant({ plainValues: true }), 501);
+    // Turning the dicts back to pairs takes the variants with it, which is
+    // what makes `withClassicTypes` a single decision rather than two.
+    const v = readVariant({ plainValues: false });
+    assert.ok(Array.isArray(v));
+    assert.strictEqual(v[1][0], 501);
   });
 
   it('wins over plainValues when it is given', () => {

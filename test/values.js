@@ -1,4 +1,4 @@
-// Forward-compatible value helpers: the same call must work on today's shapes
+// Forward-compatible value helpers: the same call must work on the 1.x shapes
 // and on the 2.0 shapes, so each case is asserted against both.
 
 const { describe, it } = require('node:test');
@@ -8,11 +8,17 @@ const marshall = require('../lib/marshall');
 const unmarshall = require('../lib/unmarshall');
 const { Variant, variantValue, variantSignature, toPlain } = dbus;
 
-const roundTrip = (signature, body) =>
-  unmarshall(marshall(signature, body), signature);
+// The classic shapes are asked for explicitly. They stopped being the default
+// in 2.0, and a helper that just took the default would quietly stop reading
+// them -- turning most of the conversions below into identities that assert
+// nothing.
+const CLASSIC = { plainValues: false };
+
+const roundTrip = (signature, body, options = CLASSIC) =>
+  unmarshall(marshall(signature, body), signature, undefined, options);
 
 describe('variantValue', () => {
-  it('unwraps a variant as it is parsed today', () => {
+  it('unwraps a variant in the classic tree shape', () => {
     const [value] = roundTrip('v', [['s', 'hello']]);
     assert.strictEqual(variantValue(value), 'hello');
   });
@@ -53,6 +59,20 @@ describe('variantSignature', () => {
     );
     assert.strictEqual(
       variantSignature(roundTrip('v', [['a{sv}', [['k', ['s', 'v']]]]])[0]),
+      'a{sv}'
+    );
+  });
+
+  it("reports it under variants: 'wrap' too, which is the 2.0 way", () => {
+    const wrap = { variants: 'wrap' };
+    assert.strictEqual(
+      variantSignature(roundTrip('v', [['s', 'x']], wrap)[0]),
+      's'
+    );
+    assert.strictEqual(
+      variantSignature(
+        roundTrip('v', [['a{sv}', [['k', ['s', 'v']]]]], wrap)[0]
+      ),
       'a{sv}'
     );
   });

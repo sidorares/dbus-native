@@ -1,10 +1,11 @@
 // Writing a plain JavaScript object where a dict is expected.
 //
-// The read side still returns an array of pairs until 2.0, so a round trip
-// goes back through `toPlain()` -- the forward-compatible helper from 0.6,
-// which becomes the identity once dicts unmarshal as objects. The skipped test
-// this file replaces asserted a plain object came *back*, which is why it
-// could never have passed: it was waiting on the read half too.
+// Since 2.0 the read side returns an object too, so a round trip is an
+// identity. `toPlain()` stays in the helper below because it is the identity
+// on the current shape and still flattens the old one, which is what makes
+// these assertions readable either way. The skipped test this file replaces
+// asserted a plain object came *back*, which is why it could never have
+// passed: it was waiting on the read half too.
 
 const { describe, it } = require('node:test');
 const assert = require('assert');
@@ -17,10 +18,23 @@ function roundTrip(signature, data) {
   return toPlain(unmarshall(marshall(signature, data), signature));
 }
 
-/** The signature a single inferred value actually got on the wire. */
+/**
+ * The signature a single inferred value actually got on the wire.
+ *
+ * Read under `variants: 'wrap'`, which is what that shape is for: the default
+ * flattens a variant to its value and the signature -- the thing being
+ * asserted here -- is gone.
+ */
 function inferred(value) {
-  const [dict] = unmarshall(marshall('a{sv}', [{ v: value }]), 'a{sv}');
-  return variantSignature(dict[0][1]);
+  const [dict] = unmarshall(
+    marshall('a{sv}', [{ v: value }]),
+    'a{sv}',
+    undefined,
+    {
+      variants: 'wrap'
+    }
+  );
+  return variantSignature(dict.v);
 }
 
 describe('a plain object as a dict', () => {
