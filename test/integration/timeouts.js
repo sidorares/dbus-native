@@ -129,5 +129,45 @@ describe(
         'here'
       );
     });
+
+    // The default is 25 seconds, which is far too long to wait for here. What
+    // can be checked against a real daemon is that a call made with no options
+    // at all now *has* a deadline -- before 2.0 it had none, and this would
+    // have stayed pending until the process ended.
+    it('gives a call with no options a deadline of its own', async () => {
+      const pending = clientBus.invoke(call('NeverReplies'));
+      const [serial] = Object.keys(clientBus.cookies);
+      assert.ok(serial, 'the call is pending');
+
+      // Settle it by hand rather than waiting 25s: what is being asserted is
+      // that the machinery armed a deadline, which the unit test pins to the
+      // exact figure.
+      clientBus.cookies[serial](
+        Object.assign(new Error('stand-in'), { name: 'TimeoutError' })
+      );
+      await assert.rejects(() => pending, { name: 'TimeoutError' });
+      assert.strictEqual(
+        Object.keys(clientBus.cookies).length,
+        0,
+        'and cleaned up after itself'
+      );
+    });
+
+    it('sends a no-reply message without waiting for one', async () => {
+      const { flags } = require('../../lib/constants');
+      const before = Object.keys(clientBus.cookies).length;
+      const result = await clientBus.invoke({
+        ...call('NeverReplies'),
+        flags: flags.noReplyExpected
+      });
+      assert.strictEqual(result, undefined);
+      assert.strictEqual(
+        Object.keys(clientBus.cookies).length,
+        before,
+        'left nothing pending'
+      );
+      // The connection is fine, and the service really did get the message.
+      assert.strictEqual(await clientBus.invoke(call('Quick')), 'here');
+    });
   }
 );

@@ -2,7 +2,11 @@
 
 **2.0 changes the shapes values arrive in.** A variant becomes the value it
 holds, a string-keyed dict becomes a plain object, and 64-bit integers become
-`bigint`. Nothing else about the API moves.
+`bigint`. That is most of the release, and most of this guide.
+
+Three smaller breaks ship alongside it: a **default call timeout**, the removal
+of `ReturnLongjs` and `dbus2js`, and a **Node floor of 22.12**. They are at the
+end, under [The rest of the release](#the-rest-of-the-release).
 
 It is the release people have been asking for since
 [#3](https://github.com/sidorares/dbus-native/issues/3) in 2013, and it is the
@@ -277,6 +281,60 @@ Four things to know:
   [#248](https://github.com/sidorares/dbus-native/issues/248) is about.
 - **It is a holding position, not a destination.** Delete the wrapper and fix
   what `dbus-native lint` and `tsc` then point at.
+
+---
+
+## The rest of the release
+
+Three smaller breaks, none of which need the tooling above.
+
+### Calls now have a deadline
+
+A call waits **25 seconds** for its reply and then rejects with a
+`TimeoutError`. Before 2.0 there was no default: a peer that never answered
+left the promise unsettled for the life of the process.
+
+```js
+await bus.invoke(msg, { timeout: 60_000 }); // this one is genuinely slow
+await bus.invoke(msg, { timeout: 0 }); // no deadline, as before
+const bus = dbus.sessionBus({ timeout: 0 }); // ...or for the whole client
+```
+
+25 seconds is what libdbus, GDBus and sd-bus all use, so a call that hits this
+deadline would have hit theirs at the same point — this brings the package in
+line rather than inventing a policy.
+
+**This one breaks in an unusual direction: it makes previously-hanging calls
+start failing.** That is the point. A promise that never settles cannot be
+caught, logged or retried, and any peer can cause one by crashing between
+receiving a message and answering it. But if you have a method that
+legitimately takes longer than 25 seconds, it needs `timeout` raised — and it
+will fail loudly rather than quietly, so you will know.
+
+A message carrying `NO_REPLY_EXPECTED` gets no deadline and settles with
+`undefined` once written, since there is nothing to wait for. It used to hang
+here too, and leak one pending entry per call.
+
+### `ReturnLongjs` and `dbus2js` are gone
+
+Both warned from 0.6. `ReturnLongjs` now **throws** rather than being ignored,
+because code that sets it expects a Long back and would otherwise meet
+`value.toNumber is not a function` somewhere far from the call:
+
+```js
+const bus = dbus.sessionBus({ returnBigInt: false }); // a lossy number
+```
+
+`dbus2js` is replaced by `dbus-native types`; see
+[DBUS_DEP0005](deprecations.md#dbus_dep0005) for the equivalent command.
+`lib/address-x11.js` is also gone — it required a package that was never a
+dependency, so it threw on require for everyone who found it.
+
+### Node 22.12 or newer
+
+Node 20 reached end of life on 2026-04-30. 22.12 rather than 22.0 because that
+is where `require()` of an ESM module works unflagged, which keeps a future
+option open.
 
 ---
 
