@@ -82,7 +82,9 @@
     "test:integration:raw": "node --test --test-concurrency=1 --test-reporter=spec test/integration/*.js",
     "test:integration:broker": "node scripts/with-broker.js -- npm run test:integration:raw",
     "test:integration:2.0": "DBUS_TEST_SHAPE=2.0 npm run test:integration",
+    "test:integration:2.0-wrap": "DBUS_TEST_SHAPE=2.0-wrap npm run test:integration",
     "test:integration:2.0:broker": "DBUS_TEST_SHAPE=2.0 npm run test:integration:broker",
+    "test:integration:2.0-wrap:broker": "DBUS_TEST_SHAPE=2.0-wrap npm run test:integration:broker",
     "dbus:session": "node scripts/dbus-session.js",
     "test:types": "tsc --noEmit"
   },

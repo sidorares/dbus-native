@@ -8,7 +8,7 @@ const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
 const { EventEmitter } = require('events');
 const { Variant, toPlain, variantSignature } = require('../../lib/values');
-const { sessionBus, PLAIN_VALUES } = require('../utils/shape');
+const { sessionBus, VARIANTS } = require('../utils/shape');
 
 const NO_BUS =
   !process.env.DBUS_SESSION_BUS_ADDRESS && 'no DBUS_SESSION_BUS_ADDRESS';
@@ -128,22 +128,25 @@ describe(
     });
 
     // A variant's signature is only recoverable from a shape that carries it.
-    // Under `plainValues` the parser has already discarded it and
-    // variantSignature() returns undefined -- there is no way for a service to
-    // ask what types an a{sv} argument arrived with. That is a real gap in the
-    // 2.0 plan, which promises `Variant` "when explicitly requested" without
-    // yet providing a way to request it. See ROADMAP 4.1.
-    it('the service sees the types too, in the shape that carries them', () => {
-      if (PLAIN_VALUES) {
+    // `variants: 'wrap'` is how a service asks for one: it is the only way to
+    // find out what types an a{sv} argument arrived with, and until it existed
+    // the answer was "read the parser's internal tree, or do without".
+    it(`the service sees the types too, under '${VARIANTS}'`, () => {
+      if (VARIANTS === 'plain') {
         assert.strictEqual(
           variantSignature(Object.values(received)[0]),
           undefined,
-          'plainValues discards signatures; nothing to assert here'
+          'this is the shape that trades the signature away'
         );
         return;
       }
+      // Pairs under 'tree', a plain object under 'wrap' -- the dict shape is
+      // governed by plainValues, not by this option.
+      const entries = Array.isArray(received)
+        ? received
+        : Object.entries(received);
       const signatures = {};
-      for (const [key, value] of received) {
+      for (const [key, value] of entries) {
         signatures[key] = variantSignature(value);
       }
       assert.deepStrictEqual(signatures, {

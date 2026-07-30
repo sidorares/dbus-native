@@ -131,7 +131,7 @@ const value = variantValue(result); // identical before and after
 a file converted to it is done — it needs no second pass at the flag day. This
 is what the accessors are for; see [DBUS_DEP0002](deprecations.md#dbus_dep0002).
 
-### The signature goes with it
+### If you need the type, ask for a `Variant`
 
 `[parsedSignatureTree, [value]]` carried the variant's type. The plain shape
 does not:
@@ -140,10 +140,25 @@ does not:
 variantSignature(result); // 's' in 1.x, undefined in 2.0
 ```
 
-Almost nobody reads it — but if you do, say because you dispatch on the type of
-an `a{sv}` value, there is no replacement yet and you should
-[open an issue](https://github.com/sidorares/dbus-native/issues) describing the
-case. Writing variants is unaffected: `new Variant('u', 9)` and the
+Almost nobody reads it. If you do — a tool that prints what came back, or a
+service that dispatches on the type of an `a{sv}` value — ask for it:
+
+```js
+const bus = dbus.sessionBus({ variants: 'wrap' });
+
+const v = await iface.$readProp('Volume');
+v.signature; // 'd'
+v.value; // 0.5
+variantValue(v); // 0.5, same as every other shape
+```
+
+A `Variant` is what the tree should have been: it prints as `Variant('d', 0.5)`
+rather than a wall of parse-tree objects, and the marshaller accepts it, so a
+value read this way can be sent straight back out. **Do not migrate to
+`variants: 'tree'` to keep the signature** — it works, but it is the shape 2.0
+exists to remove, and `withClassicTypes` is the supported way to stay on it.
+
+Writing variants is unaffected either way: `new Variant('u', 9)` and the
 `['u', 9]` pair both still work.
 
 ---

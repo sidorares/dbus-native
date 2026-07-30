@@ -10,8 +10,8 @@
 const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
 const { EventEmitter } = require('events');
-const { variantValue, variantSignature } = require('../../lib/values');
-const { sessionBus, PLAIN_VALUES, RETURN_BIGINT } = require('../utils/shape');
+const { variantValue, variantSignature, Variant } = require('../../lib/values');
+const { sessionBus, VARIANTS, RETURN_BIGINT } = require('../utils/shape');
 
 const NO_BUS =
   !process.env.DBUS_SESSION_BUS_ADDRESS && 'no DBUS_SESSION_BUS_ADDRESS';
@@ -73,11 +73,19 @@ describe(
         body: [IFACE, 'Greeting']
       });
 
-    it(`reads a variant in the ${PLAIN_VALUES ? '2.0' : 'classic'} shape`, async () => {
+    it(`reads a variant in the '${VARIANTS}' shape`, async () => {
       const value = await get();
-      if (PLAIN_VALUES) {
+      if (VARIANTS === 'plain') {
         assert.strictEqual(value, 'hello', 'plainValues did not take effect');
+        // The one thing this shape gives up.
         assert.strictEqual(variantSignature(value), undefined);
+      } else if (VARIANTS === 'wrap') {
+        assert.ok(
+          value instanceof Variant,
+          "variants:'wrap' did not take effect"
+        );
+        assert.strictEqual(value.signature, 's');
+        assert.strictEqual(value.value, 'hello');
       } else {
         assert.ok(Array.isArray(value), 'expected the classic [tree, [value]]');
         assert.strictEqual(variantSignature(value), 's');

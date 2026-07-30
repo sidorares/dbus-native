@@ -83,14 +83,19 @@ tests never touch (or depend on) the user's real session bus.
 ### The 2.0 shape gate
 
 ```sh
-npm run test:integration:2.0          # against dbus-daemon
-npm run test:integration:2.0:broker   # against lib/broker.js
+npm run test:integration:2.0               # against dbus-daemon
+npm run test:integration:2.0:broker        # against lib/broker.js
+npm run test:integration:2.0-wrap          # variants: 'wrap' as well
+npm run test:integration:2.0-wrap:broker
 ```
 
 Same suite, run with the value shapes 2.0 makes the default: a variant reads as
 its value, a string-keyed `a{sv}` as a plain object, and `x`/`t` as `bigint`.
-`DBUS_TEST_SHAPE=2.0` turns them on through `test/utils/shape.js`, which every
-integration file gets its connections from.
+`DBUS_TEST_SHAPE` turns them on through `test/utils/shape.js`, which every
+integration file gets its connections from. It takes `classic` (the default),
+`2.0`, or `2.0-wrap` — the last being the same shapes but with variants read as
+`Variant` instances, which is what a caller opts into when it needs the type
+back. All three must pass.
 
 **This is the gate for the major.** Flipping those defaults is the largest
 break in RELEASE_PLAN, and until this passed there was no way to find out what

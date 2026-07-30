@@ -238,10 +238,29 @@ export interface ConnectionOptions {
    * JavaScript object key is always a string, so converting those would change
    * the key's type and, for 64-bit keys, lose precision.
    *
-   * Reading a variant this way discards its signature — use `Variant` when
-   * writing if you need to control the type.
+   * Reading a variant this way discards its signature — set
+   * `variants: 'wrap'` if you need it back.
    */
   plainValues?: boolean;
+  /**
+   * How a variant (`v`) comes back.
+   *
+   * - `'tree'` — `[parsedSignatureTree, [value]]`, what 1.x hands back
+   * - `'plain'` — the value, and the signature is gone
+   * - `'wrap'` — a {@link Variant}, carrying both
+   *
+   * Defaults to `'plain'` when `plainValues` is set and `'tree'` otherwise, so
+   * setting neither keeps 1.x behaviour and setting only `plainValues` keeps
+   * the behaviour it had before this option existed.
+   *
+   * `'wrap'` is how you ask for the type information without reading the
+   * parser's internal tree: a `Variant` prints readably, `variantValue()` and
+   * `toPlain()` understand it, and the marshaller accepts it, so a value read
+   * this way can be sent straight back out. Combining it with
+   * `plainValues: true` gives plain dicts whose values still carry their types
+   * — what `dbus-native call` uses to print `variant u 501`.
+   */
+  variants?: 'tree' | 'plain' | 'wrap';
   /**
    * @deprecated DBUS_DEP0001 -- 64-bit values become BigInt in 2.0; use
    * `returnBigInt`. Note the capital R: this one option predates the rest and
@@ -274,6 +293,7 @@ export interface DBusConnection extends EventEmitter {
     plainValues?: boolean;
     returnBigInt?: boolean;
     ayBuffer?: boolean;
+    variants?: 'tree' | 'plain' | 'wrap';
   }): this;
 
   on(event: 'connect', listener: () => void): this;
