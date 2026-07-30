@@ -23,7 +23,7 @@ Commands:
   types        generate TypeScript declarations for a service
   introspect   print a service's raw introspection XML
   codemod      rewrite your source for a breaking change
-  lint         report reads of value shapes that change in 0.14.0
+  lint         report reads of value shapes that changed in 0.14.0
 
 Options for call/get/set/list:
   --dest <name>      bus name to talk to (call, get, set)
@@ -217,7 +217,7 @@ function runCodemod(name, paths, argv) {
 }
 
 /**
- * Report reads of the value shapes that change in 0.14.0.
+ * Report reads of the value shapes that changed in 0.14.0.
  *
  * Separate from `codemod` because these are the patterns a codemod *cannot*
  * safely rewrite: reading a variant is an index chain, and nothing in the
