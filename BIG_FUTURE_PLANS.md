@@ -86,7 +86,7 @@ discipline. That is the whole thesis.
 
 ## 2. What building it proved wrong
 
-### 2.1 The parse tree was never the right "typed" shape — `Variant` is
+### 2.1 The parse tree was never the right "typed" shape — `Variant` is ✅
 
 The original §3 said a variant reads as "the value, or `Variant` when asked".
 Shipping `plainValues` showed **there is no way to ask**, and that this is not
@@ -125,6 +125,18 @@ legacy shape belongs.
 
 **This is the highest-value correction in this document.** It turns a known gap
 into a better API than the one being replaced.
+
+**Shipped.** `variants: 'tree' | 'plain' | 'wrap'`, defaulting to whatever
+`plainValues` implied so it is purely additive. The whole integration suite runs
+under it (`npm run test:integration:2.0-wrap`) and found **no place in the
+library that indexes into a variant** — only the tests written to assert a
+specific shape, plus one real bug: `withClassicTypes` had to pin
+`variants: 'tree'` as well, or a caller who opted into `'wrap'` kept their
+Variants through it.
+
+`dbus-native call` is the proof it earns its keep. It used to pin
+`plainValues: false` purely to keep printing `variant u 501`; it now runs on the
+full 2.0 shapes with `variants: 'wrap'` and prints byte-identical output.
 
 ### 2.2 `ay` stays a `Buffer` — the two documents disagreed
 

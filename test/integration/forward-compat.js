@@ -5,7 +5,7 @@ const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
 const { EventEmitter } = require('events');
 const dbus = require('../../index');
-const { sessionBus, PLAIN_VALUES } = require('../utils/shape');
+const { sessionBus, VARIANTS } = require('../utils/shape');
 const { Variant, variantValue, toPlain } = dbus;
 const { toClassicError } = require('../../lib/compat');
 
@@ -86,15 +86,17 @@ describe(
         body: [IFACE, 'Greeting']
       });
       assert.ifError(err);
-      // The shape people complain about -- and, under `plainValues`, the shape
-      // that replaces it. Asserted explicitly on both sides because the whole
-      // point of the next line is that it does not have to care.
-      if (PLAIN_VALUES) {
+      // The shape people complain about, and the two that replace it. Asserted
+      // explicitly for each because the whole point of the last line is that it
+      // does not have to care.
+      if (VARIANTS === 'plain') {
         assert.strictEqual(result, 'hello');
+      } else if (VARIANTS === 'wrap') {
+        assert.strictEqual(result.value, 'hello');
       } else {
         assert.strictEqual(result[1][0], 'hello');
       }
-      // the shape that survives 2.0
+      // the shape that survives all of them
       assert.strictEqual(variantValue(result), 'hello');
     });
 

@@ -9,9 +9,9 @@
 const { describe, it, before, after } = require('node:test');
 const assert = require('assert');
 const { EventEmitter } = require('events');
-const { variantValue, variantSignature } = require('../../lib/values');
+const { variantValue, variantSignature, Variant } = require('../../lib/values');
 const { withClassicTypes } = require('../../lib/compat');
-const { sessionBus, PLAIN_VALUES } = require('../utils/shape');
+const { sessionBus, VARIANTS } = require('../utils/shape');
 
 const NO_BUS =
   !process.env.DBUS_SESSION_BUS_ADDRESS && 'no DBUS_SESSION_BUS_ADDRESS';
@@ -128,8 +128,12 @@ describe(
 
     it('leaves an unwrapped bus on this run’s own shapes', async () => {
       const value = await get(modernBus, 'Greeting');
-      if (PLAIN_VALUES) {
-        assert.strictEqual(value, 'hello', 'the wrapper leaked to another bus');
+      const leaked = 'the wrapper leaked to another bus';
+      if (VARIANTS === 'plain') {
+        assert.strictEqual(value, 'hello', leaked);
+      } else if (VARIANTS === 'wrap') {
+        assert.ok(value instanceof Variant, leaked);
+        assert.strictEqual(value.value, 'hello');
       } else {
         assert.strictEqual(value[1][0], 'hello');
       }

@@ -104,6 +104,7 @@ socket other processes can reach.
 | `maxMessageSize` | `number`                  | 128 MiB                                         | reject a message declaring more than this                      |
 | `returnBigInt`   | `boolean`                 | `false`                                         | read `x`/`t` as native `bigint`, exactly — the 2.0 default     |
 | `plainValues`    | `boolean`                 | `false`                                         | read variants and dicts in the 2.0 shapes — see below          |
+| `variants`       | `'tree'\|'plain'\|'wrap'` | follows `plainValues`                           | how a `v` comes back; `'wrap'` keeps the signature — see below |
 | `ReturnLongjs`   | `boolean`                 | `false`                                         | **deprecated** (`DBUS_DEP0001`) — 64-bit as Long.js            |
 
 Address forms understood by `busAddress`: `unix:path=…`, `unix:abstract=…`,
@@ -669,15 +670,56 @@ always a string, so `a{us}` read as an object would turn the key `1` into `'1'`,
 and with `returnBigInt` a 64-bit key would stringify and lose precision on the
 way back. Quiet corruption is worse than an inconvenient shape.
 
-**Reading a variant this way discards its signature**, which is the point of the
-shape — `variantSignature()` returns `undefined` for it. Use `Variant` when
-writing if you need to control the type.
+**Reading a variant this way discards its signature** — `variantSignature()`
+returns `undefined` for it. That is usually what you want, and when it is not,
+see `variants` below.
 
 Both sides of a conversation should agree: a service reads its own method
 arguments through the same parser, so set it there too.
 
 `variantValue()` and `toPlain()` read either shape and become the identity under
 this one, so code written against them needs no change when the default flips.
+
+### Getting the type back: `variants`
+
+Sometimes the value is not enough. A tool that prints a reply has to say
+`variant u 501` rather than `501`, and a service handed an `a{sv}` may need to
+know what its caller actually sent. Both used to mean reading the parser's
+internal tree, which is the thing 2.0 exists to stop.
+
+`variants` decides how a `v` comes back, independently of the dict shape:
+
+| value     | a `v` reads as             | `variantSignature()` |
+| --------- | -------------------------- | -------------------- |
+| `'tree'`  | `[signatureTree, [value]]` | the signature        |
+| `'plain'` | `value`                    | `undefined`          |
+| `'wrap'`  | `Variant(sig, value)`      | the signature        |
+
+It defaults to `'plain'` when `plainValues` is set and `'tree'` otherwise, so
+existing code is unaffected either way.
+
+```js
+const bus = dbus.sessionBus({ plainValues: true, variants: 'wrap' });
+
+const props = await iface.$readProp('Metadata');
+props.Volume.signature; // 'd'
+props.Volume.value; // 0.5
+variantValue(props.Volume); // 0.5 -- the accessors understand it
+```
+
+That combination — plain dicts whose values still carry their types — is what
+`dbus-native call` uses, and it is the recommended shape for anything that
+inspects or forwards values rather than just consuming them.
+
+A `Variant` is a better carrier than the tree in three ways: it prints as
+`Variant('u', 501)` instead of a wall of parse-tree objects, `variantValue()`
+and `toPlain()` already read it, and **the marshaller accepts it**, so a value
+read this way can be sent straight back out without unwrapping. The tree could
+do none of those.
+
+The signature is the one the sender wrote, never one re-derived from the value:
+`y`, `n`, `q`, `i`, `u` and `d` all arrive as a JavaScript number, so inferring
+it back would be a guess presented as type information.
 
 ---
 

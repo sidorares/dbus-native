@@ -222,7 +222,7 @@ function createConnection(opts) {
   // setup, and letting those be poked afterwards would do nothing visible
   // except confuse whoever tried.
   self.setValueShapes = shapes => {
-    for (const key of ['plainValues', 'returnBigInt', 'ayBuffer']) {
+    for (const key of ['plainValues', 'returnBigInt', 'ayBuffer', 'variants']) {
       if (Object.hasOwn(shapes, key)) opts[key] = shapes[key];
     }
     return self;
