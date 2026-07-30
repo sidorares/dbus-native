@@ -99,7 +99,7 @@ socket other processes can reach.
 | `authMethods`    | `string[]`                | `['EXTERNAL', 'DBUS_COOKIE_SHA1', 'ANONYMOUS']` | tried in order                                                 |
 | `direct`         | `boolean`                 | `false`                                         | skip the opening `Hello`, for peer-to-peer connections         |
 | `server`         | `boolean`                 | `false`                                         | act as the server side of the handshake                        |
-| `timeout`        | `number`                  | none                                            | default timeout in ms for every call on this client            |
+| `timeout`        | `number`                  | `25000`                                         | ms every call waits for its reply; `0` disables — see below    |
 | `ayBuffer`       | `true \| false \| 'view'` | `true`                                          | how `ay` comes back — see [Values](#values-and-types)          |
 | `maxMessageSize` | `number`                  | 128 MiB                                         | reject a message declaring more than this                      |
 | `returnBigInt`   | `boolean`                 | `true`                                          | read `x`/`t` as native `bigint`, exactly — see below           |
@@ -196,13 +196,27 @@ with `path`, `destination` and `interface` defaulted to the bus daemon's own
 | `signal`  | `AbortSignal` | cancels the call; rejects with `AbortError`                  |
 
 A timeout or an abort **removes the pending call**, so neither leaks an entry
-nor delivers a late reply. There is no default timeout: a call waits forever
-unless you ask otherwise.
+nor delivers a late reply.
+
+**Every call has a deadline: 25 seconds by default**, the same figure libdbus,
+GDBus and sd-bus use, so a call that hits it would have hit theirs at the same
+point. Before 2.0 there was none, and a peer that never answered left the
+promise unsettled for the life of the process.
 
 ```js
-await bus.invoke(msg, { timeout: 5000 });
+await bus.invoke(msg, { timeout: 5000 }); // shorter
+await bus.invoke(msg, { timeout: 0 }); // no deadline at all
 await bus.invoke(msg, { signal: AbortSignal.timeout(5000) });
+
+const bus = dbus.sessionBus({ timeout: 60_000 }); // per client
 ```
+
+A method that legitimately takes longer than 25 seconds needs `timeout` raised
+for that call — the same thing you would do against any other D-Bus library.
+
+A message carrying `NO_REPLY_EXPECTED` gets no deadline, because there is
+nothing to wait for: `invoke` settles with `undefined` once the message is
+written.
 
 ### Bus daemon methods
 

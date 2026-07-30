@@ -39,13 +39,13 @@ the classic track keeps its semver promises.
 Each major is chosen so its blast radius is small enough to tool for, and so
 it unblocks the next one.
 
-| release | theme                      | blast radius              | migration mechanism               |
-| ------- | -------------------------- | ------------------------- | --------------------------------- |
-| **0.6** | preparation, all additive  | none                      | —                                 |
-| **1.0** | errors are `Error`s ✅     | error-handling paths only | codemod + forward-compatible shim |
-| **2.0** | the type system ✅         | every value read          | accessors + lint + compat wrapper |
-| **3.0** | lifecycle and cancellation | connection setup/teardown | codemod + deprecations            |
-| **4.0** | ~~ESM~~, `/next` default   | imports                   | codemod                           |
+| release | theme                         | blast radius              | migration mechanism               |
+| ------- | ----------------------------- | ------------------------- | --------------------------------- |
+| **0.6** | preparation, all additive     | none                      | —                                 |
+| **1.0** | errors are `Error`s ✅        | error-handling paths only | codemod + forward-compatible shim |
+| **2.0** | the type system ✅            | every value read          | accessors + lint + compat wrapper |
+| **3.0** | lifecycle and cancellation ✅ | connection setup/teardown | codemod + deprecations            |
+| **4.0** | ~~ESM~~, `/next` default      | imports                   | codemod                           |
 
 Errors come before types because a rejected promise has to carry an `Error` for
 promises to be worth anything, and because it touches only `catch` blocks
@@ -321,18 +321,34 @@ deserves its own guide page.
 
 ## 3.0 — lifecycle and cancellation
 
+> **Shipped, all three, and none of them needed a release of their own.** The
+> first two landed additively across 0.7–0.13; the third is breaking and went
+> out with the type-system release, since a consumer upgrading anyway would
+> rather read one migration guide than two.
+
 **Closes** [#20](https://github.com/sidorares/dbus-native/issues/20),
 [#137](https://github.com/sidorares/dbus-native/issues/137).
 
-- `Symbol.asyncDispose` on connections, subscriptions and name registrations.
-- `connection.end()` → `await bus.close()`, which flushes pending writes and
+- ✅ `Symbol.asyncDispose` on connections, subscriptions and name
+  registrations.
+- ✅ `connection.end()` → `await bus.close()`, which flushes pending writes and
   fails in-flight calls cleanly instead of throwing
-  `ERR_STREAM_WRITE_AFTER_END` — which is what #20 still does today, as
-  confirmed during the audit.
-- A **default call timeout**. This one is breaking in an unusual direction: it
-  makes previously-hanging calls start failing. That is the point, but it
-  belongs in a major and needs a loud release note, plus `timeout: 0` to opt
-  out.
+  `ERR_STREAM_WRITE_AFTER_END` — which is what #20 did before the audit.
+- ✅ A **default call timeout**. This one is breaking in an unusual direction:
+  it makes previously-hanging calls start failing. That is the point, and
+  `timeout: 0` opts out per call or per client.
+
+  **25 seconds**, which is what libdbus, GDBus and sd-bus all use — so a call
+  that hits this deadline would have hit theirs at the same point, and the
+  change brings the package into line rather than inventing a policy.
+
+  Building it turned up a case the sketch above did not consider: a message
+  carrying `NO_REPLY_EXPECTED`. A deadline there would report a `TimeoutError`
+  for a message that did exactly what it was told, so those get none — and
+  since there is no reply to wait for, `invoke` now settles them as soon as
+  the message is written. That also fixes a leak nobody had noticed: it used
+  to register a pending-call entry against a serial that could never arrive,
+  one per call, for the life of the connection.
 
 Codemoddable: `bus.connection.end()` → `await bus.close()` is a mechanical
 rewrite.

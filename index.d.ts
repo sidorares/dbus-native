@@ -278,7 +278,11 @@ export interface ConnectionOptions {
   ReturnLongjs?: never;
   /** reject a message declaring more than this many bytes; default 128 MiB */
   maxMessageSize?: number;
-  /** default timeout in ms for every call on this client; default: no timeout */
+  /**
+   * ms every call on this client waits for its reply. Default `25000`, the
+   * figure libdbus, GDBus and sd-bus all use. `0` disables it, restoring the
+   * pre-2.0 behaviour of waiting indefinitely.
+   */
   timeout?: number;
   /**
    * Reconnect when the transport goes away. **Off by default**, because

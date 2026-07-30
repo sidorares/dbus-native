@@ -98,19 +98,91 @@ describe('call timeouts', () => {
     assert.strictEqual(await pending, 'slow but fine');
   });
 
-  it('waits forever by default, as it always has', async () => {
-    const { bus, sent, reply } = fakeBus();
-    const pending = bus.invoke({ ...call });
-    setTimeout(() => reply(sent[0].serial, ['eventually']), 60);
-    assert.strictEqual(await pending, 'eventually');
-  });
-
   it('reports the timeout through a callback too', (t, done) => {
     const { bus } = fakeBus();
     bus.invoke({ ...call }, { timeout: 20 }, err => {
       assert.strictEqual(err.name, 'TimeoutError');
       done();
     });
+  });
+});
+
+// A call with no deadline never settles when the peer does not answer -- not
+// slowly, not with an error, never. Any peer can cause it by crashing between
+// receiving a message and replying, so waiting forever turns one program's bug
+// into another's hang.
+describe('the default deadline', () => {
+  keepEventLoopAlive();
+
+  /** The delays passed to setTimeout while `fn` runs. */
+  const armedDelays = fn => {
+    const delays = [];
+    const real = global.setTimeout;
+    global.setTimeout = (cb, ms) => {
+      delays.push(ms);
+      return real(cb, ms);
+    };
+    try {
+      return { delays, result: fn() };
+    } finally {
+      global.setTimeout = real;
+    }
+  };
+
+  it('is 25 seconds, matching libdbus, GDBus and sd-bus', () => {
+    // Too long to wait for, so this reads the delay the timer was armed with
+    // rather than letting it fire.
+    const { bus } = fakeBus();
+    const { delays } = armedDelays(() => bus.invoke({ ...call }, () => {}));
+    assert.deepStrictEqual(delays, [25000]);
+  });
+
+  it('reports that number to the caller when it fires', async () => {
+    // What a caller is told has to be the deadline they were actually given,
+    // since that is the number they would adjust.
+    const { bus } = fakeBus({ timeout: 20 });
+    await assert.rejects(
+      () => bus.invoke({ ...call }),
+      err => {
+        assert.strictEqual(err.name, 'TimeoutError');
+        assert.strictEqual(err.timeout, 20);
+        return true;
+      }
+    );
+  });
+
+  it('is turned off by timeout: 0, per call', async () => {
+    const { bus, sent, reply } = fakeBus();
+    const pending = bus.invoke({ ...call }, { timeout: 0 });
+    setTimeout(() => reply(sent[0].serial, ['eventually']), 60);
+    assert.strictEqual(await pending, 'eventually');
+  });
+
+  it('is turned off by timeout: 0, per client', async () => {
+    const { bus, sent, reply } = fakeBus({ timeout: 0 });
+    const pending = bus.invoke({ ...call });
+    setTimeout(() => reply(sent[0].serial, ['eventually']), 60);
+    assert.strictEqual(await pending, 'eventually');
+  });
+
+  it('does not arm a deadline for a message expecting no reply', async () => {
+    // NO_REPLY_EXPECTED means the peer must not answer, so a deadline would
+    // report a failure for a message that did exactly what it was told.
+    const { bus, sent } = fakeBus();
+    const { delays, result } = armedDelays(() =>
+      bus.invoke({ ...call, flags: constants.flags.noReplyExpected })
+    );
+    assert.strictEqual(await result, undefined, 'settles with nothing');
+    assert.deepStrictEqual(delays, [], 'and armed no timer');
+    assert.strictEqual(sent.length, 1, 'but did send the message');
+  });
+
+  it('leaves no pending entry for a message expecting no reply', async () => {
+    // It used to register a cookie against a serial that could never arrive,
+    // which is one leaked entry per call for the life of the connection.
+    const { bus } = fakeBus();
+    await bus.invoke({ ...call, flags: constants.flags.noReplyExpected });
+    assert.deepStrictEqual(Object.keys(bus.cookies), []);
   });
 });
 
