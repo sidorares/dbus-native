@@ -188,6 +188,16 @@ export interface Message {
   sender?: string;
   signature?: string;
   body?: unknown[];
+  /**
+   * File descriptors accompanying this message. `h` values in the body are
+   * *indices* into this array, per the specification — not descriptors.
+   *
+   * The `UNIX_FDS` header field is derived from its length; do not set
+   * `unixFds` yourself. Sending requires a transport that can carry them.
+   */
+  fds?: number[];
+  /** How many descriptors the message declared. Derived from `fds` on send. */
+  unixFds?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -284,6 +294,14 @@ export interface DBusConnection extends EventEmitter {
    */
   message(msg: Message): boolean;
   end(): this;
+  /**
+   * Whether this connection's transport can carry file descriptors — i.e.
+   * whether the stream implements `writeWithFds`. Nothing in this package
+   * provides one; supply your own as `opts.stream`.
+   */
+  canPassFds: boolean;
+  /** Whether the peer agreed to descriptors during the handshake. */
+  unixFdsAgreed: boolean;
   /**
    * Change the value shapes this connection's parser produces. Takes effect on
    * the next message in; a reply already parsed keeps the shape it was read

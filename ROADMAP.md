@@ -413,7 +413,28 @@ works for the case it was published for — handing TCP sockets between
 processes — and fails on precisely the case d-bus needs. `process.binding` is
 also internal and deprecated.
 
-#### What to do before 3.0/4.0
+#### What to do before 3.0/4.0 — DONE, and further than planned
+
+The plan was to shape the seam and build nothing. In the event the seam turned
+out to be almost all of it: once a message is `{ bytes, fds }` and `h` is the
+uint32 index the spec says it is, the only missing piece is a stream that can
+carry descriptors — and that is exactly what a caller can supply.
+
+So the whole protocol is implemented and tested against a mock fd-capable
+transport, and **UNIX_FD works today for anyone who brings their own stream**.
+The package still depends on nothing, which was the point.
+
+- `writeWithFds(bytes, fds)` on the stream, and an `'fds'` event, are the seam.
+- `connection.canPassFds` / `connection.unixFdsAgreed` report each half.
+- `NEGOTIATE_UNIX_FD` is sent only when the transport can carry one, and the
+  server agrees only when its own can.
+- An fd-carrying message is never batched: ancillary data attaches to a write,
+  not to a message.
+- Header field 9 is in the tables. It was missing, so a peer that sent one
+  produced `msg.undefined = 2` — latent only because we never negotiated.
+
+The original text follows, because the transport findings are still why there
+is no built-in one.
 
 Do not build it; there is nothing safe to depend on. But **shape the transport
 seam**, because that is the part that would otherwise force a major later.

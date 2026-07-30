@@ -243,6 +243,71 @@ bus.signals.on(key, (body, signature) => console.log(body));
 The [proxy API](#proxy-api) wraps both steps — `iface.on('Pinged', handler)`
 adds the match rule for you.
 
+### File descriptors
+
+`h` (`UNIX_FD`) is a **uint32 index**, not a descriptor — "the value is an index
+into the array of file descriptors that accompany the message", per the
+specification. The descriptors themselves travel as ancillary data
+(`SCM_RIGHTS`) beside the bytes, and ride on `msg.fds`:
+
+```js
+bus.connection.message({
+  destination: 'org.example.Sink',
+  path: '/org/example/Sink',
+  interface: 'org.example.Sink',
+  member: 'Take',
+  signature: 'sh',
+  body: ['a name', 0], //        ^ index into fds
+  fds: [fd]
+});
+```
+
+and the same shape arrives:
+
+```js
+bus.connection.on('message', msg => {
+  if (msg.fds) console.log(msg.fds[msg.body[1]]);
+});
+```
+
+**Node has no ancillary-data API**, so nothing here provides a transport that
+can carry them — [nodejs/node#53391](https://github.com/nodejs/node/issues/53391)
+is closed as not planned, and every addon that does needs a compiler on every
+install, which is the property this package spent three releases acquiring. See
+[ROADMAP.md §2.8](../ROADMAP.md) for what was measured.
+
+**So the capability is a seam on the stream.** Supply your own transport as
+`opts.stream` implementing two things, and everything above it works:
+
+| on the stream              |                                                     |
+| -------------------------- | --------------------------------------------------- |
+| `writeWithFds(bytes, fds)` | write, carrying descriptors; returns like `write()` |
+| `emit('fds', fds)`         | descriptors received, in arrival order              |
+
+`test/utils/fd-transport.js` is a working example, minus the kernel.
+
+| on the connection          |                                                |
+| -------------------------- | ---------------------------------------------- |
+| `connection.canPassFds`    | whether the transport declared the capability  |
+| `connection.unixFdsAgreed` | whether the _peer_ agreed during the handshake |
+
+Both must be true before a descriptor gets anywhere. `NEGOTIATE_UNIX_FD` is only
+sent when the transport can carry one — claiming the capability and then failing
+on the first `h` would leave the peer with no way to know to use a different
+call.
+
+Three details that matter if you write a transport:
+
+- **Descriptors must arrive in the same order as their bytes.** That is what
+  lets each message take the number its `UNIX_FDS` header claims, which is how
+  libdbus does it too. `SCM_RIGHTS` gives this for free.
+- **An fd-carrying message is never batched.** Ancillary data attaches to a
+  _write_, not to a message, so a batched one would hand its descriptors to
+  whichever message the kernel associated them with. Such a message flushes the
+  cork and goes on its own.
+- **Ownership is yours.** Nothing here dups or closes anything; a received
+  descriptor is a live fd in your process and closing it is your job.
+
 ### Scoped resources
 
 A match rule is the thing people forget to remove. A process that adds them and

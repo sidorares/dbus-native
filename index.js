@@ -186,9 +186,31 @@ function createConnection(opts) {
     typeof stream.cork === 'function' && typeof stream.uncork === 'function';
   let corked = false;
 
+  // A transport that can carry file descriptors declares itself by having
+  // these. Nothing in this package provides one -- see ROADMAP 2.8 for why --
+  // so it comes from `opts.stream`, and everything above this line works the
+  // day one exists.
+  const canSendFds = typeof stream.writeWithFds === 'function';
+  self.canPassFds = canSendFds;
+
   function writeMessage(msg) {
     publishSend(msg);
     const buffer = message.marshall(msg);
+
+    if (msg.fds && msg.fds.length) {
+      if (!canSendFds) throw new Error(constants.noFdTransport('sent'));
+      // Deliberately outside the cork. Batching concatenates messages into one
+      // write, and ancillary data attaches to a write rather than to a message
+      // -- so a batched fd-carrying message would hand its descriptors to
+      // whichever message the kernel happened to associate them with. Flushing
+      // first costs a syscall on a rare message and keeps fds with their own.
+      if (corked && !stream.destroyed) {
+        corked = false;
+        stream.uncork();
+      }
+      return stream.writeWithFds(buffer, msg.fds);
+    }
+
     if (canCork && !corked) {
       corked = true;
       stream.cork();
@@ -246,17 +268,41 @@ function createConnection(opts) {
   };
 
   const handshake = opts.server ? serverHandshake : clientHandshake;
-  handshake(stream, opts, (error, guid, identity) => {
+  handshake(stream, opts, (error, guid, identity, negotiated) => {
     if (error) {
       return self.emit('error', error);
     }
     self.guid = guid;
+    // Whether the *peer* agreed to descriptors, which is not the same question
+    // as whether our transport can carry them: both have to be true before a
+    // message with fds will get anywhere.
+    self.unixFdsAgreed = Boolean(negotiated && negotiated.unixFd);
     // What the server side learnt about the peer while authenticating: the
     // mechanism, and the uid it claimed. Undefined on a client connection,
     // where there is nothing to learn. lib/broker.js answers
     // GetConnectionUnixUser from it.
     if (identity) self.identity = identity;
     self.emit('connect');
+    // Descriptors arrive alongside the bytes but on their own event, so they
+    // are queued in arrival order and each message takes the number its
+    // UNIX_FDS header claims. SCM_RIGHTS delivers them in the same order as
+    // the bytes they accompany, which is what makes counting sufficient --
+    // and is how libdbus does it too.
+    const received = [];
+    stream.on('fds', fds => {
+      for (const fd of fds) received.push(fd);
+    });
+    const takeFds = count => {
+      // One capability, both directions: a stream that cannot send descriptors
+      // is not going to have received any either, and saying *that* is more
+      // use than "claimed 1, got 0" -- which is true but leaves the reader to
+      // work out that the transport was never able to.
+      if (count > 0 && !canSendFds) {
+        throw new message.ProtocolError(constants.noFdTransport('received'));
+      }
+      return received.splice(0, count);
+    };
+
     message.unmarshalMessages(
       stream,
       msg => {
@@ -288,7 +334,8 @@ function createConnection(opts) {
         process.nextTick(() => {
           throw err;
         });
-      }
+      },
+      takeFds
     );
   });
 
