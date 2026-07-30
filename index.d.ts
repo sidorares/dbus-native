@@ -282,6 +282,30 @@ export interface ConnectionOptions {
   maxMessageSize?: number;
   /** default timeout in ms for every call on this client; default: no timeout */
   timeout?: number;
+  /**
+   * Reconnect when the transport goes away. **Off by default**, because
+   * reconnecting changes what a connection means: the unique name is
+   * reassigned, so anyone holding the old one is talking to nobody.
+   *
+   * `true` for the defaults, or an object to tune them. Cannot be combined
+   * with `stream` — a stream the caller supplied cannot be reopened.
+   *
+   * Nothing in flight is retried. A method call is not idempotent, so calls
+   * are failed with `ConnectionClosedError` and re-issuing is the caller's
+   * decision — that is what `bus.on('reconnected')` is for.
+   */
+  reconnect?:
+    | boolean
+    | {
+        /** default `Infinity` */
+        retries?: number;
+        /** first delay, ms; default 100 */
+        minDelay?: number;
+        /** ceiling, ms; default 30000 */
+        maxDelay?: number;
+        /** backoff multiplier; default 2 */
+        factor?: number;
+      };
 }
 
 export interface DBusConnection extends EventEmitter {
@@ -329,6 +353,15 @@ export interface DBusConnection extends EventEmitter {
   on(event: 'error', listener: (err: Error) => void): this;
   /** an exception thrown by one of your own message/signal listeners */
   on(event: 'handlerError', listener: (err: Error) => void): this;
+  /** A retry is scheduled. Only with `reconnect`. */
+  on(
+    event: 'reconnecting',
+    listener: (info: { attempt: number; delay: number; cause?: Error }) => void
+  ): this;
+  /** The transport is back, before the bus has re-established anything. */
+  on(event: 'reconnect', listener: () => void): this;
+  /** `retries` exhausted; nothing further will be attempted. */
+  on(event: 'reconnectFailed', listener: (cause?: Error) => void): this;
   on(event: string, listener: (...args: any[]) => void): this;
 }
 
@@ -797,8 +830,25 @@ export interface NameRegistration {
   [Symbol.asyncDispose](): Promise<void>;
 }
 
-export interface MessageBus {
+export interface MessageBus extends EventEmitter {
   connection: DBusConnection;
+
+  /**
+   * Reconnected, and the unique name, owned names and match rules are back.
+   * Only with `reconnect`. Nothing in flight was retried.
+   */
+  on(
+    event: 'reconnected',
+    listener: (info: { name: string; names: string[] }) => void
+  ): this;
+  /** Reconnected, but re-establishing the names or rules failed. */
+  on(event: 'reconnectError', listener: (err: Error) => void): this;
+  on(event: string, listener: (...args: any[]) => void): this;
+
+  /** Well-known names this connection owns. Not the unique name — see `name`. */
+  names: Set<string>;
+  /** Match rules added through `addMatch`, replayed on a reconnect. */
+  matchRules: Set<string>;
   serial: number;
   cookies: Record<number, InvokeCallback>;
   signals: EventEmitter;

@@ -135,6 +135,42 @@ function createStream(opts) {
   }
 }
 
+/**
+ * Reconnection settings, normalised.
+ *
+ * Off unless asked for. Reconnecting silently would change what a connection
+ * means: the unique name is reassigned, so anyone holding the old one is
+ * talking to nobody, and a service's owned names are gone until re-requested.
+ * That is a decision for the program, not a default.
+ */
+function normaliseReconnect(reconnect, opts) {
+  if (!reconnect) return null;
+  const settings = reconnect === true ? {} : reconnect;
+  // A caller-supplied stream cannot be redialled -- we did not open it and
+  // have no idea how to open another. Refusing loudly beats reconnecting to
+  // the same dead socket forever.
+  if (opts.stream) {
+    throw new Error(
+      'reconnect cannot be used with opts.stream: a stream supplied by the ' +
+        'caller cannot be reopened. Use busAddress, socket, host/port, or ' +
+        'handle reconnection yourself.'
+    );
+  }
+  const retries = settings.retries === undefined ? Infinity : settings.retries;
+  const minDelay = settings.minDelay === undefined ? 100 : settings.minDelay;
+  const maxDelay = settings.maxDelay === undefined ? 30000 : settings.maxDelay;
+  const factor = settings.factor === undefined ? 2 : settings.factor;
+  for (const [name, value] of Object.entries({ minDelay, maxDelay, factor })) {
+    if (typeof value !== 'number' || !(value > 0)) {
+      throw new TypeError(`reconnect.${name} must be a positive number`);
+    }
+  }
+  if (retries !== Infinity && !(Number.isInteger(retries) && retries >= 0)) {
+    throw new TypeError('reconnect.retries must be a non-negative integer');
+  }
+  return { retries, minDelay, maxDelay, factor };
+}
+
 function createConnection(opts) {
   const self = new EventEmitter();
   if (!opts) opts = {};
@@ -145,53 +181,24 @@ function createConnection(opts) {
       "The 'ReturnLongjs' option is deprecated. 64-bit values (x/t) become native BigInt in 2.0, which represents the full range without a dependency."
     );
   }
-  const stream = (self.stream = createStream(opts));
-  stream.setNoDelay?.();
 
-  // Set once we have reported a fatal protocol error and torn the stream
-  // down ourselves, so the teardown does not surface as a second error.
+  const reconnect = normaliseReconnect(opts.reconnect, opts);
+
+  // Rebindable, because a reconnect replaces the socket while `self` stays the
+  // same object: callers hold `bus.connection`, and handing them a new one
+  // would make every stored reference stale.
+  let stream;
+  // Set once we have reported a fatal protocol error and torn the stream down
+  // ourselves, so the teardown does not surface as a second error.
   let fatal = false;
-
-  stream.on('error', err => {
-    // Remembered rather than only forwarded, so that whatever fails the
-    // pending calls on teardown can name what killed the connection. The bus
-    // deliberately does not listen for 'error' itself -- doing so would stop
-    // an unhandled connection error from crashing the process.
-    self.lastError = err;
-    // forward network and stream errors
-    if (fatal) return;
-    self.emit('error', err);
-  });
-
-  stream.on('end', () => {
-    self.emit('end');
-    self.message = () => {
-      console.warn("Didn't write bytes to closed stream");
-      return false;
-    };
-  });
-
-  // Emitted once the transport is fully torn down, however that happened. The
-  // bus uses it to fail calls that can no longer get a reply.
-  stream.on('close', () => self.emit('close', self.lastError));
-
-  // Forwarded so callers that stopped writing on a `false` from message()
-  // know when it is safe to resume.
-  stream.on('drain', () => self.emit('drain'));
-
-  // Messages written in the same tick are batched into a single flush. Without
-  // this, emitting N signals in one turn of the event loop issues N separate
-  // writes to the socket.
-  const canCork =
-    typeof stream.cork === 'function' && typeof stream.uncork === 'function';
+  let canCork = false;
   let corked = false;
-
-  // A transport that can carry file descriptors declares itself by having
-  // these. Nothing in this package provides one -- see ROADMAP 2.8 for why --
-  // so it comes from `opts.stream`, and everything above this line works the
-  // day one exists.
-  const canSendFds = typeof stream.writeWithFds === 'function';
-  self.canPassFds = canSendFds;
+  let canSendFds = false;
+  // True once the caller has asked for the connection to go away, so an
+  // ordinary close is not mistaken for one worth reconnecting after.
+  let ending = false;
+  let attempt = 0;
+  let retryTimer = null;
 
   function writeMessage(msg) {
     publishSend(msg);
@@ -225,7 +232,196 @@ function createConnection(opts) {
     return stream.write(buffer);
   }
 
+  // Buffers until the handshake completes; replaced by writeMessage on
+  // 'connect'. Reports no backpressure, since nothing has reached a socket.
+  function bufferMessage(msg) {
+    self._messages.push(msg);
+    return true;
+  }
+
+  function refuseMessage() {
+    console.warn("Didn't write bytes to closed stream");
+    return false;
+  }
+
+  /** Everything that belongs to one socket. Run again per reconnect. */
+  function attachStream() {
+    fatal = false;
+    stream = self.stream = createStream(opts);
+    stream.setNoDelay?.();
+
+    canCork =
+      typeof stream.cork === 'function' && typeof stream.uncork === 'function';
+    corked = false;
+    // A transport that can carry file descriptors declares itself by having
+    // these. Nothing in this package provides one -- see ROADMAP 2.8 for why
+    // -- so it comes from `opts.stream`, and everything above it works the day
+    // one exists.
+    canSendFds = typeof stream.writeWithFds === 'function';
+    self.canPassFds = canSendFds;
+
+    stream.on('error', err => {
+      // Remembered rather than only forwarded, so that whatever fails the
+      // pending calls on teardown can name what killed the connection. The bus
+      // deliberately does not listen for 'error' itself -- doing so would stop
+      // an unhandled connection error from crashing the process.
+      self.lastError = err;
+      // forward network and stream errors
+      if (fatal) return;
+      // A failed *re*dial is reported as a retry rather than as a connection
+      // error: the connection has already told everyone it went away, and a
+      // second 'error' with no listener would take the process down for
+      // something we are about to try again.
+      if (reconnect && !ending && self.state !== 'connected') {
+        return scheduleRetry(err);
+      }
+      self.emit('error', err);
+    });
+
+    stream.on('end', () => {
+      self.emit('end');
+      self.message = refuseMessage;
+    });
+
+    // Emitted once the transport is fully torn down, however that happened.
+    // The bus uses it to fail calls that can no longer get a reply.
+    stream.on('close', () => {
+      const wasConnected = self.state === 'connected';
+      self.state = 'disconnected';
+      self.message = refuseMessage;
+      self.emit('close', self.lastError);
+      if (reconnect && !ending && wasConnected) scheduleRetry(self.lastError);
+    });
+
+    // Forwarded so callers that stopped writing on a `false` from message()
+    // know when it is safe to resume.
+    stream.on('drain', () => self.emit('drain'));
+
+    const handshake = opts.server ? serverHandshake : clientHandshake;
+    handshake(stream, opts, (error, guid, identity, negotiated) => {
+      if (error) {
+        if (reconnect && !ending) return scheduleRetry(error);
+        return self.emit('error', error);
+      }
+      self.guid = guid;
+      // Whether the *peer* agreed to descriptors, which is not the same
+      // question as whether our transport can carry them: both have to be true
+      // before a message with fds will get anywhere.
+      self.unixFdsAgreed = Boolean(negotiated && negotiated.unixFd);
+      // What the server side learnt about the peer while authenticating: the
+      // mechanism, and the uid it claimed. Undefined on a client connection,
+      // where there is nothing to learn. lib/broker.js answers
+      // GetConnectionUnixUser from it.
+      if (identity) self.identity = identity;
+
+      const reconnected = attempt > 0;
+      attempt = 0;
+      self.state = 'connected';
+      for (const msg of self._messages) writeMessage(msg);
+      self._messages.length = 0;
+      self.message = writeMessage;
+
+      // 'connect' fires once, for the first socket. A later one is a
+      // 'reconnect', so a listener written for setup does not run twice.
+      self.emit(reconnected ? 'reconnect' : 'connect');
+
+      // Descriptors arrive alongside the bytes but on their own event, so they
+      // are queued in arrival order and each message takes the number its
+      // UNIX_FDS header claims. SCM_RIGHTS delivers them in the same order as
+      // the bytes they accompany, which is what makes counting sufficient --
+      // and is how libdbus does it too.
+      const received = [];
+      stream.on('fds', fds => {
+        for (const fd of fds) received.push(fd);
+      });
+      const takeFds = count => {
+        // One capability, both directions: a stream that cannot send
+        // descriptors is not going to have received any either, and saying
+        // *that* is more use than "claimed 1, got 0" -- which is true but
+        // leaves the reader to work out that the transport was never able to.
+        if (count > 0 && !canSendFds) {
+          throw new message.ProtocolError(constants.noFdTransport('received'));
+        }
+        return received.splice(0, count);
+      };
+
+      message.unmarshalMessages(
+        stream,
+        msg => {
+          publishReceive(msg);
+          self.emit('message', msg);
+        },
+        opts,
+        err => {
+          // Framing is unrecoverable: we no longer know where the next message
+          // starts, so surface the error and drop the connection rather than
+          // resynchronising on garbage.
+          self.lastError = err;
+          self.emit('error', err);
+          fatal = true;
+          stream.destroy();
+        },
+        err => {
+          // A throw from a 'message' listener is an application bug, not a
+          // transport failure, so it does not go to 'error' -- a handler there
+          // would reasonably assume the connection is gone.
+          if (self.listenerCount('handlerError') > 0) {
+            self.emit('handlerError', err);
+            return;
+          }
+          // Nobody is listening. Preserve Node's default for an exception in
+          // an event listener (crash the process) rather than swallowing an
+          // application bug -- but do it asynchronously, so the read loop
+          // still drains the messages it has already buffered.
+          process.nextTick(() => {
+            throw err;
+          });
+        },
+        takeFds
+      );
+    });
+  }
+
+  /**
+   * Wait, then dial again.
+   *
+   * Exponential with a ceiling, because the common reason a session bus is
+   * unreachable is that it is restarting, and hammering it does not help.
+   * Nothing in flight is retried -- see 'reconnect' in docs/api.md.
+   */
+  function scheduleRetry(cause) {
+    if (retryTimer || ending) return;
+    if (attempt >= reconnect.retries) {
+      self.emit('reconnectFailed', cause);
+      return;
+    }
+    const delay = Math.min(
+      reconnect.maxDelay,
+      reconnect.minDelay * Math.pow(reconnect.factor, attempt)
+    );
+    attempt++;
+    self.emit('reconnecting', { attempt, delay, cause });
+    retryTimer = setTimeout(() => {
+      retryTimer = null;
+      if (ending) return;
+      // Buffer again, so a message written between now and the handshake
+      // completing goes out rather than warning to stderr.
+      self.message = bufferMessage;
+      attachStream();
+    }, delay);
+    // Deliberately *not* unref'd. A live socket holds the event loop open, so
+    // a connection trying to get back to one should too -- otherwise a daemon
+    // whose bus restarted exits during the gap, which is precisely the case
+    // this exists for. `end()` and the disposer clear the timer, so a program
+    // that wants to stop can.
+  }
+
   self.end = () => {
+    ending = true;
+    if (retryTimer) {
+      clearTimeout(retryTimer);
+      retryTimer = null;
+    }
     stream.end();
     return self;
   };
@@ -235,6 +431,11 @@ function createConnection(opts) {
   // caller that awaits it knows the socket has gone.
   self[Symbol.asyncDispose] = () =>
     new Promise(resolve => {
+      ending = true;
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+        retryTimer = null;
+      }
       if (stream.destroyed) return setImmediate(resolve);
       let settled = false;
       const done = () => {
@@ -267,95 +468,10 @@ function createConnection(opts) {
     return self;
   };
 
-  const handshake = opts.server ? serverHandshake : clientHandshake;
-  handshake(stream, opts, (error, guid, identity, negotiated) => {
-    if (error) {
-      return self.emit('error', error);
-    }
-    self.guid = guid;
-    // Whether the *peer* agreed to descriptors, which is not the same question
-    // as whether our transport can carry them: both have to be true before a
-    // message with fds will get anywhere.
-    self.unixFdsAgreed = Boolean(negotiated && negotiated.unixFd);
-    // What the server side learnt about the peer while authenticating: the
-    // mechanism, and the uid it claimed. Undefined on a client connection,
-    // where there is nothing to learn. lib/broker.js answers
-    // GetConnectionUnixUser from it.
-    if (identity) self.identity = identity;
-    self.emit('connect');
-    // Descriptors arrive alongside the bytes but on their own event, so they
-    // are queued in arrival order and each message takes the number its
-    // UNIX_FDS header claims. SCM_RIGHTS delivers them in the same order as
-    // the bytes they accompany, which is what makes counting sufficient --
-    // and is how libdbus does it too.
-    const received = [];
-    stream.on('fds', fds => {
-      for (const fd of fds) received.push(fd);
-    });
-    const takeFds = count => {
-      // One capability, both directions: a stream that cannot send descriptors
-      // is not going to have received any either, and saying *that* is more
-      // use than "claimed 1, got 0" -- which is true but leaves the reader to
-      // work out that the transport was never able to.
-      if (count > 0 && !canSendFds) {
-        throw new message.ProtocolError(constants.noFdTransport('received'));
-      }
-      return received.splice(0, count);
-    };
-
-    message.unmarshalMessages(
-      stream,
-      msg => {
-        publishReceive(msg);
-        self.emit('message', msg);
-      },
-      opts,
-      err => {
-        // Framing is unrecoverable: we no longer know where the next message
-        // starts, so surface the error and drop the connection rather than
-        // resynchronising on garbage.
-        self.lastError = err;
-        self.emit('error', err);
-        fatal = true;
-        stream.destroy();
-      },
-      err => {
-        // A throw from a 'message' listener is an application bug, not a
-        // transport failure, so it does not go to 'error' -- a handler there
-        // would reasonably assume the connection is gone.
-        if (self.listenerCount('handlerError') > 0) {
-          self.emit('handlerError', err);
-          return;
-        }
-        // Nobody is listening. Preserve Node's default for an exception in an
-        // event listener (crash the process) rather than swallowing an
-        // application bug -- but do it asynchronously, so the read loop still
-        // drains the messages it has already buffered.
-        process.nextTick(() => {
-          throw err;
-        });
-      },
-      takeFds
-    );
-  });
-
   self._messages = [];
+  self.message = bufferMessage;
 
-  // pre-connect version, buffers all messages. replaced after connect
-  // Reports no backpressure: nothing has reached the socket yet.
-  self.message = msg => {
-    self._messages.push(msg);
-    return true;
-  };
-
-  self.once('connect', () => {
-    self.state = 'connected';
-    for (const msg of self._messages) writeMessage(msg);
-    self._messages.length = 0;
-
-    // no need to buffer once connected
-    self.message = writeMessage;
-  });
+  attachStream();
 
   return self;
 }

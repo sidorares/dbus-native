@@ -284,7 +284,7 @@ await tree.add('/com/example/Thing1', thing); // InterfacesAdded emitted
 This closes a whole category of tracker questions and is, in my judgement, worth
 more per line than proxies.
 
-### 3.2 Reconnection
+### 3.2 Reconnection ✅
 
 A daemon that loses the bus currently has no story at all. For an audience that
 skews toward Raspberry Pi and Homebridge — where ~41k weekly downloads sit on a
@@ -303,6 +303,18 @@ bus.on('reconnected', () => {
 The hard part is not the socket, it is that a reconnect invalidates the unique
 name, every match rule and every owned name. Whatever ships must re-establish
 those or say loudly that it does not.
+
+**Shipped**, opt-in, and it does re-establish all three -- before `reconnected`
+fires, so a service is reachable by the time anyone hears about it. What it
+does _not_ do is retry calls that were in flight: they were already failed when
+the socket went, and a method call is not idempotent. Re-issuing is the
+caller's decision, which is what the event is for.
+
+Building it turned up two bugs that had nothing to do with reconnection and
+everything to do with nothing ever having reconnected before: `lib/broker.js`
+removed the parent directory of its socket on close whether or not it had
+created it, and `bus.names` held the unique name alongside the well-known ones
+-- harmless until something tried to re-request them.
 
 ### 3.3 The file-descriptor transport seam — the one breaking thing that must land now
 
