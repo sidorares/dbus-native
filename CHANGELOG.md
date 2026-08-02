@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.15.2](https://github.com/sidorares/dbus-native/compare/v0.15.1...v0.15.2) (2026-08-02)
+
+
+### Documentation
+
+* a site, built from the markdown that is already here ([#396](https://github.com/sidorares/dbus-native/issues/396)) ([d6f2f89](https://github.com/sidorares/dbus-native/commit/d6f2f894f4b0cbff88166ba2de4611c5c2e42cd2))
+
 ## [0.15.1](https://github.com/sidorares/dbus-native/compare/v0.15.0...v0.15.1) (2026-07-30)
 
 
