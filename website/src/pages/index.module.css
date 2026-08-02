@@ -1,0 +1,91 @@
+.hero {
+  padding: 5rem 0 4rem;
+  text-align: left;
+  background: linear-gradient(
+    180deg,
+    var(--ifm-background-surface-color) 0%,
+    var(--ifm-background-color) 100%
+  );
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+}
+
+.title {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.02em;
+}
+
+.tagline {
+  font-size: 1.3rem;
+  max-width: 44rem;
+  color: var(--ifm-color-emphasis-800);
+  margin-bottom: 2rem;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.install {
+  max-width: 26rem;
+}
+
+.install pre {
+  margin-bottom: 0;
+}
+
+.section {
+  padding: 3.5rem 0;
+}
+
+.sectionAlt {
+  composes: section;
+  background-color: var(--ifm-background-surface-color);
+  border-top: 1px solid var(--ifm-toc-border-color);
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+}
+
+.sectionTitle {
+  font-size: 1.6rem;
+  margin-bottom: 2rem;
+}
+
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 2rem 2.5rem;
+}
+
+.feature h3 {
+  font-size: 1.05rem;
+  margin-bottom: 0.4rem;
+}
+
+.feature p {
+  color: var(--ifm-color-emphasis-800);
+  margin-bottom: 0;
+}
+
+.exampleGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media screen and (max-width: 768px) {
+  .hero {
+    padding: 3rem 0 2.5rem;
+  }
+
+  .title {
+    font-size: 2.25rem;
+  }
+
+  .tagline {
+    font-size: 1.1rem;
+  }
+}

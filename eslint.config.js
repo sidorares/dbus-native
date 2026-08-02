@@ -4,7 +4,10 @@ const prettier = require('eslint-config-prettier/flat');
 
 module.exports = [
   {
-    ignores: ['node_modules/**', 'coverage/**']
+    // `website/` is a separate npm project with a separate toolchain -- JSX and
+    // ESM, neither of which this config is set up to parse. It lints nothing of
+    // its own either; there are ten files in it and none ship.
+    ignores: ['node_modules/**', 'coverage/**', 'website/**']
   },
   js.configs.recommended,
   prettier,

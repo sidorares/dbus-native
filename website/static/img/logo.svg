@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img">
+  <title>dbus-native</title>
+  <g fill="none" stroke="#17a398" stroke-width="2" stroke-linecap="round">
+    <path d="M9 13V9.5M16 19v3.5M23 13V9.5" />
+  </g>
+  <rect x="2.5" y="14" width="27" height="4" rx="2" fill="#17a398" />
+  <g fill="#17a398">
+    <circle cx="9" cy="7" r="3" />
+    <circle cx="16" cy="25" r="3" />
+    <circle cx="23" cy="7" r="3" />
+  </g>
+</svg>
