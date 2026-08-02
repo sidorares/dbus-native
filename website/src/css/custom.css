@@ -1,0 +1,65 @@
+/* Infima variables, overridden once. Everything else is the default theme. */
+
+:root {
+  --ifm-color-primary: #0f766e;
+  --ifm-color-primary-dark: #0d6760;
+  --ifm-color-primary-darker: #0c605a;
+  --ifm-color-primary-darkest: #0a4f4a;
+  --ifm-color-primary-light: #118279;
+  --ifm-color-primary-lighter: #12897f;
+  --ifm-color-primary-lightest: #14998f;
+
+  --ifm-code-font-size: 92%;
+  --ifm-font-family-monospace:
+    ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono',
+    monospace;
+  --docusaurus-highlighted-code-line-bg: rgb(0 0 0 / 10%);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #47c2b9;
+  --ifm-color-primary-dark: #3ebcb2;
+  --ifm-color-primary-darker: #3db6ad;
+  --ifm-color-primary-darkest: #38a8a0;
+  --ifm-color-primary-light: #53c6bd;
+  --ifm-color-primary-lighter: #59c8c0;
+  --ifm-color-primary-lightest: #66ccc5;
+
+  --docusaurus-highlighted-code-line-bg: rgb(0 0 0 / 30%);
+}
+
+/* The pages are long reference documents read at a desk, so the measure is
+   wider than the theme's default and the headings are given more room above
+   them than below. */
+.markdown {
+  --ifm-h2-vertical-rhythm-top: 2.5;
+  --ifm-h3-vertical-rhythm-top: 2;
+  --ifm-heading-vertical-rhythm-bottom: 0.75;
+}
+
+.markdown > h2 {
+  border-bottom: 1px solid var(--ifm-toc-border-color);
+  padding-bottom: 0.3em;
+}
+
+/* `api.md` and the migration guides lean on tables, several of which are wider
+   than the column. Scroll them rather than crushing the text. */
+.markdown table {
+  display: table;
+  width: 100%;
+}
+
+.markdown .table-wrapper,
+.markdown > table {
+  overflow-x: auto;
+}
+
+/* A three-column table of flags reads better without the theme's zebra stripe
+   fighting the code spans in it. */
+.markdown table tr:nth-child(2n) {
+  background-color: transparent;
+}
+
+.markdown table thead tr {
+  border-bottom: 2px solid var(--ifm-table-border-color);
+}
