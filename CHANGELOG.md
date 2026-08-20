@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.15.2](https://github.com/sidorares/dbus-native/compare/v0.15.1...v0.15.2) (2026-08-20)
+
+
+### Bug Fixes
+
+* defineInterface refuses positional in/out rather than indexing them ([#388](https://github.com/sidorares/dbus-native/issues/388)) ([49fcc8e](https://github.com/sidorares/dbus-native/commit/49fcc8e7844d554a091cb48c46b30b975268ca62))
+
+
+### Documentation
+
+* a site, built from the markdown that is already here ([#396](https://github.com/sidorares/dbus-native/issues/396)) ([d6f2f89](https://github.com/sidorares/dbus-native/commit/d6f2f894f4b0cbff88166ba2de4611c5c2e42cd2))
+
 ## [0.15.1](https://github.com/sidorares/dbus-native/compare/v0.15.0...v0.15.1) (2026-07-30)
 
 
