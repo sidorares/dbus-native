@@ -244,6 +244,70 @@ describe('defineInterface: what it refuses', () => {
     assert.throws(() => defineInterface(), /needs a definition object/);
   });
 
+  // The trap this closes: `Object.keys(['s', 'u'])` is `['0', '1']`, so an
+  // array produces the right wire signature with the arguments named "0" and
+  // "1", and a handler written to take them positionally receives `{ 0: … }`.
+  // Nothing failed until a call was made, and then it failed somewhere else.
+  describe('the positional forms, which used to be read as indexed names', () => {
+    const method = (io, value) => ({
+      name: 'com.example.I',
+      methods: {
+        Hello: {
+          in: { a: 's' },
+          out: { b: 's' },
+          handler: () => 'x',
+          [io]: value
+        }
+      }
+    });
+
+    it('refuses an array for `in`', () => {
+      bad(method('in', ['s', 'u']), /declares `in` as an array/);
+    });
+
+    it('refuses an array for `out`', () => {
+      bad(method('out', ['s']), /declares `out` as an array/);
+    });
+
+    it('refuses a bare signature string', () => {
+      bad(method('in', 'su'), /declares `in` as a signature string/);
+    });
+
+    it('refuses an array of signal args', () => {
+      bad(
+        { name: 'com.example.I', signals: { Pinged: { args: ['s'] } } },
+        /declares `args` as an array/
+      );
+    });
+
+    it('suggests the object form, with the types it was given', () => {
+      assert.throws(
+        () => defineInterface(method('in', ['s', 'u'])),
+        /\{ arg1: 's', arg2: 'u' \}/
+      );
+    });
+
+    it('says handlers never receive positional arguments', () => {
+      assert.throws(
+        () => defineInterface(method('in', ['s'])),
+        /never positional arguments/
+      );
+    });
+
+    it('still accepts the object form, empty or omitted', () => {
+      assert.ok(
+        defineInterface({
+          name: 'com.example.I',
+          methods: {
+            A: { in: { t: 's' }, out: { r: 's' }, handler: ({ t }) => t },
+            B: { in: {}, out: {}, handler: () => {} },
+            C: { handler: () => {} }
+          }
+        })
+      );
+    });
+  });
+
   it('needs a handler on every method', () => {
     bad(
       { name: 'com.example.I', methods: { Hello: { in: { a: 's' } } } },
