@@ -344,9 +344,14 @@ call.
 
 Three details that matter if you write one:
 
-- **Descriptors must arrive in the same order as their bytes.** That is what
-  lets each message take the number its `UNIX_FDS` header claims, which is how
-  libdbus does it too. `SCM_RIGHTS` gives this for free.
+- **Descriptors must arrive in order, and never after their bytes.** That is
+  what lets each message take the number its `UNIX_FDS` header claims, which is
+  how libdbus does it too. `SCM_RIGHTS` gives it for free — though _early_ is
+  allowed and does happen: Linux glues queued messages into one `recvmsg` and
+  hands over the descriptors of the first one that carries any, so they can
+  turn up with bytes that precede their own message. macOS stops at the message
+  boundary instead. A queue popped by the message that declares them is right
+  on both.
 - **An fd-carrying message is never batched.** Ancillary data attaches to a
   _write_, not to a message, so a batched one would hand its descriptors to
   whichever message the kernel associated them with. Such a message flushes the

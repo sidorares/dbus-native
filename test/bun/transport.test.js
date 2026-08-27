@@ -125,7 +125,22 @@ describe('sending descriptors', () => {
     await peer.readAtLeast(bulk.length + 1);
     const arrivals = await peer.readUntilFds();
     expect(peer.bytes.length).toBe(bulk.length + 1);
-    expect(arrivals[0].offset).toBe(bulk.length);
+    expect(arrivals).toHaveLength(1);
+
+    // Early is allowed; late is not. Linux glues queued messages into one
+    // recvmsg and hands over the descriptors of the first one that carries
+    // any, so they can be reported against bytes that precede their own
+    // message -- measured at 48000 bytes early on CI. macOS stops at the
+    // message boundary and reports them exactly. Either way a descriptor is
+    // never delivered after the bytes it belongs to, which is what makes a
+    // queue popped by the message that declares them correct on both.
+    expect(arrivals[0].offset).toBeLessThanOrEqual(bulk.length);
+    if (process.platform === 'darwin') {
+      expect(arrivals[0].offset).toBe(bulk.length);
+    }
+    expect(peer.bytes.subarray(0, bulk.length).equals(bulk)).toBe(true);
+    expect(peer.bytes[bulk.length]).toBe(0x21);
+
     fs.closeSync(arrivals[0].fds[0]);
     fs.closeSync(fd);
   });
