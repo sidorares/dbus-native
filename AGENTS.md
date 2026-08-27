@@ -46,6 +46,7 @@ lib/
   signature.js        signature string -> tree
   writer.js           growable output buffer with a write cursor
   handshake.js        client SASL auth (EXTERNAL, DBUS_COOKIE_SHA1, ANONYMOUS)
+  transport-bun.js    unix socket that carries file descriptors, Bun only
   server-handshake.js server-side SASL auth, the same three mechanisms
   broker.js           an in-process message bus: org.freedesktop.DBus, routing
   match-rule.js       match rule parsing and evaluation
@@ -58,6 +59,7 @@ lib/cli/              the dbus-send shaped subcommands
 lib/codegen/          introspection -> TypeScript declarations
 scripts/              dev helpers for running a private session bus
 test/                 unit tests (node:test)
+test/bun/             the fd transport, run by `bun test` (bun:test)
 test/utils/           test helpers and data, not test files
 test/integration/     end-to-end tests against a real dbus-daemon
 examples/             runnable examples; linted, so keep them valid
@@ -71,7 +73,27 @@ npm run test:raw          # unit tests only
 npm run test:integration  # spins up a private dbus-daemon, runs test/integration
 npm run lint:fix          # eslint --fix
 npm run format            # prettier --write
+npm run test:bun          # the fd transport; needs bun, and only runs there
+npm run test:bun:integration   # the same, against a private dbus-daemon
 ```
+
+### The one thing Node cannot run
+
+`lib/transport-bun.js` is a unix socket this package drives itself with
+`sendmsg`/`recvmsg` through `bun:ffi`, so that a connection can carry file
+descriptors (ROADMAP §2.8). It is selected at runtime and is inert on Node, so
+the ordinary suite covers the "not available" half and `test/bun/` — written
+against `bun:test`, not `node:test` — covers the rest. If you touch it, run
+both: `npm test` and `npm run test:bun:integration`.
+
+Two rules for that file specifically:
+
+- **Never call a variadic libc function.** `fcntl` and `ioctl` are variadic,
+  and through a fixed FFI signature on arm64 their last argument comes from the
+  wrong place — `fcntl(F_SETFL, O_NONBLOCK)` returns 0 and does nothing.
+  Everything it needs has a non-variadic spelling.
+- **Do not assume `MSG_DONTWAIT` works.** Darwin ignores it for AF_UNIX, so a
+  large send blocks the event loop; `SO_SNDTIMEO` is what bounds it there.
 
 ### You need a bus for integration work
 

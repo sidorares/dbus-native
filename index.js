@@ -3,7 +3,7 @@
 const { EventEmitter } = require('events');
 const net = require('net');
 
-const { connectToAddress } = require('./lib/address');
+const { connectToAddress, unixConnection } = require('./lib/address');
 const constants = require('./lib/constants');
 const message = require('./lib/message');
 const clientHandshake = require('./lib/handshake');
@@ -27,7 +27,7 @@ const DEFAULT_SESSION_ADDRESS =
 function createStream(opts) {
   if (opts.stream) return opts.stream;
   const { host, port, socket } = opts;
-  if (socket) return net.createConnection(socket);
+  if (socket) return unixConnection({ path: socket }, opts);
   if (port) return net.createConnection(port, host);
 
   const busAddress =
@@ -39,7 +39,7 @@ function createStream(opts) {
   const addresses = busAddress.split(';');
   for (let i = 0; i < addresses.length; ++i) {
     try {
-      return connectToAddress(addresses[i]);
+      return connectToAddress(addresses[i], opts);
     } catch (e) {
       if (i === addresses.length - 1) throw e;
       console.warn(e.message);
@@ -179,6 +179,19 @@ function createConnection(opts) {
     canSendFds = typeof stream.writeWithFds === 'function';
     self.canPassFds = canSendFds;
 
+    // Descriptors arrive alongside the bytes but on their own event, so they
+    // are queued in arrival order and each message takes the number its
+    // UNIX_FDS header claims. SCM_RIGHTS delivers them in the same order as
+    // the bytes they accompany, which is what makes counting sufficient --
+    // and is how libdbus does it too.
+    //
+    // Per socket rather than per handshake: a reconnect gets a fresh queue,
+    // and the ones this one never delivered are closed with it below.
+    const received = [];
+    stream.on('fds', fds => {
+      for (const fd of fds) received.push(fd);
+    });
+
     stream.on('error', err => {
       // Remembered rather than only forwarded, so that whatever fails the
       // pending calls on teardown can name what killed the connection. The bus
@@ -208,6 +221,13 @@ function createConnection(opts) {
       const wasConnected = self.state === 'connected';
       self.state = 'disconnected';
       self.message = refuseMessage;
+      // Descriptors that arrived but that no message ever claimed. Nothing
+      // else can know about them -- the connection is gone, so no message is
+      // coming to take them -- and a real descriptor nobody closes is a leak.
+      // Only a transport that owns them can say how, hence the optional hook.
+      if (received.length > 0 && typeof stream.closeFds === 'function') {
+        stream.closeFds(received.splice(0, received.length));
+      }
       self.emit('close', self.lastError);
       if (reconnect && !ending && wasConnected) scheduleRetry(self.lastError);
     });
@@ -244,15 +264,6 @@ function createConnection(opts) {
       // 'reconnect', so a listener written for setup does not run twice.
       self.emit(reconnected ? 'reconnect' : 'connect');
 
-      // Descriptors arrive alongside the bytes but on their own event, so they
-      // are queued in arrival order and each message takes the number its
-      // UNIX_FDS header claims. SCM_RIGHTS delivers them in the same order as
-      // the bytes they accompany, which is what makes counting sufficient --
-      // and is how libdbus does it too.
-      const received = [];
-      stream.on('fds', fds => {
-        for (const fd of fds) received.push(fd);
-      });
       const takeFds = count => {
         // One capability, both directions: a stream that cannot send
         // descriptors is not going to have received any either, and saying

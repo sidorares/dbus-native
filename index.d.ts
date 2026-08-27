@@ -193,7 +193,8 @@ export interface Message {
    * *indices* into this array, per the specification — not descriptors.
    *
    * The `UNIX_FDS` header field is derived from its length; do not set
-   * `unixFds` yourself. Sending requires a transport that can carry them.
+   * `unixFds` yourself. Sending requires a transport that can carry them,
+   * which `connection.canPassFds` reports.
    */
   fds?: number[];
   /** How many descriptors the message declared. Derived from `fds` on send. */
@@ -221,6 +222,15 @@ export interface ConnectionOptions {
   server?: boolean;
   /** skip the initial Hello, for peer-to-peer connections */
   direct?: boolean;
+  /**
+   * Use the file-descriptor-capable transport for unix connections where the
+   * runtime has one. Default `true`, which today means Bun and nothing else --
+   * see `lib/transport-bun.js`, and docs/api.md "File descriptors".
+   *
+   * Set `false` to open an ordinary socket instead. The connection then cannot
+   * carry descriptors and does not negotiate UNIX_FD.
+   */
+  fdTransport?: boolean;
   /**
    * How `ay` fields are returned. `true` (default) copies into a Buffer,
    * `'view'` shares memory with the message, `false` gives an array of numbers.
@@ -322,8 +332,8 @@ export interface DBusConnection extends EventEmitter {
   end(): this;
   /**
    * Whether this connection's transport can carry file descriptors — i.e.
-   * whether the stream implements `writeWithFds`. Nothing in this package
-   * provides one; supply your own as `opts.stream`.
+   * whether the stream implements `writeWithFds`. True for a unix connection
+   * under Bun; elsewhere, supply your own transport as `opts.stream`.
    */
   canPassFds: boolean;
   /** Whether the peer agreed to descriptors during the handshake. */

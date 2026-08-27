@@ -56,6 +56,42 @@ jobs:
       - run: npm run test:raw
       - run: npm run test:integration
 
+  bun:
+    name: bun (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      # `scripts/with-dbus.js` starts the private bus the integration half
+      # talks to, and both clients in it are Bun processes.
+      - name: Install dbus (Linux)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y dbus
+
+      - name: Install dbus (macOS)
+        if: runner.os == 'macOS'
+        run: brew install dbus
+
+      - run: npm ci
+
+      # The fd transport is the only thing in this package that cannot run on
+      # Node -- sendmsg/recvmsg through bun:ffi, a worker thread in poll(2),
+      # and the msghdr/cmsghdr layouts, which differ between these two
+      # platforms in ways only both of them can catch.
+      - run: npm run test:bun
+      - run: npm run test:bun:integration
+
   shapes:
     name: value shapes
     runs-on: ubuntu-latest
