@@ -456,8 +456,56 @@ The package still depends on nothing, which was the point.
 - Header field 9 is in the tables. It was missing, so a peer that sent one
   produced `msg.undefined = 2` — latent only because we never negotiated.
 
+#### There is a built-in one now, for Bun
+
+**Landed.** The table above is a table of _Node_ options, and Bun is not on it:
+`bun:ffi` can `dlopen` `sendmsg(2)`/`recvmsg(2)` and call them directly, with
+no addon, no compiler and no install step -- so the dependency argument that
+rules out every row simply does not apply. `lib/transport-bun.js` is that
+transport, and `lib/address.js` uses it for every unix connection under Bun.
+Node is untouched: the module loads, answers `available() === false`, and hands
+back the ordinary socket it always did.
+
+It owns the connection descriptor rather than wrapping Bun's socket, and the
+reason is specific to d-bus. Bun's reader does a plain `read(2)`, which drops
+ancillary data silently -- fine for a protocol where descriptors only arrive in
+reply to a request that asked for one, fatal here: `NEGOTIATE_UNIX_FD` is
+per-connection, so once it is agreed _any_ peer may put a descriptor in _any_
+reply, and a message whose `UNIX_FDS` header says 1 when none arrived takes the
+connection down. Send-only would be a connection that dies the first time
+something hands it a descriptor. So reading happens on a worker thread in
+`poll(2)`, which costs a thread per connection and is what `fdTransport: false`
+turns off.
+
+Two things were measured rather than read about, both macOS:
+
+- **Darwin does not honour `MSG_DONTWAIT` for AF_UNIX.** A send larger than the
+  socket buffer blocks the calling thread -- the event loop. `SO_SNDTIMEO`
+  through `setsockopt(2)` bounds it instead, and BSD turns a timed-out send
+  that moved some bytes into a short write, which is the case the flush loop
+  already handled.
+- **`fcntl(F_SETFL, O_NONBLOCK)` cannot be used to fix that.** `fcntl` is
+  variadic, and through a fixed FFI signature on arm64 the third argument comes
+  from the wrong place: `F_SETFL` returns 0 and `F_GETFL` then shows the flag
+  was never set. Silently, which is why nothing here calls a variadic libc
+  function.
+
+What this turns on is the list this section opened with -- systemd
+(`DumpByFileDescriptor`), the XDG portals (`OpenPipeWireRemote`, `OpenFile`,
+`Spawn`), logind (`Inhibit`, `TakeDevice`), UDisks2 (`LoopSetup`), BlueZ
+(`Acquire`) -- for anyone running on Bun. `test/bun/` covers both directions
+against a hand-rolled peer, and passes a descriptor between two clients through
+a real dbus-daemon, which is the end-to-end case E2E_DOCKER_TESTING.md had
+listed as impossible.
+
+Still open: the **server** side. `lib/server.js` and `lib/broker.js` hand an
+accepted socket straight to `createConnection`, and Bun is reading it by then,
+so exporting a service that hands out descriptors needs an fd-capable listener
+too -- `socket`/`bind`/`listen`/`accept` through the same FFI, plus the poll
+thread. Worth doing; not needed by any client.
+
 The original text follows, because the transport findings are still why there
-is no built-in one.
+is no built-in one on Node.
 
 Do not build it; there is nothing safe to depend on. But **shape the transport
 seam**, because that is the part that would otherwise force a major later.

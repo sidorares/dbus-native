@@ -292,21 +292,45 @@ bus.connection.on('message', msg => {
 });
 ```
 
-**Node has no ancillary-data API**, so nothing here provides a transport that
-can carry them — [nodejs/node#53391](https://github.com/nodejs/node/issues/53391)
-is closed as not planned, and every addon that does needs a compiler on every
-install, which is the property this package spent three releases acquiring. See
-[ROADMAP.md §2.8](../ROADMAP.md) for what was measured.
+#### Under Bun, this works out of the box
 
-**So the capability is a seam on the stream.** Supply your own transport as
-`opts.stream` implementing two things, and everything above it works:
+A unix connection opened under Bun is one this package drives itself, with
+`sendmsg(2)`/`recvmsg(2)` through `bun:ffi` — no dependency, no compiler, no
+build step. There is nothing to switch on: `sessionBus()`, `systemBus()`,
+`socket:` and `unix:`/`launchd:` addresses all get it.
+
+```js
+const bus = dbus.sessionBus();
+bus.connection.canPassFds; // true under Bun, false on Node
+```
+
+It costs one worker thread per connection, and that is what buys the half that
+matters: **receiving**. Bun's own socket reader does a plain `read(2)`, which
+silently drops ancillary data, so a connection that may be handed a descriptor
+cannot let Bun read it — the thread waits in `poll(2)` instead. Pass
+`fdTransport: false` to open an ordinary socket; the connection then cannot
+carry descriptors and does not negotiate `UNIX_FD`.
+
+**On Node it does not, and cannot.** There is no ancillary-data API —
+[nodejs/node#53391](https://github.com/nodejs/node/issues/53391) is closed as
+not planned — and every addon that does needs a compiler on every install,
+which is the property this package spent three releases acquiring. See
+[ROADMAP.md §2.8](../ROADMAP.md) for what was measured. The same code runs
+there; a message carrying descriptors is refused with an error that says why.
+
+#### Bringing your own transport
+
+The capability is a seam on the stream, which is how Bun's own transport
+attaches. Supply yours as `opts.stream`, implementing:
 
 | on the stream              |                                                     |
 | -------------------------- | --------------------------------------------------- |
 | `writeWithFds(bytes, fds)` | write, carrying descriptors; returns like `write()` |
 | `emit('fds', fds)`         | descriptors received, in arrival order              |
+| `closeFds(fds)` (optional) | close descriptors nobody claimed; see below         |
 
-`test/utils/fd-transport.js` is a working example, minus the kernel.
+`test/utils/fd-transport.js` is a working example minus the kernel, and
+`lib/transport-bun.js` is a real one.
 
 | on the connection          |                                                |
 | -------------------------- | ---------------------------------------------- |
@@ -318,7 +342,7 @@ sent when the transport can carry one — claiming the capability and then faili
 on the first `h` would leave the peer with no way to know to use a different
 call.
 
-Three details that matter if you write a transport:
+Three details that matter if you write one:
 
 - **Descriptors must arrive in the same order as their bytes.** That is what
   lets each message take the number its `UNIX_FDS` header claims, which is how
@@ -327,8 +351,13 @@ Three details that matter if you write a transport:
   _write_, not to a message, so a batched one would hand its descriptors to
   whichever message the kernel associated them with. Such a message flushes the
   cork and goes on its own.
-- **Ownership is yours.** Nothing here dups or closes anything; a received
-  descriptor is a live fd in your process and closing it is your job.
+- **Ownership.** A received descriptor is a live fd in your process and closing
+  it is your job — nothing here dups or closes what it hands you. Descriptors
+  you _send_ stay yours too: a transport that queues them (Bun's does) dups
+  first, so you may close your own as soon as the call returns. Descriptors
+  that arrived and that no message ever claimed are closed with the
+  connection, through the transport's `closeFds` if it has one, because by
+  then nothing else can.
 
 ### Reconnecting
 

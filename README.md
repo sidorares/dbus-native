@@ -635,12 +635,44 @@ dependency at all, which also removes the ARMv6 crash that made downstream
 forks vendor their own copy — a Long is still _accepted_ on the way in, since
 the check is on its `{low, high, unsigned}` shape and costs no import.
 
+### File descriptors (`h` / UNIX_FD)
+
+A descriptor does not travel inside a message — it rides beside it as ancillary
+data, and `h` is a uint32 index into what arrived. Node has no API for that, so
+on Node a message carrying one is refused with an error that says why.
+
+**Under Bun it just works.** A unix connection there is one this package drives
+itself with `sendmsg`/`recvmsg` through `bun:ffi` — still no dependency, no
+compiler, no build step:
+
+```js
+const bus = dbus.sessionBus(); // under Bun
+bus.connection.canPassFds; // true
+
+bus.connection.message({
+  destination: 'org.example.Sink',
+  path: '/org/example/Sink',
+  interface: 'org.example.Sink',
+  member: 'Take',
+  signature: 'sh',
+  body: ['a name', 0], //        ^ index into fds
+  fds: [fd]
+});
+```
+
+That is what makes systemd's `DumpByFileDescriptor`, the XDG portals'
+`OpenPipeWireRemote`, logind's `Inhibit` and `TakeDevice`, UDisks2's
+`LoopSetup` and BlueZ's `Acquire` reachable at all. See
+[docs/api.md](docs/api.md#file-descriptors) for the details, including how to
+supply your own transport on Node.
+
 Development
 -----------
 
 ```shell
 npm test                 # lint, format check and unit tests
 npm run test:integration # end-to-end tests against a real dbus-daemon
+npm run test:bun         # the Bun-only fd transport (needs bun)
 ```
 
 ### Running a bus locally (including on macOS)
