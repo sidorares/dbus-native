@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.0](https://github.com/sidorares/dbus-native/compare/v0.15.2...v0.16.0) (2026-09-12)
+
+
+### Features
+
+* **bun:** a unix transport that carries file descriptors ([#400](https://github.com/sidorares/dbus-native/issues/400)) ([05213cc](https://github.com/sidorares/dbus-native/commit/05213cc5e6668003f29ce44e9577fcc39b0f0cd8))
+
 ## [0.15.2](https://github.com/sidorares/dbus-native/compare/v0.15.1...v0.15.2) (2026-08-20)
 
 
