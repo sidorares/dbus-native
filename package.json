@@ -83,6 +83,8 @@
     "test:integration:wrap:broker": "DBUS_TEST_SHAPE=wrap npm run test:integration:broker",
     "test:integration:classic": "DBUS_TEST_SHAPE=classic npm run test:integration",
     "test:integration:classic:broker": "DBUS_TEST_SHAPE=classic npm run test:integration:broker",
+    "test:bun": "bun test test/bun",
+    "test:bun:integration": "node scripts/with-dbus.js -- bun test test/bun",
     "dbus:session": "node scripts/dbus-session.js",
     "test:types": "tsc --noEmit"
   },

@@ -188,8 +188,10 @@ due to security policies in the configuration file`. Tests that need to own
 
 ## What it cannot cover
 
-- **UNIX_FD passing.** Refusing it is checked; carrying one is not possible —
-  see ROADMAP §2.8.
+- **UNIX_FD passing, on Node.** Refusing it is checked; carrying one is not
+  possible there — see ROADMAP §2.8. Under Bun it is: `test/bun/` passes a
+  descriptor between two clients through a real dbus-daemon, and that runs in
+  CI on Linux and macOS.
 - **Big-endian messages.** Every peer here is little-endian. The unit suite
   covers big-endian reads with fixtures.
 - **systemd, logind, hostnamed.** They need PID 1. Running the container with
