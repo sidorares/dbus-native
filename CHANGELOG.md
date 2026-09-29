@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.16.0](https://github.com/sidorares/dbus-native/compare/v0.15.2...v0.16.0) (2026-09-29)
+
+
+### Features
+
+* **bun:** a unix transport that carries file descriptors ([#400](https://github.com/sidorares/dbus-native/issues/400)) ([05213cc](https://github.com/sidorares/dbus-native/commit/05213cc5e6668003f29ce44e9577fcc39b0f0cd8))
+
+
+### Performance Improvements
+
+* introspection's XML loads with the first proxy, not with the package ([#412](https://github.com/sidorares/dbus-native/issues/412)) ([9b66295](https://github.com/sidorares/dbus-native/commit/9b66295aefac540436bf4ff1865cc2b4010d071a))
+
 ## [0.15.2](https://github.com/sidorares/dbus-native/compare/v0.15.1...v0.15.2) (2026-08-20)
 
 
