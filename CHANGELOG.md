@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.1](https://github.com/sidorares/dbus-native/compare/v0.16.0...v0.16.1) (2026-10-04)
+
+
+### Bug Fixes
+
+* **bun:** poll retries EINTR without limit, so a d-bus connection survives a GC-heavy script ([#416](https://github.com/sidorares/dbus-native/issues/416)) ([84798da](https://github.com/sidorares/dbus-native/commit/84798da74a626a503269648b89ff872fda680e98))
+
 ## [0.16.0](https://github.com/sidorares/dbus-native/compare/v0.15.2...v0.16.0) (2026-09-29)
 
 
