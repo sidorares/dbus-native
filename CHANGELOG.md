@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.2](https://github.com/sidorares/dbus-native/compare/v0.16.1...v0.16.2) (2026-10-22)
+
+
+### Bug Fixes
+
+* the Bun transport has ref() and unref(), so an unref()ed connection lets the process exit ([#431](https://github.com/sidorares/dbus-native/issues/431)) ([f92a9db](https://github.com/sidorares/dbus-native/commit/f92a9db13d5505068425ca83b77a874e84328303))
+
 ## [0.16.1](https://github.com/sidorares/dbus-native/compare/v0.16.0...v0.16.1) (2026-10-04)
 
 
