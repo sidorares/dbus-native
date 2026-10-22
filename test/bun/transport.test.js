@@ -4,6 +4,7 @@
 // cannot run on Node: the transport under test does not exist there.
 
 const { describe, it, expect, afterEach } = require('bun:test');
+const { spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -259,6 +260,39 @@ describe('the stream underneath', () => {
     peer.close();
     for (let i = 0; i < 200 && !ended; i++) await sleep(5);
     expect(ended).toBe(true);
+  });
+
+  // In a process of its own, because what is under test is whether the
+  // process ends: an open connection holds it, an unref()ed one does not.
+  async function exitsWithin(ms, hold) {
+    const peer = listenAt(socketPath('liveness'));
+    const child = spawn(
+      process.execPath,
+      [
+        '-e',
+        `const s = require(${JSON.stringify(require.resolve('../../lib/transport-bun'))})` +
+          `.connect({ path: ${JSON.stringify(peer.path)} });` +
+          `s.on('data', () => {});${hold}`
+      ],
+      { stdio: ['ignore', 'ignore', 'inherit'] }
+    );
+    peer.accept();
+    const exited = await Promise.race([
+      new Promise(resolve => child.once('exit', resolve)),
+      sleep(ms).then(() => null)
+    ]);
+    child.kill();
+    peer.close();
+    return exited;
+  }
+
+  it('holds the process open while it is connected', async () => {
+    expect(await exitsWithin(1000, '')).toBe(null);
+  });
+
+  it('lets the process end once unref()ed, and holds it again once ref()ed', async () => {
+    expect(await exitsWithin(5000, 's.unref();')).toBe(0);
+    expect(await exitsWithin(1000, 's.unref(); s.ref();')).toBe(null);
   });
 
   it('stops the reader thread when destroyed', async () => {
