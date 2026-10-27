@@ -4,7 +4,7 @@
 // is unit-testable here is everything raised locally -- a dead connection, the
 // empty-body fallback, and the compat shim.
 
-const { describe, it } = require('node:test');
+const { after, before, describe, it } = require('node:test');
 const assert = require('assert');
 const { Duplex } = require('stream');
 const dbus = require('../index');
@@ -117,6 +117,15 @@ describe('errors: a connection that goes away', () => {
 // Hello. The failure used to be thrown from the reply timer, out of reach of
 // any listener, and took the process down.
 describe('errors: a bus that never answers Hello', () => {
+  // The Hello and handshake timers are unref'd, and a FakeSocket holds nothing
+  // open, so stand in for a real socket as test/timeouts.js does. Without it
+  // Node 22 sees the event loop drain before the timer fires.
+  let handle;
+  before(() => {
+    handle = setInterval(() => {}, 1 << 30);
+  });
+  after(() => clearInterval(handle));
+
   function silentBus(authenticate = true) {
     const socket = new FakeSocket();
     const bus = dbus.createClient({ stream: socket, timeout: 20 });
