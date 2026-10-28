@@ -4,7 +4,7 @@
 // is unit-testable here is everything raised locally -- a dead connection, the
 // empty-body fallback, and the compat shim.
 
-const { describe, it } = require('node:test');
+const { after, before, describe, it } = require('node:test');
 const assert = require('assert');
 const { Duplex } = require('stream');
 const dbus = require('../index');
@@ -110,6 +110,65 @@ describe('errors: a connection that goes away', () => {
     // behalf, so nothing should be listening unless the user asked.
     const { bus } = await connectBus();
     assert.strictEqual(bus.connection.listenerCount('error'), 0);
+  });
+});
+
+// #393: a bus that accepts the socket and authenticates, then never answers
+// Hello. The failure used to be thrown from the reply timer, out of reach of
+// any listener, and took the process down.
+describe('errors: a bus that never answers Hello', () => {
+  // The Hello and handshake timers are unref'd, and a FakeSocket holds nothing
+  // open, so stand in for a real socket as test/timeouts.js does. Without it
+  // Node 22 sees the event loop drain before the timer fires.
+  let handle;
+  before(() => {
+    handle = setInterval(() => {}, 1 << 30);
+  });
+  after(() => clearInterval(handle));
+
+  function silentBus(authenticate = true) {
+    const socket = new FakeSocket();
+    const bus = dbus.createClient({ stream: socket, timeout: 20 });
+    if (authenticate)
+      setImmediate(() => socket.push('OK 0123456789abcdef\r\n'));
+    return { bus, socket };
+  }
+
+  it('reports the failure as a connection error and closes', async () => {
+    const { bus } = silentBus();
+    let err;
+    bus.connection.on('error', e => (err = e));
+    const closedBy = await new Promise(resolve =>
+      bus.connection.once('close', resolve)
+    );
+    assert.strictEqual(err.name, 'TimeoutError');
+    assert.match(err.message, /org\.freedesktop\.DBus\.Hello/);
+    assert.strictEqual(closedBy, err);
+    assert.strictEqual(bus.connection.lastError, err);
+    assert.strictEqual(bus.name, undefined);
+  });
+
+  it('fails pending calls with the Hello failure as the cause', async () => {
+    const { bus } = silentBus();
+    bus.connection.on('error', () => {});
+    const failed = new Promise(resolve =>
+      bus.invoke(aCall, { timeout: 0 }, resolve)
+    );
+    const err = await failed;
+    assert.ok(err instanceof ConnectionClosedError, `got ${err}`);
+    assert.strictEqual(err.cause.name, 'TimeoutError');
+  });
+
+  it('reports it once when the handshake never finishes either', async () => {
+    const { bus } = silentBus(false);
+    const errors = [];
+    bus.connection.on('error', err => errors.push(err));
+    await new Promise(resolve => bus.connection.once('close', resolve));
+    await new Promise(resolve => setImmediate(resolve));
+    assert.deepStrictEqual(
+      errors.map(err => err.name),
+      ['TimeoutError']
+    );
   });
 });
 

@@ -199,6 +199,27 @@ describe('integration: reconnect', { timeout: 30000 }, () => {
     assert.strictEqual(reconnecting, false, 'close() means close');
   });
 
+  it('stops a pending redial when closed while the bus is down', async () => {
+    // With the socket already gone, close() used to resolve without telling
+    // the connection, so the redial it had scheduled still went ahead. A
+    // failed Hello tears the socket down the same way (#393).
+    const bus = connect({ reconnect: { minDelay: 50 } });
+    await bus.getId();
+
+    const scheduled = once(bus.connection, 'reconnecting');
+    await stopBroker();
+    await scheduled;
+    await bus.close();
+
+    let redialled = false;
+    bus.connection.on('reconnect', () => {
+      redialled = true;
+    });
+    broker = await startBroker();
+    await settle(300);
+    assert.strictEqual(redialled, false, 'close() means close');
+  });
+
   it('fails calls made while it is down rather than replaying them', async () => {
     // A method call is not idempotent, so nothing in flight is retried. The
     // event is how a caller decides what to re-issue.
