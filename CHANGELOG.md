@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.3](https://github.com/sidorares/dbus-native/compare/v0.16.2...v0.16.3) (2026-10-28)
+
+
+### Bug Fixes
+
+* a failed Hello closes the connection instead of crashing the process ([#435](https://github.com/sidorares/dbus-native/issues/435)) ([380db3d](https://github.com/sidorares/dbus-native/commit/380db3dcb313baf381bf9dff92fa0812abef32b4))
+
 ## [0.16.2](https://github.com/sidorares/dbus-native/compare/v0.16.1...v0.16.2) (2026-10-22)
 
 
